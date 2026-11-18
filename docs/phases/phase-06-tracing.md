@@ -1,6 +1,6 @@
 # Phase 6: tracing
 
-**Status:** to build. **Branch:** `phase-6-tracing`. **Follows:** 5b (merged). **Next:** phase 7 (the app).
+**Status:** steps 1 and 2 done ([build report](../builds/phase-06-build.md)). Step 3 (Langfuse) moved to phase 6b, branch `phase-6b-langfuse-export`. **Branch:** `phase-6-tracing`. **Follows:** 5b (merged). **Next:** phase 6b, then phase 7 (the app).
 
 Read `docs/notes/langfuse-notes.md` before you start. It holds the SDK version, variable names, tested behaviour, privacy findings and free-plan limits.
 
@@ -12,7 +12,7 @@ The agent already builds a `trace` for every turn (path, router answer, model ca
 
 1. **Local trace file.** One JSON line per turn. This is the main record and the only one the Developer page needs.
 2. **Reader functions** for the Developer page: list turns, read one turn.
-3. **Optional Langfuse export,** behind a switch, off by default.
+3. **Optional Langfuse export,** behind a switch, off by default. *(Moved to phase 6b.)*
 
 ## Step 1: the local file
 
@@ -29,7 +29,7 @@ The agent already builds a `trace` for every turn (path, router answer, model ca
 - A broken or half-written line is skipped and counted, never fatal.
 - A small script `scripts/show_traces.py` prints the last turns in a readable form.
 
-## Step 3: optional Langfuse export
+## Step 3: optional Langfuse export (moved to phase 6b)
 
 - `agent/langfuse_export.py`. Import the `langfuse` package only inside this module, and only when the switch is on. If the package or the keys are missing, skip cleanly with one log line. Never crash.
 - Use the mapping in the notes (one turn = one trace; model calls = generation; tools = tool; policy search = retriever; checks = event).
@@ -55,9 +55,9 @@ A new `[tracing]` section in `config/agent.toml`: `enabled`, `local_path`, `max_
 ## Files
 
 **Created**
-- `agent/tracing.py`, `agent/langfuse_export.py`, `scripts/show_traces.py`
-- `requirements-tracing.txt`
-- Tests for the record, the reader, the failure cases, privacy, and the Langfuse mapping
+- `agent/tracing.py`, `agent/langfuse_export.py` (6b), `scripts/show_traces.py`
+- `requirements-tracing.txt` (6b)
+- Tests for the record, the reader, the failure cases, privacy, and the Langfuse mapping (the Langfuse tests in 6b)
 - `docs/builds/phase-06-build.md`
 
 **Changed**
@@ -76,7 +76,7 @@ A new `[tracing]` section in `config/agent.toml`: `enabled`, `local_path`, `max_
 - Two turns at once write two whole lines.
 - The size limit works. A bad line is skipped and counted.
 - No record contains an API key pattern, `staff_approved`, or a hidden schema field.
-- Langfuse: with the switch off nothing is imported. With no package or no keys it skips cleanly. With a fake span exporter, the mapping is right and the user id is hashed and masked. A customer id inside a message is masked.
+- Langfuse (6b): with the switch off nothing is imported. With no package or no keys it skips cleanly. With a fake span exporter, the mapping is right and the user id is hashed and masked. A customer id inside a message is masked.
 - Mutation check (new rules only): break the hash, the mask, the catch-all guard, the line lock and the no-secrets rule one at a time. The suite must catch each.
 
 ## Real-model run
@@ -86,3 +86,28 @@ Use a copy of the database. Run three turns (a policy question, an eligible retu
 ## Not in phase 6
 
 The Developer page (phase 9), the Evaluation tab, scoring traces, and any Langfuse prompt management or datasets.
+
+## What was really built (steps 1 and 2)
+
+Steps 1 and 2 followed the plan above, with the differences below. The full account is in the [build report](../builds/phase-06-build.md).
+
+- **Where it writes.** Every turn appends one JSON line to `data/traces/traces.jsonl`. `list_turns`, `get_turn` and `scripts/show_traces.py` read it back and skip broken lines.
+- **Settings.** `[tracing]` is a new config section. It also holds `capture_text`, `hidden_keys` and `step_chars`, which were not in the list above. `enabled` defaults to true. Three environment variables (`TRACING_ENABLED`, `TRACING_LANGFUSE_ENABLED`, `TRACING_CAPTURE_TEXT`) override the matching switches. They are read from the process environment only, not from `.env`. Fixing that is part of 6b.
+- **`capture_text = false`** replaces the customer message and the reply with "[not captured]" and their lengths, and also leaves out the model's own reasons, the policy search query and the raw model outputs. Tool inputs and outputs, checks and routes stay. It applies to the local file now and to Langfuse in 6b.
+- **Size limit.** The newest `max_lines` (5000) lines are kept. Trimming runs when the file passes `max_lines` plus a tenth, so the file is not rewritten every turn. A warning goes to the log. No marker line is written into the file.
+- **Key patterns.** Text that looks like a key is replaced, including inside the customer's message. The list is short: `sk-`, `pk-lf-`, `sk-lf-` and `Bearer`.
+- **Lock.** A thread lock per file path. Two separate processes on one file are not coordinated.
+- **Gaps in the record.**
+  - `index_fingerprint` is always null, because the tool adapter drops it from the search result. Passing it through is a 6b change.
+  - Tokens and cost are not in any trace.
+  - Tools and checks have no per-step timing, and the order of model calls and tool calls inside a branch is unknown (steps list model calls first).
+  - The model name is added from config.
+- **Files outside the list.** `scripts/09_mutation_check.py` (M106 to M122), `tests/conftest.py`, `tests/test_router.py` (the fixed test config switches tracing off), and `scripts/15_live_trace_paths.py` (the real-model run).
+- **`.gitignore`.** `data/traces/` was added, and `!.env.example` so that `.env.*` does not hide the example file.
+- **Step 3 was not built.** The Langfuse keys were not saved in `.env` when the phase ran, so it stopped after step 2 as instructed. Step 3 is phase 6b.
+
+### Results
+
+- `python -m pytest -q`: 1339 passed, 34 deselected (1296 before, 43 new in `tests/test_tracing.py`).
+- Mutations M106 to M122 (17, new rules only): all killed. There is no mutation for the hash or the mask, because step 3 is not built.
+- Real-model run on a copy of the database: the confirm turn wrote one return (73 to 74), the policy and person turns wrote none, one review item was created, and the real database hash did not change. The trace lines held the customer id once, in its own field, and no key or `staff_approved`.
