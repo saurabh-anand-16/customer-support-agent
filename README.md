@@ -14,13 +14,14 @@ This folder builds the data an Amazon.in returns/refunds support agent works fro
 
 ## Run it
 
-Needs Python 3.10+ and `pip install -r requirements.txt`. From this folder, build the data and then check it:
+Needs Python 3.11+ (the policy-search config is read with the standard library's `tomllib`) and `pip install -r requirements.txt`. From this folder, build the data and then check it:
 
 ```
 python scripts/01_clean_products.py
 python scripts/02_build_policy_tables.py
 python scripts/03_generate_orders.py
 python scripts/04_build_db.py
+python scripts/05_chunk_policy.py   # policy pages -> data/clean/policy_chunks.csv (phase 3a)
 ```
 
 ```
@@ -40,7 +41,10 @@ On Windows use `py` instead of `python` if `python` is not found. Every script p
 | `returns_agent.db` | The SQLite database (generated; not committed) |
 | `scripts/config.py` | Settings in one place: today's date, seed, sizes, paths |
 | `agent/` | The agent's seven tools (`tools.py`) and the pure decision logic (`eligibility.py`) |
-| `tests/` | 67 tests for the tools; run with `python -m pytest` |
+| `agent/rag/` | Policy search, so far: config loader, page reader, chunkers (phase 3a) |
+| `config/rag.toml` | Every tunable value for policy search: chunking, metadata, embedding, retrieval, profiles |
+| `docs/phases/` | One document per build phase: what it is for, files touched, how it was checked |
+| `tests/` | 155 tests (67 for the tools, 88 for the policy-search config and chunking); run with `python -m pytest` |
 
 ## What each script does
 
@@ -94,6 +98,12 @@ Seven plain Python functions in `agent/tools.py`, used as `ReturnsTools("returns
 - **Coverage of the data itself:** a test fails if a regenerated dataset has no item on or just past the boundary of any policy type.
 - **Cancellation:** 17 tests: the processing-only rule, refund details for prepaid and Pay on Delivery items, confirmation, another customer's item, double cancel, only the requested item changing, and a simulated race. Nine bugs planted in `cancel_order`: eight caught, and the ninth (removing only the early status check) is harmless because the `UPDATE` repeats the check.
 - **Bug check:** I planted 12 deliberate bugs one at a time (an off-by-one in the day count, a `>=` for `>`, a removed confirmation check, a removed ownership filter, and so on) and the suite failed every time.
+
+## Policy search config and chunks (phase 3a)
+
+`config/rag.toml` holds every choice for policy search: which pages to read, how to chunk them, which metadata to keep, the embedding model, retrieval settings, and five named profiles (`baseline_bm25`, `vector_only`, `hybrid`, `hybrid_cross_encoder`, `hybrid_llm_rerank`). Pick a profile with the `RAG_PROFILE` environment variable. A wrong key or value stops loading with a message naming it. The settings that shape the index (pages, chunking, metadata, text handling, embedding model and size) are hashed into an index fingerprint; search-only settings are not.
+
+`python scripts/05_chunk_policy.py` reads the 18 pages, removes the table-of-contents lists, splits the pages and writes `data/clean/policy_chunks.csv`, one row per chunk. With the starting settings (heading chunker, 1,200 characters, long tables split between rows) that is 138 chunks. Nothing is searched yet.
 
 ## Day counting
 

@@ -1,0 +1,128 @@
+# Settings for policy search (phase 3). Every tunable value lives here, not in code.
+# Secrets (API keys) never go in this file: they stay in .env.
+#
+# Choose a profile with the RAG_PROFILE environment variable or by passing a name to
+# load_config(). A profile overrides only the keys it lists; everything else comes from
+# the base sections below.
+#
+# Settings that shape the index (sources, chunking, metadata, text, embedding model and
+# dimensions) are hashed into the "index fingerprint". Search-only settings are not.
+
+default_profile = "baseline_bm25"
+
+[sources]
+policy_dir = "policy"                       # relative to the project root
+include_glob = "*.md"
+exclude_files = ["README.md", "CHANGES.md"] # folder files, not policy pages
+readme_file = "README.md"                   # lists page types and the copy date
+copy_date_pattern = 'copied on (\d{4}-\d{2}-\d{2})'
+page_type_heading_level = 3                 # "###" headings in the README name the page types
+# Pages that describe cases outside this agent's scope (our judgement, not Amazon's).
+out_of_scope_files = [
+  "a-to-z-guarantee.md",
+  "third-party-seller-returns.md",
+  "return-a-gift.md",
+  "send-a-gift-receipt.md",
+]
+
+[chunking]
+strategy = "heading"            # "heading" or "fixed"
+max_chars = 1200
+overlap_chars = 0
+include_heading_in_text = true  # heading: repeat the section heading at the top of later parts
+heading_levels = [1, 2, 3]      # heading: which "#" levels start a new section
+merge_empty_headings = true     # heading: a heading with no body, followed by another heading, joins the next chunk
+table_handling = "split_rows"   # "keep_whole" (a long table stays one chunk) or "split_rows" (cut between rows, header repeated)
+
+[metadata]
+# Columns written for every chunk, in this order. chunk_id and text are required.
+fields = [
+  "chunk_id", "source_file", "page_title", "heading_path", "heading_level",
+  "part_index", "text", "char_count", "copied_on", "in_scope", "page_type",
+]
+heading_path_separator = " > "
+export_path = "data/clean/policy_chunks.csv"   # written by scripts/05_chunk_policy.py (not part of the fingerprint)
+
+[text]
+remove_toc = true
+toc_label = "**Table of Contents**"
+toc_item_pattern = '^\s*[-*]\s+\[.*\]\(#[^)]*\)\s*$'
+collapse_blank_lines = true     # after removing the contents list, keep at most one blank line in a row
+
+[embedding]                     # used in 3b
+provider = "sentence-transformers"
+model = "BAAI/bge-small-en-v1.5"
+dimensions = 384
+batch_size = 32
+normalize = true
+query_prefix = "Represent this sentence for searching relevant passages: "
+
+[store]                         # used in 3b
+kind = "chroma"
+path = "data/index"
+collection = "policy_chunks"
+distance = "cosine"
+
+[retrieval]                     # used in 3c
+strategy = "bm25"               # "bm25", "vector" or "hybrid"
+top_k = 5
+candidate_k = 20
+bm25_k1 = 1.5
+bm25_b = 0.75
+
+[fusion]                        # used in 3c
+method = "rrf"                  # "rrf" or "none"
+rrf_k = 60
+weight_bm25 = 1.0
+weight_vector = 1.0
+
+[rerank]                        # used in 3c
+method = "none"                 # "none", "cross_encoder" or "llm"
+top_n = 5
+cross_encoder_model = "cross-encoder/ms-marco-MiniLM-L-6-v2"
+llm_model = "claude-haiku-5-5"
+
+[no_match]                      # used in 3c
+min_score = 0.0
+min_hits = 1
+note = "The policy pages do not cover this."
+
+[citations]                     # used in 3c
+format = "{page_title} > {heading_path}"
+show_copied_on = true
+
+# Named presets. Each table below overrides keys in the base sections above.
+[profiles.baseline_bm25.retrieval]
+strategy = "bm25"
+[profiles.baseline_bm25.fusion]
+method = "none"
+[profiles.baseline_bm25.rerank]
+method = "none"
+
+[profiles.vector_only.retrieval]
+strategy = "vector"
+[profiles.vector_only.fusion]
+method = "none"
+[profiles.vector_only.rerank]
+method = "none"
+
+[profiles.hybrid.retrieval]
+strategy = "hybrid"
+[profiles.hybrid.fusion]
+method = "rrf"
+[profiles.hybrid.rerank]
+method = "none"
+
+[profiles.hybrid_cross_encoder.retrieval]
+strategy = "hybrid"
+[profiles.hybrid_cross_encoder.fusion]
+method = "rrf"
+[profiles.hybrid_cross_encoder.rerank]
+method = "cross_encoder"
+
+[profiles.hybrid_llm_rerank.retrieval]
+strategy = "hybrid"
+[profiles.hybrid_llm_rerank.fusion]
+method = "rrf"
+[profiles.hybrid_llm_rerank.rerank]
+method = "llm"

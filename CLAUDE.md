@@ -1,0 +1,83 @@
+# customer-support-agent
+
+An Amazon.in returns/refunds support agent. Real product data (Kaggle CSV), Amazon.in policy pages, synthetic orders. "Today" is fixed at 2026-11-17. Scope: Amazon-fulfilled orders only (no seller-fulfilled, A-to-Z, gifts, international). The agent handles order status, returns, replacements, exchanges, refunds and cancelling items that are still processing. Anything else (address changes, payments, product advice, general questions, chit-chat) is declined politely, with an offer of a person where that makes sense; that behaviour is tested.
+
+## Commands
+
+```
+python scripts/01_clean_products.py      # then 02, 03, 04 in order: rebuilds data/clean/*.csv and returns_agent.db
+python scripts/05_chunk_policy.py      # policy pages -> data/clean/policy_chunks.csv (phase 3a)
+python -m pytest                         # 155 tests; must all pass before any change is called done
+```
+
+Windows: use `py` if `python` is not found. Activate the venv first: `.venv\Scripts\Activate.ps1`.
+
+## Layout
+
+- `policy/` the 18 polished Amazon policy pages. Amazon's text: never edit it without logging the change in `policy/CHANGES.md`.
+- `scripts/` build the data (clean products, policy tables, synthetic orders, database). `config.py` holds today's date and the seed.
+- `agent/eligibility.py` pure decision logic. `agent/tools.py` the seven tools so far. Both are framework-free.
+- `agent/rag/` policy search parts so far: `config.py` (loads `config/rag.toml`, index fingerprint), `ingest.py`, `registry.py`, `types.py`, `chunkers/`. `config/rag.toml` holds every tunable value for it.
+- `docs/phases/` one document per phase: plan, files touched, results.
+- `tests/` pytest. `schema.sql` is the database layout and the window view.
+
+## Rules that must not be broken
+
+1. **The model never supplies the customer.** Every tool takes `customer_id` from the session. Another customer's order must look exactly like a missing one (`not_found`).
+2. **Eligibility is computed in code, never by the model.** Day counting: the delivery date is day 1; `day_number = (today - delivered_at) + 1`; eligible when `day_number <= window`.
+3. **Writers are few and strict.** `create_return` and `cancel_order` are the only two. `create_return` needs `confirmed is True`, re-runs the eligibility check itself, checks the resolution is allowed, and needs staff approval above INR 10,000, for restricted accounts, or for more than 5 returns in 12 months. `cancel_order` meets the same bar: customer from the session, `confirmed is True`, status re-checked inside the call, another customer's item looks like a missing one.
+3a. **Cancellation rule (our decision, not Amazon's; the 18 policy pages have none):** only items with status `processing` can be cancelled. Shipped items go through the return flow after delivery. It is the `policy_facts` row `cancellable_item_status`, enforced by `cancel_order` and tested. Refund timing for cancelled orders uses the existing 24-hour fact.
+4. **`staff_approved` must never appear in any schema shown to the model.** Only the review-queue code sets it.
+5. **Never read `order_items.test_scenario`** in tools or the agent. It exists for tests only (a test enforces this).
+6. **The agent never grants exceptions** (requests past the window). It routes them to a reviewer.
+7. **Numbers in answers come from tools and tables, not from the model's memory.** Policy search supplies explanations and citations only. If the policy is silent (see "Known gaps" in README.md), say so or escalate; do not guess.
+8. **The category-to-policy mapping is our inference**, not Amazon's. Do not describe it as official.
+9. Data is synthetic. Keep the repo private: the policy text belongs to Amazon.
+
+## Conventions
+
+- **Open choices live in config.** Anything tunable (chunk size, embedding model, retrieval strategy, thresholds, scope lists, model names) goes in `config/*.toml`, never in code. Secrets stay in `.env`. Retrieval stages are swappable parts registered by name; the front door `search_policy` keeps a fixed result shape (see `docs/phases/phase-03-policy-search.md`). Rules about returns (limits, windows) stay in `policy_facts`.
+- **One document per phase** in `docs/phases/` (see its README). Before a phase starts, its file lists the files to create, change and leave alone, and it is the brief. When the phase ends, update it with what was really built, the test results and known gaps, and update the table in `docs/phases/README.md`. Only claim what the tests check.
+
+- **Every finished phase gets a build report in `docs/builds/`**, written from real git history and command output (use `docs/builds/TEMPLATE.md`), before the branch is merged.
+- Plain Python, explained in comments. Prefer small functions and tests that name the situation they check.
+- After changing code, rebuild nothing unless the data scripts changed; always run `python -m pytest`.
+- Writing style for docs and UI: plain sentences, no marketing words.
+
+## Tools (target: nine)
+
+Seven built (`list_orders`, `get_order`, `check_eligibility`, `get_refund_timeline`, `get_return_status`, `create_return`, `cancel_order`), plus `search_policy` (phase 3c) and `request_review` (phase 5, creates a queue entry for exceptions and policy gaps).
+
+## App design (decided)
+
+Streamlit, with the agent behind `agent.respond(session_id, message)`. A sidebar holds the "Play as" selector (Customer, Manager, Developer), a "Now playing" box and a Reset demo button.
+- **Home:** warm welcome; three short blocks (what it shows, how to use it, good to know: synthetic data, today fixed at 2026-11-17, not affiliated with Amazon); the persona picker.
+- **Persona picker:** about 8 curated personas, each with a one-line story, chosen by a script that uses the eligibility logic (never `test_scenario`): last eligible day, one day late, high value, restricted account, Pay on Delivery, non-returnable defect, still processing (cancel), existing return. Plus a "browse any customer" option, then an order dropdown. Choosing a customer stands in for logging in: it sets `customer_id` for the session. A "try someone else's order" button demonstrates the guardrail.
+- **Customer:** chat with an evidence panel (policy used, numbers).
+- **Manager:** approval queue and escalations, each with evidence; only this code sets `staff_approved`. Shared state, so a customer request shows up for the manager. Public deployment: one database copy per visitor session.
+- **Developer:** traces (model calls, tool calls with inputs and outputs, guardrail checks, retrieved passages, latency, tokens, cost, graph path highlighted, links to Langfuse), evaluation results, tests, policy explorer and assumptions.
+
+## Agent design (decided; phase 4)
+
+Chain per message: session state (customer_id fixed) -> router -> branch flow -> confirm step (actions only) -> review gate (actions only) -> answer check -> reply.
+
+**Router.** One model call per message, structured output, one label from a fixed list. It never answers and never calls a tool. If unsure between two intents it asks one short question. It gets the recent conversation, so a message can change topic ("where's my order?" then "return it").
+
+**Pending action first.** If the session holds a pending confirmation (for example "Cancel this item? Yes or no"), the next message goes to the confirm step, not the router.
+
+| Branch | Allowed tools |
+| --- | --- |
+| Order status | `list_orders`, `get_order`, `get_return_status` |
+| Policy question | `search_policy`, `get_refund_timeline` |
+| Return or replace | `get_order`, `check_eligibility`, `search_policy`, `create_return`, `request_review` |
+| Cancel an item | `get_order`, `cancel_order` |
+| Human help | `request_review` (customer asks for a person; creates a queue entry, then says what happens next) |
+| Out of scope and chat | none |
+
+**Out of scope and chat.** No tools, and no answers from the model's own knowledge. Greetings and thanks get a short friendly reply. General questions ("who is the prime minister of India?") and unsupported requests (address change, product advice) get one polite sentence saying what the agent can help with, plus an offer of a person where that makes sense. Requests to ignore instructions, reveal instructions, or see another customer's data are declined the same way and never reach a tool. After three off-topic messages in a row, offer a person or end politely. The Developer page shows the routing decision for every message.
+
+**Routing evals must include:** ambiguous messages ("cancel my order" for a shipped item), topic changes mid-conversation, a bare "yes" with and without a pending action, off-topic questions, prompt-injection attempts, and a request for a person.
+
+## Roadmap (phases 2, 2b and 3a done)
+
+~~3a config, ingestion and chunking~~ done · 3b embeddings and ChromaDB · 3c retrievers, fusion, reranking and `search_policy` · 3d retrieval evals and tuning · 4 agent flow in LangGraph with guardrails and the out-of-scope behaviour · 5 human review and escalation (`request_review`) · 6 Langfuse tracing · 7 Streamlit shell, Home and persona picker, Customer chat · 8 Manager page · 9 Developer page (traces) · 10-11 evaluation suite and results · 12 policy explorer and assumptions · 13 CI and packaging. Optional last: wrap the tools as an MCP server.
