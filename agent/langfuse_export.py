@@ -17,8 +17,12 @@ What it does with a turn record (the cleaned dict that agent/tracing.py already 
   * sending is done by one background worker thread, including the flush, so a reply never waits for Langfuse. Any error is
     caught and logged once per kind. A missing package, missing keys or a missing hash key skip the export with one log line.
 
-Not done: the SDK's observations are made after the turn has finished (the record is built at the end), so a child observation's own
-start and end are not the real ones. The real latency of a step is in its metadata (`latency_ms`) where the trace had one.
+Phase 6c: each generation carries `model`, `usage_details` (input, output, cached when reported) and `cost_details` (only when a price
+exists); the client gets `release` (the git commit) and the version hashes ride on the trace metadata; search scores sit on the retriever
+and the answer-check detail on the check events.
+Not done: the SDK (5.2.0) cannot set the start time of an observation (only `end(end_time=...)`), and the observations are made after the
+turn has finished, so an observation's own start and end are not the real ones. The real timing of each step is in its metadata
+(`seq`, `start_ms` from the start of the turn, `duration_ms`).
 """
 import hashlib
 import hmac
@@ -81,35 +85,94 @@ def _level(status) -> str | None:
     return "ERROR" if status == "failed" else "WARNING" if status == "refused" else None
 
 
+def usage_details(call: dict) -> dict | None:
+    """The token counts of one model call as Langfuse names them. Only counts the API reported; None when it reported none.
+    The API's input count includes the cached tokens, and Langfuse adds `input` and `input_cached_tokens` together (it sums every key for
+    the total and prices each one), so `input` is sent without the cached part. Otherwise the cached tokens would be counted twice."""
+    n_in, cached = call.get("input_tokens"), call.get("cached_tokens")
+    if isinstance(n_in, int) and isinstance(cached, int) and 0 <= cached <= n_in:
+        n_in -= cached
+    found = {"input": n_in, "output": call.get("output_tokens"), "input_cached_tokens": cached}
+    found = {k: v for k, v in found.items() if isinstance(v, int)}
+    return found or None
+
+
+def cost_details(call: dict) -> dict | None:
+    """The cost of one model call in US dollars, only when a price existed (cost_usd is None otherwise: nothing is guessed)."""
+    if call.get("cost_usd") is None:
+        return None
+    return {"input": call.get("cost_input_usd"), "output": call.get("cost_output_usd"), "total": call.get("cost_usd")}
+
+
+ANSWER_CHECK_EVENTS = ("answer_check", "answer_check_retry", "answer_fallback")
+
+
 def send_record(client, record: dict, user_hash: str) -> str | None:
     """Make the trace for one turn record with `client`. Returns the trace id. Raises on SDK errors (the caller catches them)."""
     from langfuse import propagate_attributes          # only here, with the client
     route = record.get("route") or {}
+    versions = record.get("versions") or {}
     tags = [t for t in (route.get("router_label"), route.get("branch")) if isinstance(t, str) and t]
     root_meta = {"turn_id": record.get("turn_id"), "route": route, "duration_ms": record.get("duration_ms"),
                  "capture_text": record.get("capture_text"), "index_fingerprint": record.get("index_fingerprint"),
                  "review_reference": record.get("review_reference"), "passages": record.get("passages"),
-                 "pending_action": record.get("pending_action"), "schema_version": record.get("schema_version")}
+                 "pending_action": record.get("pending_action"), "schema_version": record.get("schema_version"),
+                 "versions": versions, "errors": record.get("errors"), "timeline": record.get("timeline"),
+                 "totals": {k: record.get(k) for k in ("total_input_tokens", "total_output_tokens", "total_cost_usd", "cost_complete", "unpriced_calls",
+                                                       "model_call_count", "tool_call_count", "retry_count")}}
+    propagated = {"turn_id": str(record.get("turn_id"))}
+    propagated.update({k: str(v)[:190] for k, v in versions.items() if v})
+    calls = {c.get("seq"): c for c in record.get("model_calls") or []}
+    searches = list(record.get("search") or [])
+    answer_detail = record.get("answer_check")
+    shown_calls = set()
     with propagate_attributes(user_id=user_hash, session_id=str(record.get("session_id")), trace_name="turn",
-                              tags=[mask_text(t)[:200] for t in tags], metadata={"turn_id": str(record.get("turn_id"))}):
+                              tags=[mask_text(t)[:200] for t in tags], metadata=propagated):
         with client.start_as_current_observation(name="turn", as_type="agent", input=record.get("message"), output=record.get("reply"),
                                                  metadata=root_meta) as root:
             trace_id = getattr(root, "trace_id", None)
             for step in record.get("steps") or []:
                 kind, name = step.get("kind"), str(step.get("name"))
-                meta = {"kind": kind, "status": step.get("status"), "latency_ms": step.get("latency_ms")}
+                # The SDK (5.2.0) has no start time for an observation (only end(end_time=...)), and these are made after the turn,
+                # so the real timing goes in metadata: the offset from the start of the turn and the duration.
+                meta = {"kind": kind, "status": step.get("status"), "latency_ms": step.get("latency_ms"), "seq": step.get("seq"),
+                        "start_ms": step.get("start_ms"), "duration_ms": step.get("duration_ms")}
                 if step.get("refused"):
                     meta["refused"] = step.get("refused")
                 if kind == "check":
+                    if name in ANSWER_CHECK_EVENTS and answer_detail:
+                        meta["answer_check"] = answer_detail
                     root.create_event(name=f"check:{name}", output=step.get("output"), metadata=meta,
                                       level="WARNING" if step.get("status") == "failed" else None)
                     continue
-                extra = {"model": step["model"]} if step.get("model") and STEP_TYPES.get(kind) == "generation" else {}
+                extra = {}
+                call = calls.get(step.get("seq"))
+                if STEP_TYPES.get(kind) == "generation":
+                    model = (call or {}).get("model") or step.get("model")
+                    if model:
+                        extra["model"] = model
+                    if call:
+                        shown_calls.add(call.get("seq"))
+                        if usage_details(call):
+                            extra["usage_details"] = usage_details(call)
+                        if cost_details(call):
+                            extra["cost_details"] = cost_details(call)
+                        meta["cost_missing"] = call.get("cost_missing")
                 if kind == "retrieval":
                     meta["index_fingerprint"] = record.get("index_fingerprint")
+                    if searches:
+                        meta["search"] = searches.pop(0)           # profile, each passage's rank and score, the no-match rule and its thresholds
                 child = root.start_observation(name=name, as_type=STEP_TYPES.get(kind, "span"), input=step.get("input"),
                                                output=step.get("output"), metadata=meta, level=_level(step.get("status")), **extra)
                 child.end()
+            for call in record.get("model_calls") or []:            # a model call that no step describes (a second router call, for example)
+                if call.get("seq") in shown_calls:
+                    continue
+                extra = {k: v for k, v in (("model", call.get("model")), ("usage_details", usage_details(call)), ("cost_details", cost_details(call))) if v}
+                meta = {"kind": "model_call", "status": call.get("status"), "latency_ms": call.get("latency_ms"), "seq": call.get("seq"),
+                        "start_ms": call.get("start_ms"), "duration_ms": call.get("latency_ms"), "cost_missing": call.get("cost_missing")}
+                root.start_observation(name=str(call.get("kind")), as_type="generation", metadata=meta,
+                                       level=_level(call.get("status")), **extra).end()
     return trace_id
 
 
@@ -146,8 +209,9 @@ class LangfuseExporter:
             self._logged.add(key)
         log.warning("%s", text)
 
-    def _setup(self) -> bool:
-        """Open the client once. False (with one log line) when it cannot be done. Only names are ever logged, never values."""
+    def _setup(self, release: str | None = None) -> bool:
+        """Open the client once. False (with one log line) when it cannot be done. Only names are ever logged, never values.
+        `release` (phase 6c) is the git commit of the first turn; it is given to the client so Langfuse can group by release."""
         if self._ready is not None:
             return self._ready
         self._ready = False
@@ -163,10 +227,12 @@ class LangfuseExporter:
                 self._log_once("package", "Langfuse export skipped: the 'langfuse' package is not installed (pip install -r requirements-tracing.txt)")
                 return False
             self._hash_key = self._secret(hash_name)
+            args = {"release": release} if release and release != "unknown" else {}
+            args.update(self._client_args)
             self._client = Langfuse(public_key=self._secret(PUBLIC_KEY_NAME), secret_key=self._secret(SECRET_KEY_NAME),
                                     base_url=self._secret(BASE_URL_NAME), timeout=self.settings.langfuse_timeout,
                                     environment=self.settings.langfuse_environment, sample_rate=self.settings.langfuse_sample_rate,
-                                    mask=mask, **self._client_args)
+                                    mask=mask, **args)
             self._ready = True
         except BaseException as err:
             if isinstance(err, (KeyboardInterrupt, SystemExit)):
@@ -195,7 +261,7 @@ class LangfuseExporter:
     # -- the work, on the worker thread
     def _export(self, record: dict) -> None:
         try:
-            if not self._setup():
+            if not self._setup((record.get("versions") or {}).get("git_commit")):
                 return
             user = hash_customer(record.get("customer_id") or "", self._hash_key)
             trace_id = send_record(self._client, record, user)

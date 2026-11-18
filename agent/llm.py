@@ -13,9 +13,15 @@ Two jobs, kept together because they are the only things every other agent modul
    phase 3b (the variable named in [model].api_key_env, then the env file, by read_secret()). It is
    used only to build the client and is never printed, logged, traced or written to an error message.
 """
+import contextlib
+import contextvars
 import dataclasses
+import logging
 import os
+import re
 import string
+import threading
+import time
 import tomllib
 from dataclasses import dataclass
 from pathlib import Path
@@ -155,6 +161,17 @@ class ReviewSettings:
 
 
 @dataclass(frozen=True)
+class ModelPrice:
+    """[pricing.<model>] (phase 6c): US dollars per million tokens. A price that is None is not known, and no cost is ever worked out from it."""
+    input_per_million: float | None = None
+    output_per_million: float | None = None
+    cached_input_per_million: float | None = None
+
+
+PRICE_KEYS = ("input_per_million", "output_per_million", "cached_input_per_million")
+
+
+@dataclass(frozen=True)
 class EvalSettings:
     test_fraction: float
 
@@ -221,6 +238,7 @@ class AgentConfig:
     tracing: TracingSettings
     replies: dict     # kind -> text, plus person_offer, not_built, blank_message
     eval: EvalSettings
+    pricing: dict = dataclasses.field(default_factory=dict)    # model name -> ModelPrice (phase 6c); no [pricing] section means no prices
 
 
 # The labels the code itself relies on: out_of_scope picks a fixed reply, clarify asks a question.
@@ -341,17 +359,38 @@ def load_agent_config(path: str | Path | None = None) -> AgentConfig:
 
     for key in raw:
         # [app] (phase 7) belongs to the Streamlit app, which reads and checks it itself (app/config.py). The agent only lets it be there.
-        if key not in _SPEC and key not in ("replies", "app"):
-            raise AgentConfigError(f"{where}: unknown section [{key}]. Allowed: {', '.join([*_SPEC, 'replies', 'app'])}")
+        if key not in _SPEC and key not in ("replies", "app", "pricing"):
+            raise AgentConfigError(f"{where}: unknown section [{key}]. Allowed: {', '.join([*_SPEC, 'replies', 'app', 'pricing'])}")
     built = {name: _build(name, raw.get(name), cls, spec, where) for name, (cls, spec) in _SPEC.items()}
     replies = raw.get("replies")
     if not isinstance(replies, dict):
         raise AgentConfigError(f"{where}: [replies] is missing or is not a table")
 
     built["tracing"] = apply_tracing_env(built["tracing"], env_file=_env_file_for(built["model"]))   # the three overrides: environment, then env file
-    cfg = AgentConfig(root=ROOT, replies=dict(replies), **built)
+    cfg = AgentConfig(root=ROOT, replies=dict(replies), pricing=_read_pricing(raw.get("pricing"), where), **built)
     _check(cfg, where)
     return cfg
+
+
+def _read_pricing(raw, where: str) -> dict:
+    """[pricing.<model>] tables -> {model: ModelPrice}. A price must be a number of 0 or more; an unknown key or a bad value is refused."""
+    if raw is None:
+        return {}
+    if not isinstance(raw, dict):
+        raise AgentConfigError(f"{where}: [pricing] must hold one table per model, such as [pricing.\"model-name\"]")
+    prices = {}
+    for model, table in raw.items():
+        if not isinstance(table, dict):
+            raise AgentConfigError(f"{where}: [pricing].{model} must be a table with {', '.join(PRICE_KEYS)}")
+        for key, value in table.items():
+            if key not in PRICE_KEYS:
+                raise AgentConfigError(f"{where}: [pricing.{model}] has '{key}'. Allowed keys: {', '.join(PRICE_KEYS)}")
+            if isinstance(value, bool) or not isinstance(value, (int, float)):
+                raise AgentConfigError(f"{where}: [pricing.{model}].{key} must be a number, got {value!r}")
+            if value != value or value < 0 or value == float("inf"):
+                raise AgentConfigError(f"{where}: [pricing.{model}].{key} must be 0 or more, got {value!r}")
+        prices[model] = ModelPrice(**{k: float(v) for k, v in table.items()})
+    return prices
 
 
 def _check_tracing(t: TracingSettings, where: str) -> None:
@@ -596,12 +635,18 @@ class ChatModel:
     def complete(self, system: str, messages: list[dict], settings: ModelSettings) -> str:
         raise NotImplementedError
 
+    def take_usage(self) -> dict | None:
+        """The usage of this thread's last call, once: {"model", "input_tokens", "output_tokens", "cached_tokens"} (any may be None), or None
+        when the model does not report it. Phase 6c: read by RecordingChat, never by the agent's own logic."""
+        return None
+
 
 class OpenAIChat(ChatModel):
     """The real model. Asks for a JSON object. For tests, pass a `client` shaped like openai.OpenAI()."""
 
     def __init__(self, root: Path = ROOT, client=None):
         self.root, self._client, self._key = root, client, None
+        self._local = threading.local()          # the usage of the last call, per thread (a worker thread and a script may share one model)
 
     def _get_client(self, settings: ModelSettings):
         if self._client is None:
@@ -622,11 +667,33 @@ class OpenAIChat(ChatModel):
                 model=settings.name, temperature=settings.temperature, max_tokens=settings.max_output_tokens,
                 response_format={"type": "json_object"},
                 messages=[{"role": "system", "content": system}, *messages])
+            self._keep_usage(response)
             return response.choices[0].message.content or ""
         except (MissingKeyError, MissingDependencyError) as err:
             raise LlmError(str(err)) from None             # these messages name the variable or package, never the key
         except Exception as err:                            # the kind of failure, never the key
             raise LlmError(f"model call failed ({type(err).__name__}): {scrub(str(err), self._key)}") from None
+
+
+    def _keep_usage(self, response) -> None:
+        """Remember the model name and token counts the API reported. Reads only; a response without them leaves None. Never raises."""
+        try:
+            usage = getattr(response, "usage", None)
+            details = getattr(usage, "prompt_tokens_details", None)
+            self._local.usage = {"model": getattr(response, "model", None) if isinstance(getattr(response, "model", None), str) else None,
+                                 "input_tokens": _count(getattr(usage, "prompt_tokens", None)),
+                                 "output_tokens": _count(getattr(usage, "completion_tokens", None)),
+                                 "cached_tokens": _count(getattr(details, "cached_tokens", None))}
+        except Exception:
+            self._local.usage = None
+
+    def take_usage(self):
+        usage, self._local.usage = getattr(self._local, "usage", None), None
+        return usage
+
+
+def _count(value) -> int | None:
+    return value if isinstance(value, int) and not isinstance(value, bool) and value >= 0 else None
 
 
 class FakeChat(ChatModel):
@@ -636,12 +703,25 @@ class FakeChat(ChatModel):
     recorded in `.calls` with the system prompt, the messages and the model name and temperature it was given.
     """
 
-    def __init__(self, replies="{}"):
+    def __init__(self, replies="{}", usage=None):
+        """`usage` (phase 6c) is what the fake reports for each call, like the API does: a dict {"input_tokens", "output_tokens",
+        "cached_tokens", "model"}, or a list of them used in order (the last repeats), or a function (system, messages) -> dict."""
         self.replies, self.calls, self._next = replies, [], 0
+        self.usage, self._last_usage = usage, None
+
+    def take_usage(self):
+        usage, self._last_usage = self._last_usage, None
+        return usage
 
     def complete(self, system, messages, settings):
         self.calls.append({"system": system, "messages": messages, "model": settings.name,
                            "temperature": settings.temperature})
+        if callable(self.usage):
+            self._last_usage = self.usage(system, messages)
+        elif isinstance(self.usage, list) and self.usage:
+            self._last_usage = self.usage[min(len(self.calls) - 1, len(self.usage) - 1)]
+        else:
+            self._last_usage = self.usage
         if callable(self.replies):
             reply = self.replies(system, messages)
         elif isinstance(self.replies, list):
@@ -652,3 +732,131 @@ class FakeChat(ChatModel):
         if isinstance(reply, Exception):
             raise reply
         return reply
+
+
+# --- what a turn did, for the trace (phase 6c) -------------------------------------------------------------------
+# One TurnRecorder is made for each `Agent.respond`. The wrapper below and the tool adapter write into it; the tracer reads it after the
+# turn. It never changes what a model or a tool is given or what they return, and a failure in it is caught, logged once and ignored.
+log = logging.getLogger("agent.capture")
+_LOGGED: set = set()
+_CURRENT: contextvars.ContextVar = contextvars.ContextVar("turn_recorder", default=None)
+_PURPOSE: contextvars.ContextVar = contextvars.ContextVar("model_call_purpose", default="model_call")
+
+
+def log_capture_failure(where: str, err: BaseException) -> None:
+    """One warning per kind of failure (and place), then silence. The text names the place and the error type only."""
+    key = f"{where}:{type(err).__name__}"
+    if key not in _LOGGED:
+        _LOGGED.add(key)
+        log.warning("trace capture failed in %s (%s); the turn is not affected. Further errors of this kind are not logged.", where, type(err).__name__)
+
+
+def safely(where: str, fn, *args, **kwargs):
+    """Run a capture step. An error is logged once and swallowed (None is returned); KeyboardInterrupt and SystemExit pass."""
+    try:
+        return fn(*args, **kwargs)
+    except Exception as err:
+        log_capture_failure(where, err)
+        return None
+
+
+def short_error(text) -> str:
+    """The category of an error text (what is before the first colon, cut), never the rest: that may hold a model's words or a message."""
+    return str(text).split(":")[0].strip()[:80] if text else ""
+
+
+class TurnRecorder:
+    """The steps of one turn in the order they started: `seq` counts from 1, `start_ms` is the time since the turn began."""
+
+    def __init__(self):
+        self._t0 = time.perf_counter()
+        self._lock = threading.Lock()
+        self._seq = 0
+        self.model_calls: list = []
+        self.tool_calls: list = []
+        self.searches: list = []
+        self.answer_checks: list = []
+        self.errors: list = []
+
+    def begin(self) -> tuple:
+        """(seq, start time) of a step that is starting now."""
+        with self._lock:
+            self._seq += 1
+            return self._seq, time.perf_counter()
+
+    def _ms(self, t: float) -> float:
+        return round((t - self._t0) * 1000, 2)
+
+    def add_model_call(self, seq: int, started: float, kind: str, configured_model: str, status: str, usage: dict | None, error_type: str | None) -> None:
+        ended = time.perf_counter()
+        usage = usage if isinstance(usage, dict) else {}
+        reported = usage.get("model") if isinstance(usage.get("model"), str) and usage.get("model") else None
+        self.model_calls.append({"seq": seq, "kind": kind, "model": reported or configured_model, "model_configured": configured_model,
+                                 "input_tokens": _count(usage.get("input_tokens")), "output_tokens": _count(usage.get("output_tokens")),
+                                 "cached_tokens": _count(usage.get("cached_tokens")), "start_ms": self._ms(started),
+                                 "latency_ms": round((ended - started) * 1000, 2), "status": status})
+        if error_type:
+            self.errors.append({"where": f"model_call:{kind}", "type": error_type, "message": "the model call failed"})
+
+    def add_tool_call(self, seq: int, started: float, name: str, status: str) -> None:
+        self.tool_calls.append({"seq": seq, "name": name, "start_ms": self._ms(started),
+                                "duration_ms": round((time.perf_counter() - started) * 1000, 2), "status": status})
+
+    def snapshot(self) -> dict:
+        """A copy of everything recorded so far, safe to hand to the tracer."""
+        return {"model_calls": [dict(c) for c in self.model_calls], "tool_calls": [dict(c) for c in self.tool_calls],
+                "searches": [dict(c) for c in self.searches], "answer_checks": [dict(c) for c in self.answer_checks],
+                "errors": [dict(e) for e in self.errors]}
+
+
+def current_recorder() -> TurnRecorder | None:
+    return _CURRENT.get()
+
+
+@contextlib.contextmanager
+def recording():
+    """Make a TurnRecorder the current one for this turn (and for the threads LangGraph copies the context into)."""
+    recorder = safely("recorder start", TurnRecorder)
+    token = _CURRENT.set(recorder)
+    try:
+        yield recorder
+    finally:
+        _CURRENT.reset(token)
+
+
+@contextlib.contextmanager
+def purpose(kind: str):
+    """Name the model call made inside this block (router, confirm_label, refund_method_label, branch, rewrite, answer_retry)."""
+    token = _PURPOSE.set(kind)
+    try:
+        yield
+    finally:
+        _PURPOSE.reset(token)
+
+
+class RecordingChat(ChatModel):
+    """
+    Wraps a ChatModel and records each call (its kind, model, tokens, timing, status) in the current TurnRecorder. It passes the
+    arguments through unchanged and returns the text unchanged, and it raises exactly what the model raised. Outside a turn it records nothing.
+    """
+
+    def __init__(self, inner: ChatModel):
+        self.inner = inner
+
+    def take_usage(self):
+        return self.inner.take_usage() if hasattr(self.inner, "take_usage") else None
+
+    def complete(self, system, messages, settings):
+        recorder = _CURRENT.get()
+        step = safely("model call start", recorder.begin) if recorder is not None else None
+        kind = _PURPOSE.get()
+        try:
+            text = self.inner.complete(system, messages, settings)
+        except BaseException as err:
+            if step is not None:
+                safely("model call end", recorder.add_model_call, step[0], step[1], kind, settings.name, "failed", None, type(err).__name__)
+            raise
+        if step is not None:
+            usage = safely("model usage", lambda: getattr(self.inner, "take_usage", lambda: None)())
+            safely("model call end", recorder.add_model_call, step[0], step[1], kind, settings.name, "ok", usage, None)
+        return text

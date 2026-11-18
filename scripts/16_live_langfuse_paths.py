@@ -26,7 +26,7 @@ from agent import Agent, ReturnsTools                                           
 from agent.langfuse_export import CUSTOMER_ID, EMAIL, PHONE, hash_customer, make_exporter   # noqa: E402
 from agent.llm import FakeChat, load_agent_config                                          # noqa: E402
 from agent.rag.embedders.base import read_secret                                           # noqa: E402
-from agent.tracing import Tracer                                                           # noqa: E402
+from agent.tracing import Tracer, compute_versions                                                           # noqa: E402
 
 ROOT = Path(__file__).resolve().parent.parent
 TRACE_FILE = ROOT / "data" / "traces" / "live_langfuse.jsonl"
@@ -50,7 +50,8 @@ def build_agent(tools, **kwargs):
     cfg = load_agent_config()
     cfg = replace(cfg, tracing=replace(cfg.tracing, enabled=True, local_path=str(TRACE_FILE), langfuse_enabled=True))
     exporter = make_exporter(cfg.tracing, ENV_FILE)
-    tracer = Tracer(cfg.tracing, cfg.root, {"router": cfg.model.name, "branch": cfg.branches.name, "confirm": cfg.confirm.name}, exporter=exporter)
+    tracer = Tracer(cfg.tracing, cfg.root, {"router": cfg.model.name, "branch": cfg.branches.name, "confirm": cfg.confirm.name}, exporter=exporter,
+                    pricing=cfg.pricing, versions_fn=lambda: compute_versions(cfg, cfg.root))
     return Agent(config=cfg, tools=tools, tracer=tracer, **kwargs), exporter
 
 
@@ -58,7 +59,7 @@ def _fetch(api, trace_id: str):
     """All observations of one trace, through the SDK's API client. In SDK 5 this is the read path (there is no trace.get)."""
     out, cursor = [], None
     while True:
-        page = api.observations.get_many(trace_id=trace_id, fields="core,basic,io,metadata,model,trace_context", limit=100, cursor=cursor,
+        page = api.observations.get_many(trace_id=trace_id, fields="core,basic,io,metadata,model,usage,time,trace_context", limit=100, cursor=cursor,
                                          expand_metadata="*")
         out += [json.loads(o.json()) if hasattr(o, "json") else dict(o) for o in page.data]
         cursor = getattr(page.meta, "cursor", None)
@@ -90,11 +91,15 @@ def read_back(exporter, trace_id: str, customer_id: str, key: str, expected: int
     return {"observations": len(observations), "expected": expected, "observation_types": kinds, "user_ids": sorted(map(str, users)),
             "user_id_is_the_keyed_hash": users == {hash_customer(customer_id, key)}, "user_id_equals_customer_id": customer_id in users,
             "session_ids": sorted(map(str, sessions)), "trace_names": sorted({str(o.get("traceName")) for o in observations}),
-            "hits_in_inputs_outputs_metadata": hits}
+            "hits_in_inputs_outputs_metadata": hits,
+            "generations": [{k: o.get(k) for k in ("name", "model", "providedModelName", "usageDetails", "costDetails", "startTime", "endTime", "latency")}
+                            for o in observations if o.get("type") == "GENERATION"]}
 
 
 def expected_observations(rec: dict) -> int:
-    return 1 + len(rec["steps"])          # the root plus one observation per step (checks are events)
+    matched = {s["seq"] for s in rec["steps"] if s.get("seq") is not None and s["kind"] in ("router", "model_call")}
+    extra = [c for c in rec.get("model_calls", []) if c["seq"] not in matched]       # a model call that no step describes gets its own generation
+    return 1 + len(rec["steps"]) + len(extra)          # the root plus one observation per step (checks are events)
 
 
 def run_three_turns() -> int:

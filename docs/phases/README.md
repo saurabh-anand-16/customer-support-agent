@@ -33,6 +33,7 @@ Rules for these files:
 | 8 | Manager page: Open, Approved and Declined tabs, approve and decline through `decide()` | Done, in review ([build report](../builds/phase-08-build.md)); real-model run done | 1 | [phase-08-manager-page.md](phase-08-manager-page.md) |
 | 8b | Review follow-ups: chat sides, red dot, notices that arrive by themselves, the manager's reply, no second case, returns lookup | Done, in review ([build report](../builds/phase-08b-build.md)); real-model and real-browser run done; price questions and policy thresholds reported, not changed | | [phase-08b-review-followups.md](phase-08b-review-followups.md) |
 | 8c | Polish: solid corner tag, replacement wording and short product names in notices and cards, a "try" message per scenario, two replaced suggested chips | Done, in review ([build report](../builds/phase-08c-build.md)); real-model run and screenshots done | | [phase-08c-polish.md](phase-08c-polish.md) |
+| 6c | Richer trace: tokens, cost from a price table, timing and order, search and answer-check detail, versions, errors; fingerprint out of the prompt | Done, in review ([build report](../builds/phase-06c-build.md)); real-model and real-Langfuse run done | | [phase-06c-richer-trace.md](phase-06c-richer-trace.md) |
 | 9 | Developer page (traces) | Not started | 2 | |
 | 10 | Evaluation suite | Not started | 3 | |
 | 11 | Evaluation results page | Not started | 1 | |

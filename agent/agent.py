@@ -28,6 +28,7 @@ The customer id is set once, in start_session(), and is neither read from a mess
 The model name and temperature come from config/agent.toml. LangGraph (requirements-agent.txt) is
 imported when an Agent is created, so the other agent modules work without it.
 """
+import contextlib
 import time
 from pathlib import Path
 
@@ -36,13 +37,13 @@ from .confirm import ConfirmStep, public_pending
 from .escalation import Escalator, queue_for_tools
 from .langfuse_export import make_exporter
 from . import llm as llm_settings
-from .llm import ROOT, AgentConfig, ChatModel, OpenAIChat, load_agent_config
+from .llm import ROOT, AgentConfig, ChatModel, OpenAIChat, RecordingChat, load_agent_config, recording, safely
 from .replies import Replies
 from .review_notice import outcome_notices
 from .router import Router
 from .session import SessionStore
 from .tool_adapter import ToolAdapter
-from .tracing import Tracer
+from .tracing import Tracer, compute_versions
 
 DEFAULT_DB = ROOT / "returns_agent.db"
 
@@ -66,10 +67,12 @@ class Agent:
         # Phase 6b: the Langfuse copy exists only when [tracing].langfuse_enabled is true; the package is imported on the first sent turn.
         self.tracer = tracer or Tracer(self.cfg.tracing, self.cfg.root, {"router": self.cfg.model.name, "branch": self.cfg.branches.name,
                                                                          "confirm": self.cfg.confirm.name},
-                                       exporter=make_exporter(self.cfg.tracing, llm_settings._env_file_for(self.cfg.model)))
+                                       exporter=make_exporter(self.cfg.tracing, llm_settings._env_file_for(self.cfg.model)),
+                                       pricing=self.cfg.pricing, versions_fn=lambda: compute_versions(self.cfg, self.cfg.root))
         self.chat = chat or OpenAIChat(self.cfg.root)
+        seen_chat = RecordingChat(self.chat)         # phase 6c: the parts below call this one; it records each call for the trace and changes nothing
         self.sessions = sessions or SessionStore()
-        self.router = Router(self.cfg, self.chat)
+        self.router = Router(self.cfg, seen_chat)
         self.replies = Replies(self.cfg)
         def open_tools():
             from .tools import ReturnsTools
@@ -88,8 +91,8 @@ class Agent:
             return self._queue
 
         self.escalator = Escalator(queue_source, self.cfg)
-        self.confirm = ConfirmStep(self.cfg, self.chat, self.adapter, self.escalator)
-        self._graph = build_graph(self.cfg, self.router, self.replies, self.chat, self.adapter, self.confirm, self.escalator)
+        self.confirm = ConfirmStep(self.cfg, seen_chat, self.adapter, self.escalator)
+        self._graph = build_graph(self.cfg, self.router, self.replies, seen_chat, self.adapter, self.confirm, self.escalator)
 
     def start_session(self, customer_id: str) -> str:
         """A new conversation for this customer. The customer cannot be changed afterwards. Returns the session id."""
@@ -108,7 +111,10 @@ class Agent:
         session = self.sessions.get(session_id)        # raises UnknownSession for an id that was never issued
         text = message if isinstance(message, str) else ""
         session.current_message = text            # for the excerpt of a review case; it joins `history` when the turn ends
-        state = self._graph.invoke({"session": session, "message": text, "steps": []})
+        # phase 6c: collects the model calls, tool calls and search detail of this turn, but only when something will use them
+        with (recording() if getattr(self.tracer, "wants_capture", True) else contextlib.nullcontext()) as recorder:
+            state = self._graph.invoke({"session": session, "message": text, "steps": []})
+            capture = safely("capture snapshot", recorder.snapshot) if recorder is not None else None
         decision = state["decision"]
         notice, notice_checks = self._outcome_notice(session)
         reply = notice + "\n\n" + state["reply"] if notice else state["reply"]
@@ -129,7 +135,7 @@ class Agent:
         # Phase 6: save the turn. The tracer reads `result` and never raises, so the reply is the same with tracing on, off or failing.
         try:
             self.tracer.record_turn(result=result, session_id=session.session_id, customer_id=session.customer_id, message=text,
-                                    duration_ms=(time.perf_counter() - started) * 1000)
+                                    duration_ms=(time.perf_counter() - started) * 1000, capture=capture)
         except Exception:
             pass
         return result

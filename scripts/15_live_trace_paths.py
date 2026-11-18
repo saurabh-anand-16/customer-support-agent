@@ -21,7 +21,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from agent import Agent, ReturnsTools                          # noqa: E402
-from agent.llm import load_agent_config                         # noqa: E402
+from agent.llm import OpenAIChat, load_agent_config            # noqa: E402
 from agent.tracing import list_turns                            # noqa: E402
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -41,11 +41,44 @@ def counts(con) -> dict:
             "review_items": con.execute("SELECT COUNT(*) FROM review_items").fetchone()[0]}
 
 
+class TalliedChat(OpenAIChat):
+    """The real model, with its own count of what the API returned. It wraps the client's `create` and adds up `response.usage` by itself,
+    so the total can be compared with what the trace recorded (phase 6c). It records nothing else."""
+
+    def __init__(self, *a, **k):
+        super().__init__(*a, **k)
+        self.api_input = self.api_output = self.api_calls = 0
+
+    def _get_client(self, settings):
+        client = super()._get_client(settings)
+        if not getattr(client, "_tallied", False):
+            create = client.chat.completions.create
+
+            def counted(*args, **kwargs):
+                response = create(*args, **kwargs)
+                self.api_calls += 1
+                self.api_input += response.usage.prompt_tokens
+                self.api_output += response.usage.completion_tokens
+                return response
+            client.chat.completions.create = counted
+            client._tallied = True
+        return client
+
+
 def shorten(rec: dict) -> dict:
     """The parts of a trace line worth reading: no long text."""
     return {"turn_id": rec["turn_id"], "route": rec["route"], "duration_ms": rec["duration_ms"], "review_reference": rec["review_reference"],
             "index_fingerprint": rec["index_fingerprint"], "passages": len(rec["passages"]),
-            "steps": [f"{s['kind']}:{s['name']}:{s['status']}" + (f":{s['latency_ms']}ms" if s["latency_ms"] is not None else "") for s in rec["steps"]]}
+            "steps": [f"{s['kind']}:{s['name']}:{s['status']}" + (f":{s['latency_ms']}ms" if s["latency_ms"] is not None else "") for s in rec["steps"]],
+            "timeline": [f"#{t['seq']} {t['type']}:{t['name']} +{t['start_ms']}ms {t['duration_ms']}ms {t['status']}" for t in rec.get("timeline", [])],
+            "model_calls": [f"{c['kind']} {c['model']} in={c['input_tokens']} out={c['output_tokens']} cached={c['cached_tokens']} "
+                            f"{c['latency_ms']}ms cost={c['cost_usd']}" for c in rec.get("model_calls", [])],
+            "totals": {k: rec.get(k) for k in ("total_input_tokens", "total_output_tokens", "total_cost_usd", "cost_complete", "model_call_count",
+                                              "tool_call_count", "retry_count")},
+            "search": [{"profile": f["profile"], "scores": [r["score"] for r in f["results"]], "no_match_fired": f["no_match_fired"],
+                        "thresholds": f["no_match_thresholds"], "rewritten": f.get("rewritten")} for f in rec.get("search", [])],
+            "answer_check": rec.get("answer_check") and {k: rec["answer_check"][k] for k in ("retried", "fallback_used", "used")},
+            "versions": rec.get("versions"), "errors": rec.get("errors")}
 
 
 def main() -> int:
@@ -65,7 +98,8 @@ def main() -> int:
         finally:
             probe.con.close()
         tools = ReturnsTools(copy)
-        agent = Agent(config=cfg, tools=tools)
+        chat = TalliedChat(cfg.root)
+        agent = Agent(config=cfg, tools=tools, chat=chat)
         ret = chosen["return"]
         ask_return = (f"The {ret['product_name']} from order {ret['order_id']} (item {ret['item_id']}) arrived damaged. "
                       "I want to return it for a refund.")
@@ -84,6 +118,13 @@ def main() -> int:
                 print(f"[{name}] counts {before} -> {after}\n[{name}] copy hash {hash_before[:16]}... -> {hash_after[:16]}... (changed: {hash_before != hash_after})")
         finally:
             tools.con.close()
+    page_now = list_turns(TRACE_FILE, limit=50)
+    traced_in = sum(r["total_input_tokens"] for r in page_now.turns)
+    traced_out = sum(r["total_output_tokens"] for r in page_now.turns)
+    traced_calls = sum(r["model_call_count"] for r in page_now.turns)
+    print(f"\ntokens the API returned (counted by the script): {chat.api_calls} call(s), in {chat.api_input}, out {chat.api_output}")
+    print(f"tokens the trace recorded:                       {traced_calls} call(s), in {traced_in}, out {traced_out}   "
+          f"({'equal' if (chat.api_calls, chat.api_input, chat.api_output) == (traced_calls, traced_in, traced_out) else 'DIFFERENT'})")
     real_after = live.sha256(real_db)
     print(f"\nreal database hash before {real_before}\nreal database hash after  {real_after}  ({'unchanged' if real_before == real_after else 'CHANGED'})")
     print("\n=== trace lines (shortened) ===")

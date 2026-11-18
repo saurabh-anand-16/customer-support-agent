@@ -14,10 +14,12 @@ The model never calls `ReturnsTools` directly. It asks this adapter, which
 
 It never raises for something the model did: a refusal or a bad argument comes back as a record with ok False.
 """
+import dataclasses
 from dataclasses import dataclass
 from typing import Callable
 
 from .eligibility import REASONS
+from .llm import current_recorder, safely
 
 # Names that must never be in a schema shown to the model, and are dropped if the model sends them anyway
 # (any argument that is not in a tool's schema is dropped, these three included).
@@ -137,12 +139,34 @@ class ToolAdapter:
         if missing:
             record["output"] = _bad(f"missing argument(s): {', '.join(missing)}")
             return record
+        recorder = current_recorder()                                # phase 6c: when and how long, for the trace only
+        step = safely("tool call start", recorder.begin) if recorder is not None else None
         try:
             output = d.run(self, session.customer_id, clean)      # the id comes from the session, never from `args`
         except Exception as err:                                   # a tool that fails must not end the conversation
             output = {"ok": False, "error_code": "tool_error", "message": f"The tool failed ({type(err).__name__})."}
         record["output"] = _hide(output)
+        if step is not None:
+            failed = isinstance(output, dict) and output.get("ok") is False
+            safely("tool call end", recorder.add_tool_call, step[0], step[1], name, "failed" if failed else "ok")
         return record
+
+    def _note_search(self, query: str, found: dict) -> None:
+        """For the trace only (phase 6c): the profile, each passage's rank and score, whether the no-match rule fired and the thresholds in use.
+        Nothing here is added to the tool's result, so the model sees what it saw before."""
+        recorder = current_recorder()
+        if recorder is None:
+            return
+        cfg = getattr(self.policy, "cfg", None)
+        rule = getattr(cfg, "no_match", None)
+        recorder.searches.append({
+            "profile": found.get("profile"), "query": query, "ok": bool(found.get("ok")), "error_code": found.get("error_code"),
+            "strategy": getattr(getattr(cfg, "retrieval", None), "strategy", None),
+            "results": [{"rank": i, "score": r.get("score"), "source_file": r.get("source_file"), "heading_path": r.get("heading_path"),
+                         "in_scope": r.get("in_scope", True)} for i, r in enumerate(found.get("results") or [], start=1)],
+            "no_match_fired": bool(found.get("ok")) and not (found.get("results") or []),
+            "no_match_thresholds": dataclasses.asdict(rule) if dataclasses.is_dataclass(rule) else None,
+            "index_fingerprint": found.get("index_fingerprint")})
 
     # -- the tools ---------------------------------------------------------------------------------
     def _build_defs(self) -> list[ToolDef]:
@@ -182,6 +206,7 @@ class ToolAdapter:
             if err:
                 return err
             found = a.policy.search_policy(query, top_k=a.top_k)       # never include_out_of_scope
+            safely("search detail", a._note_search, query, found)
             if not found.get("ok"):
                 return {"ok": False, "error_code": found.get("error_code", "search_failed"), "message": found.get("error", "Search failed.")}
             results = [{"source_file": r["source_file"], "heading_path": r["heading_path"], "text": r["text"],

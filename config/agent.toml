@@ -192,6 +192,17 @@ langfuse_sample_rate = 1.0
 langfuse_timeout = 5                      # seconds
 hash_key_env_name = "LANGFUSE_HASH_KEY"   # the variable that holds the key for hashing the customer id; the key itself stays in .env
 
+[pricing."gpt-4o-mini"]
+# Phase 6c: what a model costs, in US dollars per million tokens, so a trace can show the cost of a turn. Keyed by the model name used in
+# [model], [branches], [confirm] and [refund_method] (the name we ask for, not the name the API reports back). Fill the numbers in
+# yourself from the provider's price page; they are deliberately left out. A model with no prices has cost_usd = null: the code never guesses one.
+# Keys: input_per_million, output_per_million, cached_input_per_million. A negative or non-number value is a config error.
+# Fill in all three: the API reports cached input tokens for a repeated prompt start (seen in the real run), and a call with cached tokens
+# but no cached price gets cost_usd = null (cost_missing = no_cached_price) rather than a price we made up.
+# input_per_million =
+# output_per_million =
+# cached_input_per_million =
+
 [eval]
 # Used by scripts/eval_split.py (shared with phase 3d): the share of rows that go to the test split.
 test_fraction = 0.33

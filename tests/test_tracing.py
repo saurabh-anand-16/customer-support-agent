@@ -46,7 +46,10 @@ def greeting_agent(tmp_path, customer="C-TRACE-1", **tracing_changes):
 
 
 FIELDS = {"schema_version", "turn_id", "session_id", "timestamp", "customer_id", "capture_text", "message", "message_chars", "reply",
-          "reply_chars", "route", "steps", "passages", "index_fingerprint", "checks", "pending_action", "review_reference", "duration_ms"}
+          "reply_chars", "route", "steps", "passages", "index_fingerprint", "checks", "pending_action", "review_reference", "duration_ms",
+          # phase 6c
+          "model_calls", "tool_calls", "timeline", "model_call_count", "tool_call_count", "retry_count", "total_input_tokens",
+          "total_output_tokens", "usage_complete", "total_cost_usd", "cost_complete", "unpriced_calls", "search", "answer_check", "versions", "errors"}
 
 
 # === step 1: the record ========================================================================================

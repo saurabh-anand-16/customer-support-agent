@@ -28,7 +28,7 @@ from dataclasses import dataclass, field
 
 from .branches.base import fill
 from .checks import check
-from .llm import AgentConfig, ChatModel, LlmError
+from .llm import AgentConfig, ChatModel, LlmError, purpose
 from .session import Session
 from .tool_adapter import ToolAdapter
 
@@ -120,7 +120,8 @@ class RefundMethodStep:
         started = time.perf_counter()
         out = {"label": UNCLEAR, "reason": "", "raw_output": None, "error": None, "latency_ms": 0.0}
         try:
-            raw = self.chat.complete(m.prompt, [{"role": "user", "content": user}], self._settings())
+            with purpose("refund_method_label"):
+                raw = self.chat.complete(m.prompt, [{"role": "user", "content": user}], self._settings())
         except LlmError as err:
             out["error"] = f"model call failed: {err}"
             out["latency_ms"] = round((time.perf_counter() - started) * 1000, 1)

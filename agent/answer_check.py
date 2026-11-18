@@ -162,6 +162,19 @@ def find_problems(text: str, facts: Facts) -> list:
     return problems
 
 
+def inspect_text(text: str, facts: Facts) -> dict:
+    """
+    Phase 6c, for the trace only: every number, money amount, date and policy-file name found in `text`, each with whether the facts back it.
+    It uses the same reading and the same support rules as find_problems, which it does not call and does not change; a test checks that
+    the unsupported values here are exactly the problems find_problems reports.
+    """
+    dates_found, rest = read_dates(text)
+    dates = [{"text": written, "supported": bool(valid and _date_supported(year, month, day, facts))} for year, month, day, written, valid in dates_found]
+    numbers = [{"text": written, "money": money, "supported": value in facts.numbers} for value, written, money in read_numbers(rest)]
+    files = [{"text": name, "supported": name in facts.sources} for name in _SOURCE_FILE.findall(text)]
+    return {"numbers": numbers, "dates": dates, "files": files}
+
+
 def describe_problems(problems: list) -> str:
     return "; ".join(str(p) for p in problems)
 

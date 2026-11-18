@@ -18,10 +18,13 @@ The rules, each tested:
 
 The file is made for one process. The lock is a thread lock; two processes writing the same file are not coordinated.
 """
+import dataclasses
+import hashlib
 import json
 import logging
 import os
 import re
+import subprocess
 import threading
 import time
 import uuid
@@ -29,9 +32,11 @@ from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
 
+from .llm import log_capture_failure, safely, short_error
+
 log = logging.getLogger("agent.tracing")
 
-SCHEMA_VERSION = 1
+SCHEMA_VERSION = 2      # 2 (phase 6c) adds model calls with tokens and cost, tool timing, the timeline, search and answer-check detail, versions, errors
 NOT_CAPTURED = "[not captured]"
 WRITER_TOOLS = ("create_return", "cancel_order")
 RETRIEVAL_TOOLS = ("search_policy",)
@@ -127,9 +132,178 @@ def build_steps(trace: dict, evidence: dict, settings, model_names: dict) -> lis
     return clean(steps, hidden)
 
 
+# -- phase 6c: the richer record ----------------------------------------------------------------------------------
+# Everything below is built from what the TurnRecorder in agent/llm.py saw during the turn (`capture`) and from the agent's own trace.
+# It is added to the record inside its own guard: if it fails, the old fields are still written and the record says so in `errors`.
+MODEL_STEP_KEYS = {"router": ("router",), "confirm_label": ("confirm_label", "refund_method_label")}
+
+
+def cost_of(call: dict, price) -> tuple:
+    """(input cost, output cost, why not) in US dollars for one model call. Costs are None, with the reason, when a price or the usage is
+    missing: a price is never guessed, and cached tokens with no cached price are not priced at the normal rate."""
+    if price is None or price.input_per_million is None or price.output_per_million is None:
+        return None, None, "no_price"
+    n_in, n_out, cached = call.get("input_tokens"), call.get("output_tokens"), call.get("cached_tokens")
+    if n_in is None or n_out is None:
+        return None, None, "no_usage"
+    cached = cached or 0
+    if cached > n_in:
+        return None, None, "bad_usage"
+    if cached and price.cached_input_per_million is None:
+        return None, None, "no_cached_price"
+    cost_in = (n_in - cached) * price.input_per_million / 1e6 + cached * (price.cached_input_per_million or 0) / 1e6
+    cost_out = n_out * price.output_per_million / 1e6
+    return round(cost_in, 8), round(cost_out, 8), None
+
+
+def _model_calls(capture: dict, pricing: dict) -> list:
+    out = []
+    for call in capture.get("model_calls") or []:
+        cost_in, cost_out, why = cost_of(call, pricing.get(call.get("model_configured")))
+        item = {k: v for k, v in call.items() if k != "model_configured"}
+        item.update(cost_usd=None if why else round(cost_in + cost_out, 8), cost_input_usd=cost_in, cost_output_usd=cost_out, cost_missing=why)
+        out.append(item)
+    return out
+
+
+def _match_steps(steps: list, model_calls: list, tool_calls: list) -> None:
+    """Give each step that has a real counterpart its `seq`, `start_ms` and `duration_ms`. A step takes the first unused call of the same
+    kind (model calls) or name (tools), in order. A step with no counterpart (a check, the review item, a writer) gets null."""
+    used_model, used_tool = set(), set()
+    for step in steps:
+        found, duration = None, None
+        if step.get("kind") in ("router", "model_call"):
+            kinds = MODEL_STEP_KEYS.get(step.get("name"), (step.get("name"),))
+            found = next((c for c in model_calls if c["seq"] not in used_model and c.get("kind") in kinds), None)
+            if found:
+                used_model.add(found["seq"])
+                duration = found.get("latency_ms")
+        elif step.get("kind") in ("tool_call", "retrieval"):
+            found = next((c for c in tool_calls if c["seq"] not in used_tool and c.get("name") == step.get("name")), None)
+            if found:
+                used_tool.add(found["seq"])
+                duration = found.get("duration_ms")
+        step["seq"] = found["seq"] if found else None
+        step["start_ms"] = found["start_ms"] if found else None
+        step["duration_ms"] = duration
+
+
+def _search_detail(capture: dict, trace: dict, settings) -> list:
+    rewrite = (((trace.get("branch") or {}).get("notes") or {}).get("rewrite")) or {}
+    out = []
+    for i, found in enumerate(capture.get("searches") or []):
+        item = dict(found)
+        query = item.pop("query", None)
+        item["query_chars"] = len(query) if isinstance(query, str) else None
+        if i == 0 and rewrite.get("called"):
+            item["rewritten"] = rewrite.get("original") != rewrite.get("query")
+        if settings.capture_text:
+            item["query"] = query
+            if i == 0 and rewrite.get("called"):
+                item["original_query"] = rewrite.get("original")
+        out.append(item)
+    return clean(out, ())
+
+
+def _answer_check_detail(capture: dict, trace: dict, settings) -> dict | None:
+    attempts = capture.get("answer_checks") or []
+    notes = (((trace.get("branch") or {}).get("notes") or {}).get("answer_check")) or {}
+    if not attempts and not notes:
+        return None
+    shown = []
+    for a in attempts:
+        item = {"attempt": a.get("attempt"), "passed": a.get("passed"), "problem_count": a.get("problem_count")}
+        for kind in ("numbers", "dates", "files"):
+            values = a.get(kind) or []
+            item[f"{kind}_found"] = len(values)
+            item[f"{kind}_unsupported"] = sum(1 for v in values if not v.get("supported"))
+            if settings.capture_text:       # the values come from the reply, which capture_text = false does not keep
+                item[kind] = values
+        shown.append(item)
+    return clean({"attempts": shown, "retried": any(str(a.get("attempt", "")).startswith("retry") for a in attempts) or bool(notes.get("retries")),
+                  "retries": notes.get("retries", 0), "fallback_used": notes.get("used") == "fallback", "used": notes.get("used")}, ())
+
+
+def _errors(capture: dict, trace: dict, evidence: dict) -> list:
+    """Type and a short, fixed-shape message per error. Never the text of a message, a model output, a header or a key."""
+    errors = [dict(e) for e in capture.get("errors") or []]
+    for where, holder in (("router", trace.get("router")), ("confirm", trace.get("confirm")), ("branch", trace.get("branch"))):
+        text = holder.get("error") if isinstance(holder, dict) else None
+        if text and not str(text).startswith("model call failed"):       # a failed model call is already in `errors`, with its type
+            errors.append({"where": where, "type": "error", "message": short_error(text)})
+    for call in evidence.get("tool_calls") or []:
+        out = call.get("output")
+        if isinstance(out, dict) and out.get("ok") is False and not call.get("refused"):
+            errors.append({"where": f"tool:{call.get('tool')}", "type": str(out.get("error_code") or "error"), "message": "the tool call did not succeed"})
+    return clean(errors, ())
+
+
+def build_detail(settings, *, record: dict, capture: dict | None, trace: dict, evidence: dict, pricing: dict | None, versions: dict | None) -> dict:
+    """The phase 6c fields for one turn. Also gives each step in record["steps"] its seq, start_ms and duration_ms."""
+    capture = capture or {}
+    model_calls = _model_calls(capture, pricing or {})
+    tool_calls = [dict(c) for c in capture.get("tool_calls") or []]
+    _match_steps(record["steps"], model_calls, tool_calls)
+    timeline = sorted([{"seq": c["seq"], "type": "model_call", "name": c.get("kind"), "start_ms": c.get("start_ms"), "duration_ms": c.get("latency_ms"),
+                        "status": c.get("status")} for c in model_calls] +
+                      [{"seq": c["seq"], "type": "tool_call", "name": c.get("name"), "start_ms": c.get("start_ms"), "duration_ms": c.get("duration_ms"),
+                        "status": c.get("status")} for c in tool_calls], key=lambda x: x["seq"])
+    costs = [c["cost_usd"] for c in model_calls]
+    complete = all(v is not None for v in costs)
+    tokens_in, tokens_out = [c["input_tokens"] for c in model_calls], [c["output_tokens"] for c in model_calls]
+    versions = dict(versions or {})
+    versions["index_fingerprint"] = record.get("index_fingerprint")
+    return {
+        "model_calls": model_calls, "tool_calls": tool_calls, "timeline": timeline,
+        "model_call_count": len(model_calls), "tool_call_count": len(tool_calls),
+        "retry_count": sum(1 for c in model_calls if c.get("kind") == "answer_retry"),
+        "total_input_tokens": sum(t for t in tokens_in if t is not None), "total_output_tokens": sum(t for t in tokens_out if t is not None),
+        "usage_complete": all(t is not None for t in tokens_in + tokens_out),
+        "total_cost_usd": round(sum(costs), 8) if complete else None, "cost_complete": complete,
+        "unpriced_calls": sum(1 for v in costs if v is None),
+        "search": _search_detail(capture, trace, settings), "answer_check": _answer_check_detail(capture, trace, settings),
+        "versions": clean(versions, ()), "errors": _errors(capture, trace, evidence)}
+
+
+def empty_detail(error_type: str) -> dict:
+    """The phase 6c fields when building them failed: the same keys, nothing in them, and one error that says why."""
+    return {"model_calls": [], "tool_calls": [], "timeline": [], "model_call_count": 0, "tool_call_count": 0, "retry_count": 0,
+            "total_input_tokens": 0, "total_output_tokens": 0, "usage_complete": False, "total_cost_usd": None, "cost_complete": False,
+            "unpriced_calls": 0, "search": [], "answer_check": None, "versions": {},
+            "errors": [{"where": "trace_detail", "type": error_type, "message": "the extra trace detail could not be built"}]}
+
+
+# -- versions -------------------------------------------------------------------------------------------------------
+def _digest(value) -> str:
+    return hashlib.sha256(json.dumps(value, sort_keys=True, ensure_ascii=False, default=str).encode("utf-8")).hexdigest()[:12]
+
+
+def git_commit(root: Path) -> str:
+    """The short commit of the code, or "unknown" when the folder is not a git repository or git cannot be run."""
+    try:
+        done = subprocess.run(["git", "rev-parse", "--short", "HEAD"], cwd=str(root), capture_output=True, text=True, timeout=5)
+        out = done.stdout.strip()
+        return out if done.returncode == 0 and re.fullmatch(r"[0-9a-f]{4,40}", out) else "unknown"
+    except Exception:
+        return "unknown"
+
+
+def compute_versions(cfg, root: Path) -> dict:
+    """Short commit, a hash of the resolved config, and a hash of the prompt texts. The config holds setting names and values and no secret
+    (the API key stays in .env and is never loaded into it). The [tracing] section is left out of the hash: it does not change what the agent does."""
+    data = dataclasses.asdict(cfg)
+    for key in ("root", "tracing"):
+        data.pop(key, None)
+    prompts = {"router": cfg.router.system_prompt, "router_labels": cfg.router.labels, "router_kinds": cfg.router.kinds, "scope": cfg.scope.statement,
+               "branches": cfg.branches.prompts, "confirm": cfg.confirm.prompt, "refund_method": cfg.refund_method.prompt,
+               "answer_retry": cfg.answer_check.retry_instruction}
+    return {"git_commit": git_commit(root), "config_hash": _digest(data), "prompt_hash": _digest(prompts)}
+
+
 def build_record(settings, *, result: dict, session_id: str, customer_id: str, message: str, duration_ms: float,
-                 model_names: dict | None = None, turn_id: str | None = None, timestamp: str | None = None) -> dict:
-    """The turn record for one `Agent.respond` result. Pure: reads `result`, changes nothing."""
+                 model_names: dict | None = None, turn_id: str | None = None, timestamp: str | None = None,
+                 capture: dict | None = None, pricing: dict | None = None, versions: dict | None = None) -> dict:
+    """The turn record for one `Agent.respond` result. Pure: reads `result`, changes nothing. `capture` is the TurnRecorder's snapshot (phase 6c)."""
     hidden = frozenset(settings.hidden_keys)
     trace = result.get("trace") or {}
     evidence = result.get("evidence") or {}
@@ -159,6 +333,11 @@ def build_record(settings, *, result: dict, session_id: str, customer_id: str, m
         "review_reference": sent.get("reference") if sent else None,
         "duration_ms": round(float(duration_ms), 1),
     }
+    try:                                  # phase 6c: the extra detail has its own guard, so a failure here never costs the rest of the record
+        record.update(build_detail(settings, record=record, capture=capture, trace=trace, evidence=evidence, pricing=pricing, versions=versions))
+    except Exception as err:
+        log_capture_failure("trace detail", err)
+        record.update(empty_detail(type(err).__name__))
     return record
 
 
@@ -215,11 +394,25 @@ def _trim(path: Path, max_lines: int) -> None:
 
 
 class Tracer:
-    def __init__(self, settings, root: Path, model_names: dict | None = None, exporter=None):
-        """`exporter` (phase 6b, agent/langfuse_export.py) gets a copy of each record; it is None unless Langfuse is switched on."""
+    def __init__(self, settings, root: Path, model_names: dict | None = None, exporter=None, pricing: dict | None = None, versions_fn=None):
+        """`exporter` (phase 6b, agent/langfuse_export.py) gets a copy of each record; it is None unless Langfuse is switched on.
+        `pricing` (phase 6c) is {model: ModelPrice}; `versions_fn` is called once, on the first turn, and gives {"git_commit", "config_hash", "prompt_hash"}."""
         self.settings, self.root, self.model_names = settings, Path(root), dict(model_names or {})
         self.exporter = exporter
+        self.pricing = dict(pricing or {})
+        self._versions_fn, self._versions = versions_fn, None
         self._logged: set = set()
+
+    @property
+    def wants_capture(self) -> bool:
+        """True when a turn's capture will be used: the file is on, or the Langfuse copy is. Otherwise the agent skips the recorder."""
+        return bool(self.settings.enabled or self.exporter is not None)
+
+    def versions(self) -> dict:
+        """The versions of this run, worked out once (git is asked once). An error gives an empty dict and is logged once."""
+        if self._versions is None:
+            self._versions = (safely("versions", self._versions_fn) if self._versions_fn else None) or {}
+        return self._versions
 
     @property
     def path(self) -> Path:
@@ -231,13 +424,14 @@ class Tracer:
             self._logged.add(key)
             log.warning("tracing failed (%s); the turn is not affected. Further errors of this kind are not logged.", key)
 
-    def record_turn(self, *, result: dict, session_id: str, customer_id: str, message: str, duration_ms: float) -> None:
+    def record_turn(self, *, result: dict, session_id: str, customer_id: str, message: str, duration_ms: float, capture: dict | None = None) -> None:
         """Write the record of one turn. Never raises and never changes `result`."""
         if not self.settings.enabled and self.exporter is None:
             return
         try:
             record = build_record(self.settings, result=result, session_id=session_id, customer_id=customer_id, message=message,
-                                  duration_ms=duration_ms, model_names=self.model_names)
+                                  duration_ms=duration_ms, model_names=self.model_names, capture=capture, pricing=self.pricing,
+                                  versions=self.versions())
             if self.settings.enabled:
                 append_line(self.path, record, self.settings.max_lines)
             if self.exporter is not None:

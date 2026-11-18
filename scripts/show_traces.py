@@ -18,6 +18,17 @@ from agent.llm import ROOT, load_agent_config            # noqa: E402
 from agent.tracing import get_turn, list_turns, resolve_path   # noqa: E402
 
 
+def totals_line(turn: dict) -> str:
+    """One line of totals per turn. A line written before phase 6c has none of these fields and prints as 'no usage recorded'."""
+    if "model_call_count" not in turn:
+        return "  totals: no usage recorded (written before phase 6c)"
+    cost = turn.get("total_cost_usd")
+    cost_text = f"${cost:.6f}" if cost is not None else f"null ({turn.get('unpriced_calls', 0)} call(s) without a price or usage)"
+    return (f"  totals: {turn['model_call_count']} model call(s), {turn.get('tool_call_count', 0)} tool call(s), {turn.get('retry_count', 0)} retr(ies); "
+            f"tokens in {turn.get('total_input_tokens')} out {turn.get('total_output_tokens')}"
+            + ("" if turn.get("usage_complete", True) else " (some calls reported none)") + f"; cost {cost_text}")
+
+
 def format_turn(turn: dict) -> str:
     route = turn.get("route") or {}
     lines = [f"{turn.get('timestamp')}  turn {turn.get('turn_id')}  session {turn.get('session_id')}  customer {turn.get('customer_id')}",
@@ -25,10 +36,24 @@ def format_turn(turn: dict) -> str:
              + (f"   review: {turn['review_reference']}" if turn.get("review_reference") else ""),
              f"  customer: {turn.get('message')}",
              f"  reply:    {turn.get('reply')}"]
+    lines.append(totals_line(turn))
     for step in turn.get("steps") or []:
-        timing = f" {step['latency_ms']} ms" if step.get("latency_ms") is not None else ""
-        lines.append(f"    [{step.get('kind')}] {step.get('name')} ({step.get('status')}){timing}"
+        timing = f" {step['latency_ms']} ms" if step.get("latency_ms") is not None else (
+            f" {step['duration_ms']} ms" if step.get("duration_ms") is not None else "")
+        order = f"#{step['seq']} +{step['start_ms']}ms " if step.get("seq") is not None else ""
+        lines.append(f"    {order}[{step.get('kind')}] {step.get('name')} ({step.get('status')}){timing}"
                      + (f"  in: {step['input']}" if step.get("input") else "") + (f"  out: {step['output']}" if step.get("output") else ""))
+    for found in turn.get("search") or []:
+        top = ", ".join(f"{r.get('rank')}:{r.get('score')}" for r in found.get("results") or [])
+        lines.append(f"    search: profile {found.get('profile')}, rank:score {top or 'none'}, no-match rule {'fired' if found.get('no_match_fired') else 'did not fire'}")
+    detail = turn.get("answer_check")
+    if detail:
+        lines.append(f"    answer check: {len(detail.get('attempts') or [])} attempt(s), retried {detail.get('retried')}, fallback used {detail.get('fallback_used')}")
+    for error in turn.get("errors") or []:
+        lines.append(f"    error: {error.get('where')} {error.get('type')}: {error.get('message')}")
+    versions = turn.get("versions") or {}
+    if versions:
+        lines.append(f"  versions: commit {versions.get('git_commit')}  config {versions.get('config_hash')}  prompts {versions.get('prompt_hash')}  index {versions.get('index_fingerprint')}")
     if turn.get("index_fingerprint"):
         lines.append(f"  index: {turn['index_fingerprint']}   passages: {len(turn.get('passages') or [])}")
     if turn.get("pending_action"):

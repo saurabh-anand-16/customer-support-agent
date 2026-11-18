@@ -25,7 +25,7 @@ from dataclasses import dataclass, field
 
 from .actions import fill, run_pending
 from .checks import check
-from .llm import AgentConfig, ChatModel, LlmError
+from .llm import AgentConfig, ChatModel, LlmError, purpose
 from .refund_method import STAGE_METHOD, RefundMethodStep
 from .session import Session
 from .tool_adapter import ToolAdapter
@@ -89,7 +89,8 @@ class ConfirmStep:
         started = time.perf_counter()
         out = {"label": "unclear", "reason": "", "raw_output": None, "error": None, "latency_ms": 0.0}
         try:
-            raw = self.chat.complete(c.prompt, [{"role": "user", "content": user}], self._settings())
+            with purpose("confirm_label"):
+                raw = self.chat.complete(c.prompt, [{"role": "user", "content": user}], self._settings())
         except LlmError as err:
             out["error"] = f"model call failed: {err}"
             out["latency_ms"] = round((time.perf_counter() - started) * 1000, 1)

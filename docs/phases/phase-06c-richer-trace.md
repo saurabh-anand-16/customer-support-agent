@@ -1,6 +1,6 @@
 # Phase 6c: richer trace
 
-**Status:** to build. **Branch:** `phase-6c-richer-trace`. **Follows:** phase 8c (merged). **Next:** phase 9 (Developer trace page).
+**Status:** built, in review ([build report](../builds/phase-06c-build.md)). **Branch:** `phase-6c-richer-trace`. **Follows:** phase 8c (merged). **Next:** phase 9 (Developer trace page).
 
 Read `docs/phases/phase-06-tracing.md` and `docs/notes/langfuse-notes.md` first. They describe the trace file, its settings and the Langfuse export that this phase extends.
 
@@ -88,3 +88,22 @@ On a copy of the database with the real model, three turns (a policy question, a
 ## Not in 6c
 
 The Developer trace page (phase 9), scoring or feedback on traces, Langfuse prompt management or datasets, any change to the router, branches, search or the answer check's decisions.
+
+## What was really built
+
+The full account, with the diff and the commands, is in the [build report](../builds/phase-06c-build.md).
+
+- **Capture is central.** `agent/llm.py` holds a `TurnRecorder` (made once per `Agent.respond`, found through a context variable), a `RecordingChat` that wraps the chat model, and a small `purpose(...)` tag. `OpenAIChat` keeps the model name and token counts the API reports (`take_usage`); `FakeChat` can report them for tests. The tool adapter times each call and notes the search detail on the side (nothing is added to a tool's result). `answer_check.inspect_text` is a read-only addition; `find_problems` is untouched.
+- **Where it touched code that the plan said to leave alone.** Four one-line `with purpose("...")` tags so a model call can be named (`branches/base.py` `ask_model`, `router.py`, `confirm.py`, `refund_method.py`), the answer check's call site in `branches/base.py` (`check_answer` notes each attempt), and `for_model` in the same file (the fingerprint clean-up). No logic changed.
+- **New record fields** (`schema_version` 2): `model_calls`, `tool_calls`, `timeline`, the totals (`total_input_tokens`, `total_output_tokens`, `total_cost_usd`, `cost_complete`, `unpriced_calls`, `usage_complete`, `model_call_count`, `tool_call_count`, `retry_count`), `search`, `answer_check`, `versions`, `errors`. Each step also has `seq`, `start_ms`, `duration_ms` where a real call stands behind it.
+- **Cost.** `[pricing."<model>"]` in `config/agent.toml`, keyed by the configured model name. The shipped config has an entry for the model it uses and no prices. A call with no price, no usage, or cached tokens but no cached price has `cost_usd = null` and a reason (`cost_missing`).
+- **Langfuse.** `model`, `usage_details` (`input` without the cached part, `output`, `input_cached_tokens`), `cost_details` only when priced, `release` on the client, version hashes on the trace metadata, search scores on the retriever, answer-check detail on the check events. **Real start and end times are not possible with SDK 5.2.0** (no start time on an observation); `seq`, `start_ms` and `duration_ms` are in each observation's metadata instead.
+- **The fingerprint** no longer reaches the model's prompt. It is still in the evidence, the trace and `versions`.
+- **When tracing is off** and no copy is wanted, no recorder is made (`Tracer.wants_capture`).
+- **Mutations:** M161 to M163 only, as asked.
+
+### Known gaps (6c)
+- A writer (`create_return`, `cancel_order`) and the status read after it are called by `agent/actions.py`, not through the tool adapter, so they have no `seq` or timing and are not in `tool_call_count`.
+- The cost of a call with cached tokens needs `cached_input_per_million`; without it the cost is null. The real API reported cached tokens on some calls.
+- The router's trace keeps only its last decision, but the recorder sees every call, so a rerouted turn shows two router calls in `model_calls` and one router step.
+- `git_commit` is the commit only; a dirty working tree is not marked.

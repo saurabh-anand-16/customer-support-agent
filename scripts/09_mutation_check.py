@@ -1,5 +1,5 @@
 """
-09_mutation_check.py - break each safety rule on purpose and check that a test notices (phases 4c, 5a, 4d, 5b, 6, 6b and 7).
+09_mutation_check.py - break each safety rule on purpose and check that a test notices (phases 4c, 5a, 4d, 5b, 6, 6b, 7, 8, 8b and 6c).
 
     python scripts/09_mutation_check.py              # all mutations
     python scripts/09_mutation_check.py M07 M11      # only these
@@ -31,7 +31,7 @@ TESTS = ["tests/test_confirm_step.py", "tests/test_answer_check.py", "tests/test
          "tests/test_review_queue.py", "tests/test_escalation.py", "tests/test_review_safety.py", "tests/test_branch_human_help.py",
          "tests/test_refund_method.py", "tests/test_build_script.py", "tests/test_router.py", "tests/test_review_decision.py",
          "tests/test_tracing.py", "tests/test_langfuse_export.py", "tests/test_app.py", "tests/app_helpers.py", "tests/test_manager_page.py",
-         "tests/test_followups_agent.py", "tests/test_followups_app.py", "tests/test_followups_notices.py"]
+         "tests/test_followups_agent.py", "tests/test_followups_app.py", "tests/test_followups_notices.py", "tests/test_trace_detail.py"]
 
 # (id, the rule that is broken, file, text to replace, replacement)
 MUTATIONS = [
@@ -383,6 +383,15 @@ MUTATIONS = [
      'elif queue.mark_notified(item["id"]):', "elif True:"),
     ("M160", "no new case is created when a recently decided case exists: only open cases count", "agent/branches/human_help.py",
      "cases = ctx.recent_cases()", 'cases = [c for c in ctx.recent_cases() if c["status"] == "open"]'),
+    # phase 6c: the richer trace (only these three)
+    ("M161", "a key-like text never reaches a new trace field: the search detail is not cleaned", "agent/tracing.py",
+     "        out.append(item)\n    return clean(out, ())\n", "        out.append(item)\n    return out\n"),
+    ("M162", "the index fingerprint is never shown to the model", "agent/branches/base.py",
+     'shown = json.dumps(for_model(record["output"]), ensure_ascii=False)', 'shown = json.dumps(record["output"], ensure_ascii=False)'),
+    ("M163", "a model with no price gives a null cost, never a guessed one", "agent/tracing.py",
+     '    if price is None or price.input_per_million is None or price.output_per_million is None:\n        return None, None, "no_price"\n',
+     '    if price is None or price.input_per_million is None or price.output_per_million is None:\n'
+     '        price = type("Guess", (), {"input_per_million": 1.0, "output_per_million": 1.0, "cached_input_per_million": None})()\n'),
 ]
 
 

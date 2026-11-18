@@ -22,7 +22,7 @@ import json
 import time
 from dataclasses import dataclass, field
 
-from .llm import AgentConfig, ChatModel, LlmError
+from .llm import AgentConfig, ChatModel, LlmError, purpose
 from .session import Session
 
 CONFIRM_STEP = "confirm_step"     # not a label the model can pick: only a pending action leads here
@@ -87,7 +87,8 @@ class Router:
 
         started = time.perf_counter()
         try:
-            raw = self.chat.complete(self.system_prompt(), [{"role": "user", "content": prompt}], m)
+            with purpose("router"):
+                raw = self.chat.complete(self.system_prompt(), [{"role": "user", "content": prompt}], m)
         except LlmError as err:
             return self._invalid(f"model call failed: {err}", None, (time.perf_counter() - started) * 1000, summary)
         latency = (time.perf_counter() - started) * 1000
