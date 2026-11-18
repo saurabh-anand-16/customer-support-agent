@@ -1,11 +1,10 @@
 """
-Tests for building the index (scripts/06_build_policy_index.py: build_index and index_status).
+Tests for building the index (agent/rag/index.py: build_index and index_status, and the script that wraps them).
 
 Everything runs offline: vectors come from a small fake embedder, and the store is the in-memory
 one (ChromaDB is used in two tests that skip when it is not installed). Every test builds its own
 config from tests/rag_helpers.py and writes only to a temporary folder; none reads config/rag.toml.
 """
-import importlib.util
 import json
 import subprocess
 import sys
@@ -17,6 +16,8 @@ from agent.rag.chunkers import chunk_documents, get_chunker
 from agent.rag.config import ROOT
 from agent.rag.embedders import CachedEmbedder, EmbedderError
 from agent.rag.embedders.base import Embedder
+from agent.rag.index import build_index as build_index_fn
+from agent.rag.index import index_status
 from agent.rag.stores import get_store
 from agent.rag.types import Document
 
@@ -29,9 +30,6 @@ try:
 except ImportError:
     HAVE_CHROMA = False
 
-_spec = importlib.util.spec_from_file_location("build_policy_index", ROOT / "scripts" / "06_build_policy_index.py")
-script = importlib.util.module_from_spec(_spec)
-_spec.loader.exec_module(script)
 
 
 class FakeEmbedder(Embedder):
@@ -66,7 +64,7 @@ def setup(tmp_path, kind="memory", **extra):
 
 
 def build(cfg, embedder, store, chunks):
-    return script.build_index(cfg, chunks, embedder, store)
+    return build_index_fn(cfg, chunks, embedder, store)
 
 
 def test_the_first_build_embeds_every_chunk_and_stores_it(tmp_path):
@@ -136,12 +134,12 @@ def test_the_json_file_holds_no_chunk_text_and_no_key(tmp_path, monkeypatch):
 
 def test_the_status_is_missing_then_ok_then_out_of_date_after_a_chunking_change(tmp_path):
     cfg, embedder, store = setup(tmp_path)
-    assert script.index_status(cfg, store)[0] == "missing"
+    assert index_status(cfg, store)[0] == "missing"
     build(cfg, embedder, store, page_chunks(cfg))
-    assert script.index_status(cfg, store) == ("ok", "")
+    assert index_status(cfg, store) == ("ok", "")
     other = make_config(tmp_path, chunking={"max_chars": 800},
                         store={"kind": "memory", "path": str(tmp_path / "store")})   # same store, different chunking
-    status, message = script.index_status(other, store)
+    status, message = index_status(other, store)
     assert status == "out_of_date" and "Rebuild" in message and cfg.fingerprint in message and other.fingerprint in message
 
 
@@ -149,14 +147,14 @@ def test_an_embedding_model_change_also_makes_the_index_out_of_date(tmp_path):
     cfg, embedder, store = setup(tmp_path)
     build(cfg, embedder, store, page_chunks(cfg))
     other = make_config(tmp_path, embedding={"model": "a-different-model"})
-    assert script.index_status(other, store)[0] == "out_of_date"
+    assert index_status(other, store)[0] == "out_of_date"
 
 
 def test_a_search_only_setting_does_not_make_the_index_out_of_date(tmp_path):
     cfg, embedder, store = setup(tmp_path)
     build(cfg, embedder, store, page_chunks(cfg))
     other = make_config(tmp_path, retrieval={"top_k": 9}, rerank={"top_n": 2})
-    assert script.index_status(other, store)[0] == "ok"
+    assert index_status(other, store)[0] == "ok"
 
 
 def test_building_after_a_settings_change_throws_the_old_index_away(tmp_path):
@@ -166,9 +164,9 @@ def test_building_after_a_settings_change_throws_the_old_index_away(tmp_path):
                         store={"kind": "memory", "path": str(tmp_path / "store"), "meta_path": str(tmp_path / "index_meta.json")})
     new_chunks = page_chunks(small)
     assert {c.chunk_id for c in new_chunks} != set(store.ids())
-    report = script.build_index(small, new_chunks, CachedEmbedder(FakeEmbedder(small), tmp_path / "cache.jsonl"), store)
+    report = build_index_fn(small, new_chunks, CachedEmbedder(FakeEmbedder(small), tmp_path / "cache.jsonl"), store)
     assert report.reset and store.ids() == sorted(c.chunk_id for c in new_chunks)
-    assert script.index_status(small, store) == ("ok", "")
+    assert index_status(small, store) == ("ok", "")
 
 
 def test_stored_metadata_has_the_page_facts_but_not_the_text_or_the_id(tmp_path):
@@ -220,9 +218,9 @@ def test_a_settings_change_is_detected_and_rebuilt_in_chromadb(tmp_path):
     small = make_config(tmp_path, chunking={"max_chars": 40}, store={"kind": "chroma", "path": str(tmp_path / "store"),
                                                                     "meta_path": str(tmp_path / "index_meta.json"),
                                                                     "collection": cfg.store.collection})
-    assert script.index_status(small, store)[0] == "out_of_date"
-    report = script.build_index(small, page_chunks(small), CachedEmbedder(FakeEmbedder(small), tmp_path / "cache.jsonl"), store)
-    assert report.reset and script.index_status(small, store)[0] == "ok"
+    assert index_status(small, store)[0] == "out_of_date"
+    report = build_index_fn(small, page_chunks(small), CachedEmbedder(FakeEmbedder(small), tmp_path / "cache.jsonl"), store)
+    assert report.reset and index_status(small, store)[0] == "ok"
 
 
 def test_the_script_stops_with_a_clear_message_and_writes_nothing_when_the_key_is_missing(tmp_path):

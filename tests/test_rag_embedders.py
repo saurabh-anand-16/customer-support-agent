@@ -4,8 +4,9 @@ reading the API key, and the on-disk cache.
 
 Nothing here touches the network. The OpenAI and local models are replaced by small fakes that
 give each text a fixed vector. The only exception is the test marked LIVE FILE at the end: it
-reads the real config/rag.toml and calls the real provider, and skips when the key or a
-package is missing.
+reads the real config/rag.toml and calls the real provider. It carries the `live` marker, so it
+is left out of a normal run; `python -m pytest -m live` runs it (and skips if the key or a
+package is missing).
 """
 import json
 import math
@@ -386,6 +387,7 @@ def test_the_cache_is_used_only_when_cache_path_is_set(tmp_path):
 
 
 # === LIVE FILE: the real config and the real provider ==========================================
+@pytest.mark.live
 def test_live_file_the_configured_embedder_returns_sensible_vectors():
     # Uses config/rag.toml and the real provider. Skips when the key or a package is missing.
     cfg = load_config()

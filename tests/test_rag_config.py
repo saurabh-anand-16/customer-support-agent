@@ -53,7 +53,7 @@ def test_fixed_config_loads_with_its_values(tmp_path):
 
 
 def test_profile_overrides_only_the_keys_it_lists(tmp_path):
-    base, hybrid = make_config(tmp_path, "plain"), make_config(tmp_path, "hybrid")
+    base, hybrid = make_config(tmp_path, "plain"), make_config(tmp_path, "hybrid_rerank")
     assert (base.retrieval.strategy, base.rerank.method) == ("bm25", "none")
     assert (hybrid.retrieval.strategy, hybrid.rerank.method) == ("hybrid", "cross_encoder")
     assert hybrid.retrieval.top_k == base.retrieval.top_k      # not overridden, so shared
@@ -182,7 +182,7 @@ def test_fingerprint_changes_for_each_index_shaping_setting(tmp_path):
 def test_fingerprint_ignores_search_only_settings(tmp_path):
     base = make_config(tmp_path).fingerprint
     changes = [
-        {"retrieval": {"top_k": 9}}, {"fusion": {"rrf_k": 30}}, {"no_match": {"min_score": 0.5}},
+        {"retrieval": {"top_k": 9}}, {"fusion": {"rrf_k": 30}}, {"no_match": {"bm25_min_score": 5.0}},
         {"retrieval": {"bm25_k1": 1.2}}, {"rerank": {"top_n": 3}},
         {"embedding": {"batch_size": 99}},                       # how fast, not what is embedded
         {"metadata": {"export_path": "somewhere/else.csv"}},     # where the CSV goes

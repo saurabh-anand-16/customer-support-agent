@@ -50,15 +50,23 @@ FIXED_CONFIG = {
                   "env_file": "no-such.env"},
     "store": {"kind": "memory", "path": "data/test_store", "collection": "test_collection",
               "distance": "cosine", "meta_path": "data/test_store/index_meta.json"},
-    "retrieval": {"strategy": "bm25", "top_k": 5, "candidate_k": 20, "bm25_k1": 1.5, "bm25_b": 0.75},
+    "retrieval": {"strategy": "bm25", "top_k": 5, "candidate_k": 20, "bm25_k1": 1.5, "bm25_b": 0.75,
+                  "bm25_stem": True, "token_pattern": "[a-z0-9]+", "page_types": [],
+                  "stopwords": ["a", "an", "the", "of", "to", "is", "are", "can", "i", "my", "do", "how",
+                                "what", "it", "in", "for", "and", "or", "if"]},
     "fusion": {"method": "rrf", "rrf_k": 60, "weight_bm25": 1.0, "weight_vector": 1.0},
-    "rerank": {"method": "none", "top_n": 5, "cross_encoder_model": "test-ce", "llm_model": "test-llm"},
-    "no_match": {"min_score": 0.0, "min_hits": 1, "note": "not covered"},
-    "citations": {"format": "{page_title}", "show_copied_on": True},
+    "rerank": {"method": "none", "candidates": 20, "top_n": 5, "cross_encoder_model": "test-ce",
+               "llm_model": "test-llm", "llm_max_chars": 500},
+    "no_match": {"bm25_min_score": 1.0, "vector_min_score": 0.3, "hybrid_require": "any", "min_hits": 1,
+                 "note": "not covered"},
+    "citations": {"format": "{heading_path} ({source_file})", "show_copied_on": True,
+                  "copied_on_suffix": ", copied {copied_on}"},
     "profiles": {
+        "bare": {},                                  # overrides nothing: tests set everything themselves
         "plain": {"retrieval": {"strategy": "bm25"}, "fusion": {"method": "none"}},
-        "vector": {"retrieval": {"strategy": "vector"}},
-        "hybrid": {"retrieval": {"strategy": "hybrid"}, "rerank": {"method": "cross_encoder"}},
+        "vector": {"retrieval": {"strategy": "vector"}, "fusion": {"method": "none"}},
+        "hybrid": {"retrieval": {"strategy": "hybrid"}},
+        "hybrid_rerank": {"retrieval": {"strategy": "hybrid"}, "rerank": {"method": "cross_encoder"}},
     },
 }
 
@@ -84,7 +92,8 @@ def to_toml(data: dict, prefix: str = "") -> str:
         if isinstance(value, dict):
             name = f"{prefix}.{key}" if prefix else key
             body = to_toml(value, name)
-            out += f"\n[{name}]\n{body}" if any(not isinstance(v, dict) for v in value.values()) else body
+            has_values = any(not isinstance(v, dict) for v in value.values()) or not value   # an empty table still needs its header
+            out += f"\n[{name}]\n{body}" if has_values else body
     return out
 
 

@@ -97,6 +97,10 @@ class Retrieval:
     candidate_k: int
     bm25_k1: float
     bm25_b: float
+    bm25_stem: bool        # strip common endings (refunds -> refund) before matching
+    token_pattern: str     # what counts as a word, for BM25
+    stopwords: list[str]   # words that never count as a meaningful query word
+    page_types: list[str]  # only search these page types; empty means all
 
 
 @dataclass(frozen=True)
@@ -110,22 +114,27 @@ class Fusion:
 @dataclass(frozen=True)
 class Rerank:
     method: str
-    top_n: int
+    candidates: int        # how many fused results go into the reranker
+    top_n: int             # how many come out
     cross_encoder_model: str
     llm_model: str
+    llm_max_chars: int     # each passage is cut to this length in the LLM prompt
 
 
 @dataclass(frozen=True)
 class NoMatch:
-    min_score: float
+    bm25_min_score: float    # bm25: best score must reach this
+    vector_min_score: float  # vector: best similarity must reach this
+    hybrid_require: str      # hybrid: "any" or "all" of the two rules above must pass
     min_hits: int
     note: str
 
 
 @dataclass(frozen=True)
 class Citations:
-    format: str
+    format: str             # fields: {heading_path} {source_file} {copied_on}
     show_copied_on: bool
+    copied_on_suffix: str  # added after the citation when show_copied_on is true
 
 
 SECTIONS = {
@@ -234,6 +243,16 @@ def _check_values(cfg: RagConfig, where: str) -> None:
         raise ConfigError(f'{where}: [chunking].table_handling must be "keep_whole" or "split_rows"')
     if any(level < 1 or level > 6 for level in c.heading_levels):
         raise ConfigError(f"{where}: [chunking].heading_levels must be numbers from 1 to 6")
+    r, f, rr, nm = cfg.retrieval, cfg.fusion, cfg.rerank, cfg.no_match
+    for label, value in ("[retrieval].top_k", r.top_k), ("[retrieval].candidate_k", r.candidate_k), \
+            ("[rerank].candidates", rr.candidates), ("[rerank].top_n", rr.top_n), \
+            ("[rerank].llm_max_chars", rr.llm_max_chars), ("[no_match].min_hits", nm.min_hits):
+        if value < 1:
+            raise ConfigError(f"{where}: {label} must be 1 or more")
+    if min(f.rrf_k, f.weight_bm25, f.weight_vector, r.bm25_k1, r.bm25_b) < 0:
+        raise ConfigError(f"{where}: rrf_k, the fusion weights and bm25_k1 / bm25_b must not be negative")
+    if nm.hybrid_require not in ("any", "all"):
+        raise ConfigError(f'{where}: [no_match].hybrid_require must be "any" or "all"')
     for name in m.fields:
         if name not in CHUNK_FIELDS:
             raise ConfigError(
@@ -242,7 +261,8 @@ def _check_values(cfg: RagConfig, where: str) -> None:
         if required not in m.fields:
             raise ConfigError(f"{where}: [metadata].fields must include '{required}'")
     for pattern_name, pattern in (("sources.copy_date_pattern", cfg.sources.copy_date_pattern),
-                                  ("text.toc_item_pattern", cfg.text.toc_item_pattern)):
+                                  ("text.toc_item_pattern", cfg.text.toc_item_pattern),
+                                  ("retrieval.token_pattern", cfg.retrieval.token_pattern)):
         try:
             re.compile(pattern)
         except re.error as err:

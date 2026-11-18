@@ -1,6 +1,6 @@
 # Phase 3: policy search (overview of 3a to 3d)
 
-**Status:** Planned. This phase is split into four sub-phases, each with its own document. An earlier single-phase version of this file (keyword search only, no config) was replaced by this design.
+**Status:** 3a, 3b and 3c are built (see their build reports); 3d is next. This phase is split into four sub-phases, each with its own document. An earlier single-phase version of this file (keyword search only, no config) was replaced by this design.
 
 ## Goal
 Let the agent explain the policy in Amazon's own words and cite the page and heading, without ever computing a number itself. Retrieval is built as a set of swappable parts chosen by configuration, and the choice of method is made from measured results, not guessed.

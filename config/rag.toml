@@ -72,33 +72,52 @@ collection = "policy_chunks"
 distance = "cosine"             # "cosine", "ip" or "l2"
 meta_path = "data/rag/index_meta.json"   # the index fingerprint and build details, as JSON
 
-[retrieval]                     # used in 3c
+[retrieval]
 strategy = "bm25"               # "bm25", "vector" or "hybrid"
-top_k = 5
-candidate_k = 20
+top_k = 5                       # results returned to the caller (search_policy can override it)
+candidate_k = 20                # how many each retriever passes on
 bm25_k1 = 1.5
 bm25_b = 0.75
+bm25_stem = true
+token_pattern = '[a-z0-9]+'     # what counts as a word (text is lower-cased first)
+# Words that never count as a meaningful query word. A question made only of these finds nothing.
+stopwords = [
+  "a", "an", "the", "and", "or", "but", "of", "to", "in", "on", "at", "for", "from", "by", "with", "about",
+  "is", "are", "was", "were", "be", "been", "am", "do", "does", "did", "can", "could", "will", "would",
+  "should", "may", "might", "i", "me", "my", "we", "our", "you", "your", "it", "its", "this", "that",
+  "these", "those", "what", "which", "who", "whom", "when", "where", "why", "how", "if", "then", "so",
+  "there", "have", "has", "had", "not", "no", "as", "any", "some",
+]
+page_types = []                 # e.g. ["Core policies"] to search only those README sections; empty = all
 
-[fusion]                        # used in 3c
-method = "rrf"                  # "rrf" or "none"
-rrf_k = 60
-weight_bm25 = 1.0
+[fusion]
+method = "rrf"                  # "rrf", "weighted" or "none" (none is for bm25 and vector alone)
+rrf_k = 60                      # rrf: score = sum of 1 / (rrf_k + rank)
+weight_bm25 = 1.0               # weighted: scores are scaled to 0-1 per list, then weighted
 weight_vector = 1.0
 
-[rerank]                        # used in 3c
+[rerank]
 method = "none"                 # "none", "cross_encoder" or "llm"
-top_n = 5
-cross_encoder_model = "cross-encoder/ms-marco-MiniLM-L-6-v2"
-llm_model = "claude-haiku-5-5"
+candidates = 20                 # how many fused results go in
+top_n = 5                       # how many come out (the caller's top_k can cut further)
+cross_encoder_model = "cross-encoder/ms-marco-MiniLM-L-6-v2"   # needs sentence-transformers
+llm_model = "gpt-4o-mini"       # an OpenAI chat model; uses the key named in [embedding].api_key_env
+llm_max_chars = 800             # each passage is cut to this length in the prompt
 
-[no_match]                      # used in 3c
-min_score = 0.0
-min_hits = 1
+[no_match]
+# PLACEHOLDERS. These numbers were set by eye from six sample questions (phase 3c): related ones
+# scored 5.2 or more (bm25) and 0.50 or more (vector), unrelated ones 4.3 or less and 0.25 or less.
+# Phase 3d calibrates them against a labelled question set. Do not treat them as tuned.
+bm25_min_score = 5.0            # bm25: the best score must reach this, or nothing counts as an answer
+vector_min_score = 0.35         # vector: the best similarity must reach this
+hybrid_require = "any"          # hybrid: "any" or "all" of the two rules above must pass
+min_hits = 1                    # fewer results than this counts as no match
 note = "The policy pages do not cover this."
 
-[citations]                     # used in 3c
-format = "{page_title} > {heading_path}"
+[citations]
+format = "{heading_path} ({source_file})"
 show_copied_on = true
+copied_on_suffix = ", copied {copied_on}"
 
 # Named presets. Each table below overrides keys in the base sections above.
 [profiles.baseline_bm25.retrieval]

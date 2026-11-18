@@ -26,6 +26,8 @@ pip install -r requirements-rag.txt # extra packages for policy search (phase 3b
 python scripts/06_build_policy_index.py   # embed the chunks into the vector index (needs OPENAI_API_KEY in .env)
 ```
 
+`python -m pytest` leaves out the tests marked `live` (they call real services such as OpenAI). `python -m pytest -m live` runs only those.
+
 ```
 python -m pytest
 ```
@@ -42,13 +44,13 @@ On Windows use `py` instead of `python` if `python` is not found. Every script p
 | `schema.sql` | The database layout, with the day-counting view |
 | `returns_agent.db` | The SQLite database (generated; not committed) |
 | `scripts/config.py` | Settings in one place: today's date, seed, sizes, paths |
-| `agent/` | The agent's seven tools (`tools.py`) and the pure decision logic (`eligibility.py`) |
-| `agent/rag/` | Policy search, so far: config loader, page reader, chunkers (3a), embedders and vector stores (3b) |
+| `agent/` | The agent's seven tools (`tools.py`), the pure decision logic (`eligibility.py`) and policy search (`policy_search.py`) |
+| `agent/rag/` | Policy search parts: config loader, page reader, chunkers (3a), embedders, vector stores and index build (3b), retrievers, fusion, rerankers, filters, no-match rule and pipeline (3c) |
 | `requirements-rag.txt` | Extra packages for policy search (`chromadb`, `openai`); the core `requirements.txt` is unchanged |
 | `data/rag/` | The vector index and embedding cache (generated; not committed) |
 | `config/rag.toml` | Every tunable value for policy search: chunking, metadata, embedding, retrieval, profiles |
 | `docs/phases/` | One document per build phase: what it is for, files touched, how it was checked |
-| `tests/` | 246 tests (67 for the tools, 179 for policy search: config, chunking, embedders, stores and the index build); run with `python -m pytest` |
+| `tests/` | 418 tests run by default (67 for the tools, 351 for policy search), plus 4 `live` tests; run with `python -m pytest` (`-m live` for the live ones) |
 
 ## What each script does
 
@@ -116,6 +118,14 @@ Seven plain Python functions in `agent/tools.py`, used as `ReturnsTools("returns
 The OpenAI key is read from the `OPENAI_API_KEY` variable or from `.env` (the file and variable names are in the config), by a small loader in `agent/rag/embedders/base.py`, not python-dotenv. It is not printed, logged or written to the index, the cache or any other file.
 
 `python scripts/06_build_policy_index.py` chunks the pages, embeds the chunks, and writes them to ChromaDB in `data/rag/chroma`, with the index fingerprint stored beside them (`data/rag/index_meta.json`). Vectors are cached by model and text, so a second run embeds nothing. If a setting that shapes the index changes, the index reports itself out of date and the next build starts clean. Nothing is searched yet.
+
+## Policy search (phase 3c)
+
+`from agent import PolicySearch` and `PolicySearch("hybrid").search_policy("how long does a refund take?")` search the policy pages. The profile (an argument, the `RAG_PROFILE` variable, or the file's default) picks every part from `config/rag.toml`: `baseline_bm25` (keywords only, no index and no extra package), `vector_only`, `hybrid` (both, merged by reciprocal rank fusion), `hybrid_cross_encoder` and `hybrid_llm_rerank`.
+
+The result has one fixed shape: `ok`, `query`, `profile`, `index_fingerprint` and `results` (each with `source_file`, `heading_path`, `text`, `score`, `copied_on`, `in_scope` and `provenance`, which records which retrievers found it, their ranks and scores, the fused score and the position after reranking). A blank question gives `error_code` `empty_query`. If the vector index was built with other settings the answer is `index_out_of_date` and the old index is not searched. If nothing counts as an answer under the no-match rule, `results` is empty and a `note` says the policy pages do not cover it. Pages for cases outside this agent's scope are hidden unless `include_out_of_scope=True`. A reranker that fails never fails the search: the fused order is returned and the provenance says what went wrong.
+
+The no-match thresholds in `config/rag.toml` are placeholders; phase 3d calibrates them. Nothing in policy search computes eligibility, windows or refund times.
 
 ## Day counting
 
