@@ -1,0 +1,10 @@
+order_type,refund_method,time_value,time_unit,is_upper_bound,source_text,source_file
+prepaid,amazon_pay_balance,4,hours,False,4 hours,refund-policy.md / about-refunds.md
+prepaid,credit_debit_card,5,business_days,False,5 Business Days,refund-policy.md / about-refunds.md
+prepaid,net_banking,5,business_days,False,5 Business Days,refund-policy.md / about-refunds.md
+prepaid,upi,5,business_days,False,5 Business Days,refund-policy.md / about-refunds.md
+prepaid,amazon_pay_later,5,working_days,True,up to 5 working days,refund-policy.md / about-refunds.md
+prepaid,amazon_voucher,4,working_days,True,up to 4 working days,refund-policy.md / about-refunds.md
+pay_on_delivery,neft_bank_account,5,business_days,False,5 Business Days,refund-policy.md / about-refunds.md
+pay_on_delivery,amazon_pay_balance,4,hours,False,4 hours,refund-policy.md / about-refunds.md
+pay_on_delivery,paper_cheque,10,business_days,True,Up to 10 business days,refund-policy.md / about-refunds.md

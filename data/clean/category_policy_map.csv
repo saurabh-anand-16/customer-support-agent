@@ -1,0 +1,212 @@
+category_path,n_products,policy_code,confidence,rule_id,basis
+Computers&Accessories|Laptops|TraditionalLaptops,1,BRAND_REPL_10,high,R3a,Named in General Returns Policy item 2 (technician visit)
+Computers&Accessories|Monitors,2,BRAND_REPL_10,medium,R3b,Larger electronics/appliances that usually need brand technician inspection
+"Computers&Accessories|Printers,Inks&Accessories|Printers",3,BRAND_REPL_10,medium,R3b,Larger electronics/appliances that usually need brand technician inspection
+"Computers&Accessories|Printers,Inks&Accessories|Printers|InkjetPrinters",2,BRAND_REPL_10,medium,R3b,Larger electronics/appliances that usually need brand technician inspection
+Computers&Accessories|Tablets,1,BRAND_REPL_10,high,R3a,Named in General Returns Policy item 2 (technician visit)
+"Electronics|HomeTheater,TV&Video|Projectors",3,BRAND_REPL_10,medium,R3b,Larger electronics/appliances that usually need brand technician inspection
+"Electronics|HomeTheater,TV&Video|Televisions|SmartTelevisions",60,BRAND_REPL_10,high,R3a,Named in General Returns Policy item 2 (technician visit)
+"Electronics|HomeTheater,TV&Video|Televisions|StandardTelevisions",6,BRAND_REPL_10,high,R3a,Named in General Returns Policy item 2 (technician visit)
+"Home&Kitchen|Heating,Cooling&AirQuality|AirConditioners|Split-SystemAirConditioners",1,BRAND_REPL_10,high,R3a,Named in General Returns Policy item 2 (technician visit)
+"Home&Kitchen|Heating,Cooling&AirQuality|AirPurifiers|HEPAAirPurifiers",4,BRAND_REPL_10,medium,R3b,Larger electronics/appliances that usually need brand technician inspection
+"Home&Kitchen|Heating,Cooling&AirQuality|WaterHeaters&Geysers|InstantWaterHeaters",23,BRAND_REPL_10,medium,R3b,Larger electronics/appliances that usually need brand technician inspection
+"Home&Kitchen|Heating,Cooling&AirQuality|WaterHeaters&Geysers|StorageWaterHeaters",12,BRAND_REPL_10,medium,R3b,Larger electronics/appliances that usually need brand technician inspection
+Home&Kitchen|Kitchen&HomeAppliances|SewingMachines&Accessories|Sewing&EmbroideryMachines,4,BRAND_REPL_10,medium,R3b,Larger electronics/appliances that usually need brand technician inspection
+"Home&Kitchen|Kitchen&HomeAppliances|Vacuum,Cleaning&Ironing|Vacuums&FloorCare|Vacuums|RoboticVacuums",2,BRAND_REPL_10,medium,R3b,Larger electronics/appliances that usually need brand technician inspection
+Home&Kitchen|Kitchen&HomeAppliances|WaterPurifiers&Accessories|WaterFilters&Purifiers,12,BRAND_REPL_10,medium,R3b,Larger electronics/appliances that usually need brand technician inspection
+"Computers&Accessories|Printers,Inks&Accessories|Inks,Toners&Cartridges|InkjetInkCartridges",4,NON_RETURNABLE,low,R1,Consumable / used-up item; treated as non-returnable by analogy
+"Computers&Accessories|Printers,Inks&Accessories|Inks,Toners&Cartridges|InkjetInkRefills&Kits",1,NON_RETURNABLE,low,R1,Consumable / used-up item; treated as non-returnable by analogy
+"Computers&Accessories|Printers,Inks&Accessories|Inks,Toners&Cartridges|TonerCartridges",1,NON_RETURNABLE,low,R1,Consumable / used-up item; treated as non-returnable by analogy
+Electronics|Cameras&Photography|Accessories|Film,1,NON_RETURNABLE,low,R1,Consumable / used-up item; treated as non-returnable by analogy
+Home&Kitchen|CraftMaterials|PaintingMaterials|Paints,3,NON_RETURNABLE,low,R1,Consumable / used-up item; treated as non-returnable by analogy
+"Home&Kitchen|Kitchen&HomeAppliances|Vacuum,Cleaning&Ironing|Vacuums&FloorCare|VacuumAccessories|VacuumBags|HandheldBags",1,NON_RETURNABLE,low,R1,Consumable / used-up item; treated as non-returnable by analogy
+Home&Kitchen|Kitchen&HomeAppliances|WaterPurifiers&Accessories|WaterCartridges,3,NON_RETURNABLE,low,R1,Consumable / used-up item; treated as non-returnable by analogy
+"OfficeProducts|OfficePaperProducts|Paper|Stationery|Pens,Pencils&WritingSupplies|Pens&Refills|BottledInk",2,NON_RETURNABLE,low,R1,Consumable / used-up item; treated as non-returnable by analogy
+Car&Motorbike|CarAccessories|InteriorAccessories|AirPurifiers&Ionizers,1,REPL_10,medium,R5,Powered home/kitchen appliance
+"Electronics|HomeTheater,TV&Video|AVReceivers&Amplifiers",1,REPL_10,medium,R5,Powered home/kitchen appliance
+"Electronics|HomeTheater,TV&Video|SatelliteEquipment|SatelliteReceivers",3,REPL_10,medium,R5,Powered home/kitchen appliance
+Health&PersonalCare|HomeMedicalSupplies&Equipment|HealthMonitors|WeighingScales|DigitalBathroomScales,1,REPL_10,medium,R5,Powered home/kitchen appliance
+"Home&Kitchen|Heating,Cooling&AirQuality|Fans|CeilingFans",11,REPL_10,medium,R5,Powered home/kitchen appliance
+"Home&Kitchen|Heating,Cooling&AirQuality|Fans|ExhaustFans",3,REPL_10,medium,R5,Powered home/kitchen appliance
+"Home&Kitchen|Heating,Cooling&AirQuality|Fans|PedestalFans",1,REPL_10,medium,R5,Powered home/kitchen appliance
+"Home&Kitchen|Heating,Cooling&AirQuality|Fans|TableFans",2,REPL_10,medium,R5,Powered home/kitchen appliance
+"Home&Kitchen|Heating,Cooling&AirQuality|Humidifiers",3,REPL_10,medium,R5,Powered home/kitchen appliance
+"Home&Kitchen|Heating,Cooling&AirQuality|RoomHeaters",2,REPL_10,medium,R5,Powered home/kitchen appliance
+"Home&Kitchen|Heating,Cooling&AirQuality|RoomHeaters|ElectricHeaters",20,REPL_10,medium,R5,Powered home/kitchen appliance
+"Home&Kitchen|Heating,Cooling&AirQuality|RoomHeaters|FanHeaters",20,REPL_10,medium,R5,Powered home/kitchen appliance
+"Home&Kitchen|Heating,Cooling&AirQuality|RoomHeaters|HalogenHeaters",2,REPL_10,medium,R5,Powered home/kitchen appliance
+"Home&Kitchen|Heating,Cooling&AirQuality|RoomHeaters|HeatConvectors",2,REPL_10,medium,R5,Powered home/kitchen appliance
+"Home&Kitchen|Heating,Cooling&AirQuality|WaterHeaters&Geysers|ImmersionRods",9,REPL_10,medium,R5,Powered home/kitchen appliance
+"Home&Kitchen|Kitchen&HomeAppliances|Coffee,Tea&Espresso|CoffeeGrinders|ElectricGrinders",1,REPL_10,medium,R5,Powered home/kitchen appliance
+"Home&Kitchen|Kitchen&HomeAppliances|Coffee,Tea&Espresso|CoffeePresses",1,REPL_10,medium,R5,Powered home/kitchen appliance
+"Home&Kitchen|Kitchen&HomeAppliances|Coffee,Tea&Espresso|DripCoffeeMachines",5,REPL_10,medium,R5,Powered home/kitchen appliance
+"Home&Kitchen|Kitchen&HomeAppliances|Coffee,Tea&Espresso|EspressoMachines",1,REPL_10,medium,R5,Powered home/kitchen appliance
+"Home&Kitchen|Kitchen&HomeAppliances|Coffee,Tea&Espresso|MilkFrothers",3,REPL_10,medium,R5,Powered home/kitchen appliance
+"Home&Kitchen|Kitchen&HomeAppliances|Coffee,Tea&Espresso|StovetopEspressoPots",1,REPL_10,medium,R5,Powered home/kitchen appliance
+Home&Kitchen|Kitchen&HomeAppliances|SmallKitchenAppliances,1,REPL_10,medium,R5,Powered home/kitchen appliance
+Home&Kitchen|Kitchen&HomeAppliances|SmallKitchenAppliances|DeepFatFryers|AirFryers,5,REPL_10,medium,R5,Powered home/kitchen appliance
+Home&Kitchen|Kitchen&HomeAppliances|SmallKitchenAppliances|DigitalKitchenScales,10,REPL_10,medium,R5,Powered home/kitchen appliance
+Home&Kitchen|Kitchen&HomeAppliances|SmallKitchenAppliances|DigitalKitchenScales|DigitalScales,2,REPL_10,medium,R5,Powered home/kitchen appliance
+Home&Kitchen|Kitchen&HomeAppliances|SmallKitchenAppliances|EggBoilers,11,REPL_10,medium,R5,Powered home/kitchen appliance
+Home&Kitchen|Kitchen&HomeAppliances|SmallKitchenAppliances|HandBlenders,19,REPL_10,medium,R5,Powered home/kitchen appliance
+Home&Kitchen|Kitchen&HomeAppliances|SmallKitchenAppliances|HandMixers,3,REPL_10,medium,R5,Powered home/kitchen appliance
+Home&Kitchen|Kitchen&HomeAppliances|SmallKitchenAppliances|InductionCooktop,10,REPL_10,medium,R5,Powered home/kitchen appliance
+Home&Kitchen|Kitchen&HomeAppliances|SmallKitchenAppliances|JuicerMixerGrinders,12,REPL_10,medium,R5,Powered home/kitchen appliance
+Home&Kitchen|Kitchen&HomeAppliances|SmallKitchenAppliances|Juicers,2,REPL_10,medium,R5,Powered home/kitchen appliance
+Home&Kitchen|Kitchen&HomeAppliances|SmallKitchenAppliances|Juicers|ColdPressJuicers,1,REPL_10,medium,R5,Powered home/kitchen appliance
+Home&Kitchen|Kitchen&HomeAppliances|SmallKitchenAppliances|Kettles&HotWaterDispensers|ElectricKettles,19,REPL_10,medium,R5,Powered home/kitchen appliance
+Home&Kitchen|Kitchen&HomeAppliances|SmallKitchenAppliances|Kettles&HotWaterDispensers|Kettle&ToasterSets,13,REPL_10,medium,R5,Powered home/kitchen appliance
+Home&Kitchen|Kitchen&HomeAppliances|SmallKitchenAppliances|Mills&Grinders|WetGrinders,2,REPL_10,medium,R5,Powered home/kitchen appliance
+Home&Kitchen|Kitchen&HomeAppliances|SmallKitchenAppliances|MiniFoodProcessors&Choppers,8,REPL_10,medium,R5,Powered home/kitchen appliance
+Home&Kitchen|Kitchen&HomeAppliances|SmallKitchenAppliances|MixerGrinders,27,REPL_10,medium,R5,Powered home/kitchen appliance
+Home&Kitchen|Kitchen&HomeAppliances|SmallKitchenAppliances|OvenToasterGrills,2,REPL_10,medium,R5,Powered home/kitchen appliance
+Home&Kitchen|Kitchen&HomeAppliances|SmallKitchenAppliances|Pop-upToasters,3,REPL_10,medium,R5,Powered home/kitchen appliance
+Home&Kitchen|Kitchen&HomeAppliances|SmallKitchenAppliances|Rice&PastaCookers,5,REPL_10,medium,R5,Powered home/kitchen appliance
+Home&Kitchen|Kitchen&HomeAppliances|SmallKitchenAppliances|RotiMakers,1,REPL_10,medium,R5,Powered home/kitchen appliance
+Home&Kitchen|Kitchen&HomeAppliances|SmallKitchenAppliances|SandwichMakers,11,REPL_10,medium,R5,Powered home/kitchen appliance
+Home&Kitchen|Kitchen&HomeAppliances|SmallKitchenAppliances|StandMixers,1,REPL_10,medium,R5,Powered home/kitchen appliance
+Home&Kitchen|Kitchen&HomeAppliances|SmallKitchenAppliances|VacuumSealers,7,REPL_10,medium,R5,Powered home/kitchen appliance
+Home&Kitchen|Kitchen&HomeAppliances|SmallKitchenAppliances|WaffleMakers&Irons,3,REPL_10,medium,R5,Powered home/kitchen appliance
+Home&Kitchen|Kitchen&HomeAppliances|SmallKitchenAppliances|YogurtMakers,1,REPL_10,medium,R5,Powered home/kitchen appliance
+"Home&Kitchen|Kitchen&HomeAppliances|Vacuum,Cleaning&Ironing|Irons,Steamers&Accessories|Irons|DryIrons",24,REPL_10,medium,R5,Powered home/kitchen appliance
+"Home&Kitchen|Kitchen&HomeAppliances|Vacuum,Cleaning&Ironing|Irons,Steamers&Accessories|Irons|SteamIrons",12,REPL_10,medium,R5,Powered home/kitchen appliance
+"Home&Kitchen|Kitchen&HomeAppliances|Vacuum,Cleaning&Ironing|Irons,Steamers&Accessories|LintShavers",22,REPL_10,medium,R5,Powered home/kitchen appliance
+"Home&Kitchen|Kitchen&HomeAppliances|Vacuum,Cleaning&Ironing|PressureWashers,Steam&WindowCleaners",3,REPL_10,medium,R5,Powered home/kitchen appliance
+"Home&Kitchen|Kitchen&HomeAppliances|Vacuum,Cleaning&Ironing|Vacuums&FloorCare|Vacuums|CanisterVacuums",4,REPL_10,medium,R5,Powered home/kitchen appliance
+"Home&Kitchen|Kitchen&HomeAppliances|Vacuum,Cleaning&Ironing|Vacuums&FloorCare|Vacuums|HandheldVacuums",8,REPL_10,medium,R5,Powered home/kitchen appliance
+"Home&Kitchen|Kitchen&HomeAppliances|Vacuum,Cleaning&Ironing|Vacuums&FloorCare|Vacuums|Wet-DryVacuums",6,REPL_10,medium,R5,Powered home/kitchen appliance
+Computers&Accessories|Accessories&Peripherals|Adapters|USBtoUSBAdapters,2,REPL_7,medium,R6,Small electronic accessory or component
+Computers&Accessories|Accessories&Peripherals|Audio&VideoAccessories|PCHeadsets,1,REPL_7,medium,R6,Small electronic accessory or component
+Computers&Accessories|Accessories&Peripherals|Audio&VideoAccessories|PCMicrophones,2,REPL_7,medium,R6,Small electronic accessory or component
+Computers&Accessories|Accessories&Peripherals|Audio&VideoAccessories|PCSpeakers,2,REPL_7,medium,R6,Small electronic accessory or component
+Computers&Accessories|Accessories&Peripherals|Audio&VideoAccessories|Webcams&VoIPEquipment|Webcams,2,REPL_7,medium,R6,Small electronic accessory or component
+Computers&Accessories|Accessories&Peripherals|Cables&Accessories|Cables|DVICables,1,REPL_7,medium,R6,Small electronic accessory or component
+Computers&Accessories|Accessories&Peripherals|Cables&Accessories|Cables|EthernetCables,2,REPL_7,medium,R6,Small electronic accessory or component
+Computers&Accessories|Accessories&Peripherals|Cables&Accessories|Cables|SATACables,1,REPL_7,medium,R6,Small electronic accessory or component
+Computers&Accessories|Accessories&Peripherals|Cables&Accessories|Cables|USBCables,161,REPL_7,medium,R6,Small electronic accessory or component
+"Computers&Accessories|Accessories&Peripherals|Keyboards,Mice&InputDevices|GraphicTablets",11,REPL_7,medium,R6,Small electronic accessory or component
+"Computers&Accessories|Accessories&Peripherals|Keyboards,Mice&InputDevices|Keyboard&MouseSets",10,REPL_7,medium,R6,Small electronic accessory or component
+"Computers&Accessories|Accessories&Peripherals|Keyboards,Mice&InputDevices|Keyboards",5,REPL_7,medium,R6,Small electronic accessory or component
+"Computers&Accessories|Accessories&Peripherals|Keyboards,Mice&InputDevices|Mice",24,REPL_7,medium,R6,Small electronic accessory or component
+Computers&Accessories|Accessories&Peripherals|LaptopAccessories|LaptopChargers&PowerSupplies,5,REPL_7,medium,R6,Small electronic accessory or component
+Computers&Accessories|Accessories&Peripherals|PCGamingPeripherals|Gamepads,3,REPL_7,medium,R6,Small electronic accessory or component
+Computers&Accessories|Accessories&Peripherals|PCGamingPeripherals|GamingKeyboards,3,REPL_7,medium,R6,Small electronic accessory or component
+Computers&Accessories|Accessories&Peripherals|PCGamingPeripherals|GamingMice,6,REPL_7,medium,R6,Small electronic accessory or component
+Computers&Accessories|Accessories&Peripherals|PCGamingPeripherals|Headsets,3,REPL_7,medium,R6,Small electronic accessory or component
+Computers&Accessories|Accessories&Peripherals|USBGadgets|Lamps,5,REPL_7,medium,R6,Small electronic accessory or component
+Computers&Accessories|Accessories&Peripherals|USBHubs,5,REPL_7,medium,R6,Small electronic accessory or component
+Computers&Accessories|Accessories&Peripherals|UninterruptedPowerSupplies,1,REPL_7,medium,R6,Small electronic accessory or component
+Computers&Accessories|Components|InternalHardDrives,1,REPL_7,medium,R6,Small electronic accessory or component
+Computers&Accessories|Components|InternalSolidStateDrives,3,REPL_7,medium,R6,Small electronic accessory or component
+Computers&Accessories|Components|Memory,1,REPL_7,medium,R6,Small electronic accessory or component
+Computers&Accessories|ExternalDevices&DataStorage|ExternalHardDisks,6,REPL_7,medium,R6,Small electronic accessory or component
+Computers&Accessories|ExternalDevices&DataStorage|ExternalMemoryCardReaders,1,REPL_7,medium,R6,Small electronic accessory or component
+Computers&Accessories|ExternalDevices&DataStorage|ExternalSolidStateDrives,1,REPL_7,medium,R6,Small electronic accessory or component
+Computers&Accessories|ExternalDevices&DataStorage|PenDrives,10,REPL_7,medium,R6,Small electronic accessory or component
+Computers&Accessories|NetworkingDevices,1,REPL_7,medium,R6,Small electronic accessory or component
+Computers&Accessories|NetworkingDevices|DataCards&Dongles,1,REPL_7,medium,R6,Small electronic accessory or component
+Computers&Accessories|NetworkingDevices|NetworkAdapters|BluetoothAdapters,1,REPL_7,medium,R6,Small electronic accessory or component
+Computers&Accessories|NetworkingDevices|NetworkAdapters|PowerLANAdapters,1,REPL_7,medium,R6,Small electronic accessory or component
+Computers&Accessories|NetworkingDevices|NetworkAdapters|WirelessUSBAdapters,14,REPL_7,medium,R6,Small electronic accessory or component
+Computers&Accessories|NetworkingDevices|Repeaters&Extenders,3,REPL_7,medium,R6,Small electronic accessory or component
+Computers&Accessories|NetworkingDevices|Routers,9,REPL_7,medium,R6,Small electronic accessory or component
+Electronics|Accessories|MemoryCards|MicroSD,10,REPL_7,medium,R6,Small electronic accessory or component
+Electronics|Accessories|MemoryCards|SecureDigitalCards,1,REPL_7,medium,R6,Small electronic accessory or component
+Electronics|Cameras&Photography|Accessories|Batteries&Chargers|BatteryChargers,1,REPL_7,medium,R6,Small electronic accessory or component
+Electronics|Cameras&Photography|Flashes|Macro&RinglightFlashes,1,REPL_7,medium,R6,Small electronic accessory or component
+Electronics|GeneralPurposeBatteries&BatteryChargers,4,REPL_7,medium,R6,Small electronic accessory or component
+Electronics|GeneralPurposeBatteries&BatteryChargers|DisposableBatteries,7,REPL_7,medium,R6,Small electronic accessory or component
+Electronics|GeneralPurposeBatteries&BatteryChargers|RechargeableBatteries,3,REPL_7,medium,R6,Small electronic accessory or component
+"Electronics|Headphones,Earbuds&Accessories|Adapters",1,REPL_7,medium,R6,Small electronic accessory or component
+Electronics|HomeAudio|Accessories|Adapters,1,REPL_7,medium,R6,Small electronic accessory or component
+Electronics|HomeAudio|MediaStreamingDevices|StreamingClients,1,REPL_7,medium,R6,Small electronic accessory or component
+Electronics|HomeAudio|Speakers|BluetoothSpeakers,6,REPL_7,medium,R6,Small electronic accessory or component
+Electronics|HomeAudio|Speakers|MultimediaSpeakerSystems,1,REPL_7,medium,R6,Small electronic accessory or component
+Electronics|HomeAudio|Speakers|OutdoorSpeakers,4,REPL_7,medium,R6,Small electronic accessory or component
+Electronics|HomeAudio|Speakers|SoundbarSpeakers,1,REPL_7,medium,R6,Small electronic accessory or component
+Electronics|HomeAudio|Speakers|TowerSpeakers,1,REPL_7,medium,R6,Small electronic accessory or component
+"Electronics|HomeTheater,TV&Video|Accessories|Cables|HDMICables",21,REPL_7,medium,R6,Small electronic accessory or component
+"Electronics|HomeTheater,TV&Video|Accessories|Cables|OpticalCables",3,REPL_7,medium,R6,Small electronic accessory or component
+"Electronics|HomeTheater,TV&Video|Accessories|Cables|RCACables",2,REPL_7,medium,R6,Small electronic accessory or component
+"Electronics|HomeTheater,TV&Video|Accessories|Cables|SpeakerCables",1,REPL_7,medium,R6,Small electronic accessory or component
+"Electronics|HomeTheater,TV&Video|Accessories|RemoteControls",49,REPL_7,medium,R6,Small electronic accessory or component
+Electronics|Mobiles&Accessories|MobileAccessories|Cables&Adapters|OTGAdapters,2,REPL_7,medium,R6,Small electronic accessory or component
+Electronics|Mobiles&Accessories|MobileAccessories|Chargers|AutomobileChargers,4,REPL_7,medium,R6,Small electronic accessory or component
+Electronics|Mobiles&Accessories|MobileAccessories|Chargers|PowerBanks,11,REPL_7,medium,R6,Small electronic accessory or component
+Electronics|Mobiles&Accessories|MobileAccessories|Chargers|WallChargers,15,REPL_7,medium,R6,Small electronic accessory or component
+Electronics|Mobiles&Accessories|MobileAccessories|Photo&VideoAccessories|Flashes&SelfieLights|SelfieLights,1,REPL_7,medium,R6,Small electronic accessory or component
+Electronics|Mobiles&Accessories|MobileAccessories|StylusPens,5,REPL_7,medium,R6,Small electronic accessory or component
+Electronics|PowerAccessories|SurgeProtectors,1,REPL_7,medium,R6,Small electronic accessory or component
+HomeImprovement|Electrical|Adapters&Multi-Outlets,1,REPL_7,medium,R6,Small electronic accessory or component
+MusicalInstruments|Microphones|Condenser,2,REPL_7,medium,R6,Small electronic accessory or component
+OfficeProducts|OfficeElectronics|Calculators|Basic,1,REPL_7,medium,R6,Small electronic accessory or component
+OfficeProducts|OfficeElectronics|Calculators|Financial&Business,1,REPL_7,medium,R6,Small electronic accessory or component
+OfficeProducts|OfficeElectronics|Calculators|Scientific,2,REPL_7,medium,R6,Small electronic accessory or component
+Computers&Accessories|Accessories&Peripherals|Cables&Accessories|CableConnectionProtectors,2,RET_10,medium,R4,Non-electronic accessory or plain goods
+Computers&Accessories|Accessories&Peripherals|HardDiskBags,3,RET_10,medium,R4,Non-electronic accessory or plain goods
+Computers&Accessories|Accessories&Peripherals|HardDriveAccessories|Caddies,1,RET_10,medium,R4,Non-electronic accessory or plain goods
+"Computers&Accessories|Accessories&Peripherals|Keyboards,Mice&InputDevices|Keyboard&MiceAccessories|DustCovers",2,RET_10,medium,R4,Non-electronic accessory or plain goods
+"Computers&Accessories|Accessories&Peripherals|Keyboards,Mice&InputDevices|Keyboard&MiceAccessories|MousePads",8,RET_10,medium,R4,Non-electronic accessory or plain goods
+Computers&Accessories|Accessories&Peripherals|LaptopAccessories,1,RET_10,low,R9,No rule matched: default 10 Days Returnable. Review.
+Computers&Accessories|Accessories&Peripherals|LaptopAccessories|Bags&Sleeves|LaptopSleeves&Slipcases,6,RET_10,medium,R4,Non-electronic accessory or plain goods
+Computers&Accessories|Accessories&Peripherals|LaptopAccessories|CameraPrivacyCovers,2,RET_10,medium,R4,Non-electronic accessory or plain goods
+Computers&Accessories|Accessories&Peripherals|LaptopAccessories|CoolingPads,2,RET_10,medium,R4,Non-electronic accessory or plain goods
+Computers&Accessories|Accessories&Peripherals|LaptopAccessories|Lapdesks,14,RET_10,medium,R4,Non-electronic accessory or plain goods
+Computers&Accessories|Accessories&Peripherals|LaptopAccessories|NotebookComputerStands,3,RET_10,medium,R4,Non-electronic accessory or plain goods
+"Computers&Accessories|Accessories&Peripherals|TabletAccessories|Bags,Cases&Sleeves|Cases",2,RET_10,medium,R4,Non-electronic accessory or plain goods
+Computers&Accessories|Accessories&Peripherals|TabletAccessories|ScreenProtectors,5,RET_10,medium,R4,Non-electronic accessory or plain goods
+Computers&Accessories|Accessories&Peripherals|TabletAccessories|Stands,1,RET_10,medium,R4,Non-electronic accessory or plain goods
+Electronics|Cameras&Photography|Accessories|Cleaners|CleaningKits,1,RET_10,medium,R4,Non-electronic accessory or plain goods
+Electronics|Cameras&Photography|Accessories|PhotoStudio&Lighting|PhotoBackgroundAccessories|BackgroundSupports,1,RET_10,medium,R4,Non-electronic accessory or plain goods
+Electronics|Cameras&Photography|Accessories|Tripods&Monopods|CompleteTripodUnits,1,RET_10,medium,R4,Non-electronic accessory or plain goods
+Electronics|Cameras&Photography|Accessories|Tripods&Monopods|Tabletop&TravelTripods,2,RET_10,medium,R4,Non-electronic accessory or plain goods
+Electronics|Cameras&Photography|Accessories|Tripods&Monopods|TripodLegs,2,RET_10,medium,R4,Non-electronic accessory or plain goods
+"Electronics|Headphones,Earbuds&Accessories|Cases",1,RET_10,medium,R4,Non-electronic accessory or plain goods
+"Electronics|Headphones,Earbuds&Accessories|Earpads",1,RET_10,medium,R4,Non-electronic accessory or plain goods
+Electronics|HomeAudio|Accessories|SpeakerAccessories|Mounts,1,RET_10,medium,R4,Non-electronic accessory or plain goods
+"Electronics|HomeTheater,TV&Video|Accessories|3DGlasses",1,RET_10,medium,R4,Non-electronic accessory or plain goods
+"Electronics|HomeTheater,TV&Video|Accessories|TVMounts,Stands&Turntables|TVWall&CeilingMounts",6,RET_10,medium,R4,Non-electronic accessory or plain goods
+Electronics|Mobiles&Accessories|MobileAccessories|AutomobileAccessories|Cradles,3,RET_10,medium,R4,Non-electronic accessory or plain goods
+Electronics|Mobiles&Accessories|MobileAccessories|Cases&Covers|BasicCases,4,RET_10,medium,R4,Non-electronic accessory or plain goods
+Electronics|Mobiles&Accessories|MobileAccessories|Décor,3,RET_10,medium,R4,Non-electronic accessory or plain goods
+Electronics|Mobiles&Accessories|MobileAccessories|Décor|PhoneCharms,1,RET_10,medium,R4,Non-electronic accessory or plain goods
+"Electronics|Mobiles&Accessories|MobileAccessories|Maintenance,Upkeep&Repairs|ScreenProtectors",7,RET_10,medium,R4,Non-electronic accessory or plain goods
+Electronics|Mobiles&Accessories|MobileAccessories|Mounts|Bedstand&DeskMounts,2,RET_10,medium,R4,Non-electronic accessory or plain goods
+Electronics|Mobiles&Accessories|MobileAccessories|Mounts|HandlebarMounts,1,RET_10,medium,R4,Non-electronic accessory or plain goods
+Electronics|Mobiles&Accessories|MobileAccessories|Mounts|Shower&WallMounts,1,RET_10,medium,R4,Non-electronic accessory or plain goods
+Electronics|Mobiles&Accessories|MobileAccessories|Photo&VideoAccessories|SelfieSticks,3,RET_10,medium,R4,Non-electronic accessory or plain goods
+Electronics|Mobiles&Accessories|MobileAccessories|Photo&VideoAccessories|Tripods,1,RET_10,medium,R4,Non-electronic accessory or plain goods
+Electronics|Mobiles&Accessories|MobileAccessories|Stands,10,RET_10,medium,R4,Non-electronic accessory or plain goods
+Home&Kitchen|CraftMaterials|DrawingMaterials|DrawingMedia|Pencils|WoodenPencils,1,RET_10,medium,R4,Non-electronic accessory or plain goods
+Home&Kitchen|CraftMaterials|DrawingMaterials|DrawingMedia|Pens,1,RET_10,medium,R4,Non-electronic accessory or plain goods
+Home&Kitchen|CraftMaterials|PaintingMaterials,1,RET_10,medium,R4,Non-electronic accessory or plain goods
+Home&Kitchen|CraftMaterials|Scrapbooking|Tape,1,RET_10,medium,R4,Non-electronic accessory or plain goods
+"Home&Kitchen|Heating,Cooling&AirQuality|Parts&Accessories|FanParts&Accessories",1,RET_10,medium,R4,Non-electronic accessory or plain goods
+Home&Kitchen|HomeStorage&Organization|LaundryOrganization|IroningAccessories|SprayBottles,2,RET_10,medium,R4,Non-electronic accessory or plain goods
+Home&Kitchen|HomeStorage&Organization|LaundryOrganization|LaundryBags,1,RET_10,medium,R4,Non-electronic accessory or plain goods
+Home&Kitchen|HomeStorage&Organization|LaundryOrganization|LaundryBaskets,13,RET_10,medium,R4,Non-electronic accessory or plain goods
+Home&Kitchen|Kitchen&Dining|KitchenTools|ManualChoppers&Chippers|Choppers,1,RET_10,medium,R4,Non-electronic accessory or plain goods
+"Home&Kitchen|Kitchen&HomeAppliances|Coffee,Tea&Espresso|CoffeeMakerAccessories|MeasuringSpoons",3,RET_10,medium,R4,Non-electronic accessory or plain goods
+Home&Kitchen|Kitchen&HomeAppliances|SmallKitchenAppliances|SmallApplianceParts&Accessories,1,RET_10,medium,R4,Non-electronic accessory or plain goods
+Home&Kitchen|Kitchen&HomeAppliances|SmallKitchenAppliances|SmallApplianceParts&Accessories|StandMixerAccessories,1,RET_10,medium,R4,Non-electronic accessory or plain goods
+Home&Kitchen|Kitchen&HomeAppliances|WaterPurifiers&Accessories|WaterPurifierAccessories,11,RET_10,medium,R4,Non-electronic accessory or plain goods
+HomeImprovement|Electrical|CordManagement,1,RET_10,medium,R4,Non-electronic accessory or plain goods
+OfficeProducts|OfficePaperProducts|Paper|Copy&PrintingPaper|ColouredPaper,1,RET_10,medium,R4,Non-electronic accessory or plain goods
+"OfficeProducts|OfficePaperProducts|Paper|Stationery|Notebooks,WritingPads&Diaries",1,RET_10,medium,R4,Non-electronic accessory or plain goods
+"OfficeProducts|OfficePaperProducts|Paper|Stationery|Notebooks,WritingPads&Diaries|CompositionNotebooks",7,RET_10,medium,R4,Non-electronic accessory or plain goods
+"OfficeProducts|OfficePaperProducts|Paper|Stationery|Notebooks,WritingPads&Diaries|Notepads&MemoBooks",2,RET_10,medium,R4,Non-electronic accessory or plain goods
+"OfficeProducts|OfficePaperProducts|Paper|Stationery|Notebooks,WritingPads&Diaries|WireboundNotebooks",4,RET_10,medium,R4,Non-electronic accessory or plain goods
+"OfficeProducts|OfficePaperProducts|Paper|Stationery|Pens,Pencils&WritingSupplies|Pens&Refills|FountainPens",1,RET_10,medium,R4,Non-electronic accessory or plain goods
+"OfficeProducts|OfficePaperProducts|Paper|Stationery|Pens,Pencils&WritingSupplies|Pens&Refills|GelInkRollerballPens",2,RET_10,medium,R4,Non-electronic accessory or plain goods
+"OfficeProducts|OfficePaperProducts|Paper|Stationery|Pens,Pencils&WritingSupplies|Pens&Refills|LiquidInkRollerballPens",2,RET_10,medium,R4,Non-electronic accessory or plain goods
+"OfficeProducts|OfficePaperProducts|Paper|Stationery|Pens,Pencils&WritingSupplies|Pens&Refills|RetractableBallpointPens",2,RET_10,medium,R4,Non-electronic accessory or plain goods
+"OfficeProducts|OfficePaperProducts|Paper|Stationery|Pens,Pencils&WritingSupplies|Pens&Refills|StickBallpointPens",3,RET_10,medium,R4,Non-electronic accessory or plain goods
+Toys&Games|Arts&Crafts|Drawing&PaintingSupplies|ColouringPens&Markers,1,RET_10,medium,R4,Non-electronic accessory or plain goods
+Electronics|Cameras&Photography|SecurityCameras|DomeCameras,5,SC_REPL_7,medium,R2b,Branded electronics with a manufacturer service network
+Electronics|Cameras&Photography|VideoCameras,1,SC_REPL_7,medium,R2b,Branded electronics with a manufacturer service network
+"Electronics|Headphones,Earbuds&Accessories|Headphones|In-Ear",51,SC_REPL_7,medium,R2b,Branded electronics with a manufacturer service network
+"Electronics|Headphones,Earbuds&Accessories|Headphones|On-Ear",7,SC_REPL_7,medium,R2b,Branded electronics with a manufacturer service network
+"Electronics|Headphones,Earbuds&Accessories|Headphones|Over-Ear",2,SC_REPL_7,medium,R2b,Branded electronics with a manufacturer service network
+Electronics|Mobiles&Accessories|Smartphones&BasicMobiles|BasicMobiles,9,SC_REPL_7,high,R2a,Smartphones are named in General Returns Policy item 2 (brand/technician support)
+Electronics|Mobiles&Accessories|Smartphones&BasicMobiles|Smartphones,68,SC_REPL_7,high,R2a,Smartphones are named in General Returns Policy item 2 (brand/technician support)
+Electronics|WearableTechnology|SmartWatches,62,SC_REPL_7,medium,R2b,Branded electronics with a manufacturer service network

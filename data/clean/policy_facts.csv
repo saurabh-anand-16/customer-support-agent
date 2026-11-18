@@ -1,0 +1,17 @@
+fact_key,fact_value,unit,source_file,note
+refund_initiated_when,Amazon receives the returned package,,refund-policy.md,
+refund_processed_within_days_of_pickup,13,days,refund-policy.md; about-refunds.md,"After 13 days with no update, customer should contact Customer Service"
+cancelled_or_refused_order_refund_hours,24,hours,check-refund-status.md,Refund initiated to the original payment method; then the method timeline applies
+non_returnable_defect_report_days,5,days,returns-policy.md,Damaged/defective non-returnable item
+return_shipping_refund_cap_inr,100,INR,refund-policy.md,"Return shipping up to Rs.100 refunded for Fulfilled by Amazon / Prime Eligible items, to Amazon Pay Balance"
+replacement_shipping_fee_inr,40,INR,returns-and-replacements-faq.md,Applies if the original order was below Rs.499; non-refundable
+free_shipping_threshold_inr,499,INR,returns-and-replacements-faq.md,
+replacement_needs_same_item_in_stock,true,,returns-policy.md,"If not in stock, a refund is issued instead of a replacement"
+original_condition_required,true,,returns-policy.md,"Brand box, MRP tags, manual, warranty cards and all accessories"
+eligibility_depends_on_account_history,true,,returns-policy.md,No threshold is stated anywhere in the pages
+return_processing_fee_inr,,INR,returns-policy.md,Fee exists for excessive returns; AMOUNT NOT STATED in the pages
+delivery_day_counts_as_day_one,true,,project decision,Not from Amazon (its pages do not say). Last eligible day = delivery date + window - 1
+approval_value_limit_inr,10000,INR,project decision,A return/replacement for an item line above this value needs staff approval
+repeat_returner_review_threshold,5,returns,project decision,More than this many returns in the last 12 months needs staff review
+exceptions_always_reviewed,true,,project decision,Requests outside the window are never decided by the agent; they go to a reviewer
+cancellable_item_status,processing,,project decision,Only items still being processed can be cancelled. Shipped items are returned after delivery
