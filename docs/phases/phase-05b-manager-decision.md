@@ -1,6 +1,6 @@
 # Phase 5b: the manager's decision
 
-**Status:** to build. **Branch:** `phase-5b-manager-decision`. **Follows:** 4d (merged). **Next:** phase 6.
+**Status:** Done, in review ([build report](../builds/phase-05b-build.md)). **Branch:** `phase-5b-manager-decision`. **Follows:** 4d (merged). **Next:** phase 6.
 
 ## Why this phase exists
 
@@ -83,3 +83,22 @@ Use a copy of the database. Pick customers from tool output only. Run: (1) a cus
 ## Not in 5b
 
 The Manager page (phase 8), real login for managers, and telling customers by anything other than the next chat turn.
+
+## What was really built
+
+The plan above was followed, with the differences listed in the [build report](../builds/phase-05b-build.md). The ones that change what the document says:
+
+- **Claim.** The claim sets `decided_at` and `decided_by` on an item that is still `open`; the status changes only when the result is recorded. So an approval is never visible (to a customer notice or a list) before the return exists. A failed write releases the claim.
+- **Late requests.** The tool reads the eligibility check first and returns `not_eligible` (`window_expired`) before it looks at `staff_approved`, so staff approval does not cover the window. Approve on a `late_request` is refused by code without calling the tool, and the item stays open. Decline works.
+- **Requests for a person.** Approve and decline both close the item; the status is the one the manager chose, and the customer's notice says "closed" for both.
+- **What the queue stores.** `refund_method` is stored (the escalator passes it), and the queued eligibility JSON now also holds the reason code and the resolution, which an approval needs. The cheque case has its own reason sentence under `[review.reasons_by_requested_method]`.
+- **Where the notice is added.** In `Agent.respond` after the turn (`agent/review_notice.py`); `graph.py` is unchanged. A queue that fails never stops the turn.
+- **Checks.** A guardrail entry can carry `status: blocked_by_design`. The `review_gate` and `write` entries of the approval-needed case use it with `passed: true`.
+- **No new status value.** `review_items.status` still allows only `open`, `approved` and `declined`.
+- **Database.** Two new columns in `schema.sql`; a table made by 5a gets them with `ALTER TABLE ... ADD COLUMN` the first time a queue is opened on it. `scripts/04_build_db.py` needed no change (it runs `schema.sql`).
+
+## Results
+
+- `python -m pytest`: 1296 passed, 34 `live` tests left out (1231 and 23 before; 65 new tests and 11 new live tests).
+- `python scripts/09_mutation_check.py M74 ... M105`: 32 of 32 new mutations killed. The earlier mutations were not run again in this phase.
+- `python scripts/14_live_decision_paths.py`: six real-model steps on a copy of the database; one approval wrote one return (73 to 74), one decline changed nothing, both customers saw their notice once, a third customer saw none, second decisions were refused, and the real database file hash did not change. The data has no Pay on Delivery refund that needs approval, so the copy got one scenario row (see the build report).

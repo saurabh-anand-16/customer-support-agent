@@ -275,9 +275,44 @@ excerpt_message_chars = 500      # each kept message is cut to this length
 dedupe_open_items = true         # the same customer, order item and kind with an open item gives that item back
 reply_template = "I have asked a person to review this. Your reference is {reference}. Nothing has been changed on your order yet, and a person will decide."
 error_reply = "Sorry, I could not pass this to a person just now, so no request has been made. Please try again in a moment."
+# Phase 5b: the manager's decision and the notice the customer gets in their next chat turn.
+show_note_to_customer = false    # the manager's note is never put in the notice unless this is true
+note_max_chars = 500             # a decision note longer than this is refused; a note that is shown is cut to this length
+default_decided_by = "script"    # the label a script uses when it gives no decided_by; the app will give the manager's name later
 
 [review.reasons]
 # One plain sentence per kind, filled in by code from tool data. The model writes none of it.
 customer_asked_for_person = "The customer asked to speak to a person."
 late_request = "The customer asked to return item {item_id}, which is past the return window: day {day_number}, window {window_days} days, {days_late} days late (last eligible date {last_eligible_date})."
 approval_required = "The customer confirmed a {resolution} for item {item_id}, which needs staff approval because {approval_reasons}."
+
+[review.reasons_by_requested_method]
+# A case that keeps its kind but has its own sentence because of the refund method the customer asked for (4d: methods in [refund_method].not_offered).
+paper_cheque = "The customer asked for a paper cheque refund, which is only for exceptional cases."
+
+[review.notices]
+# Fixed texts for the outcome notice. Code fills them from stored data (the queue item and the return row). The model writes none of it.
+approved = "Update on {reference}: a person approved your request for {product_name} (item {item_id}). Your return number is {return_id}.{refund_line}"
+refund_line = " The refund of INR {amount} will go to {method}."
+declined = "Update on {reference}: a person looked at your request for {product_name} (item {item_id}) and could not approve it. Nothing was changed on your order."
+closed = "Update on {reference}: a person has looked at your request and closed it."
+note_line = " Their note: {note}"
+
+[review.decision_replies]
+# What a decision gives back to the caller (the manager side). {message} is the tool's own message where there is one.
+approved = "{reference} approved. Return {return_id} was created."
+declined = "{reference} declined. Nothing was written to orders or returns."
+closed = "{reference} closed. There was nothing to write."
+bad_decision = "The decision must be approve or decline. Nothing was changed."
+bad_note = "A decision needs a note (text). Nothing was changed."
+note_too_long = "The note is longer than {limit} characters. Nothing was changed."
+not_found = "There is no review item {reference}. Nothing was changed."
+already_decided = "{reference} has already been decided. Nothing was changed."
+decision_in_progress = "{reference} is being decided right now. Nothing was changed."
+late_cannot_be_approved = "{reference} is a request past the return window. A manager's approval does not cover the window, so it cannot be approved here, and this agent grants no exception. The item stays open. It can be declined."
+item_incomplete = "{reference} does not hold what is needed to write the return (item, reason or resolution). It stays open and nothing was changed."
+refund_method_missing = "{reference} is a Pay on Delivery refund with no refund method stored. It cannot be approved and stays open; nothing was changed."
+refund_method_not_offered = "{reference} holds a refund method this agent does not offer. It cannot be approved here and stays open; nothing was changed."
+write_refused = "The return was not written: {message} {reference} stays open."
+write_failed = "The return could not be written. {reference} stays open and nothing was changed."
+record_failed = "Return {return_id} was written, but {reference} could not be marked approved. Check the queue before doing anything else."

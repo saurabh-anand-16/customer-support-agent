@@ -19,16 +19,22 @@ A branch that reaches a decision stores a pending action in the session. The nex
              "branch" (model calls, tool calls, refused tools, round limit, pending action, notes),
              "off_topic", "pending_action_bypass"}}
 
+Phase 5b: when a manager has decided a case of this customer that they were not told about yet, `reply` starts with a fixed notice
+for each (agent/review_notice.py), once only, and `trace["checks"]` gets one "review_notice" entry per case. The notice is added
+after the turn, so a turn that fails tells nothing and loses nothing.
+
 The customer id is set once, in start_session(), and is neither read from a message nor sent to the model.
 The model name and temperature come from config/agent.toml. LangGraph (requirements-agent.txt) is
 imported when an Agent is created, so the other agent modules work without it.
 """
 from pathlib import Path
 
+from .checks import check
 from .confirm import ConfirmStep, public_pending
 from .escalation import Escalator, queue_for_tools
 from .llm import ROOT, AgentConfig, ChatModel, OpenAIChat, load_agent_config
 from .replies import Replies
+from .review_notice import outcome_notices
 from .router import Router
 from .session import SessionStore
 from .tool_adapter import ToolAdapter
@@ -79,12 +85,22 @@ class Agent:
         """A new conversation for this customer. The customer cannot be changed afterwards. Returns the session id."""
         return self.sessions.create(customer_id).session_id
 
+    def _outcome_notice(self, session) -> tuple:
+        """The notice text and its checks for this customer's decided cases. Never raises: a queue that fails changes nothing in the reply."""
+        try:
+            queue, tools = self.escalator.queue_source(), self.adapter.tools
+        except Exception as err:
+            return "", [check("review_notice", False, f"the review queue could not be opened ({type(err).__name__}); no notice was added")]
+        return outcome_notices(queue, tools, self.cfg, session.customer_id)
+
     def respond(self, session_id: str, message: str) -> dict:
         session = self.sessions.get(session_id)        # raises UnknownSession for an id that was never issued
         text = message if isinstance(message, str) else ""
         session.current_message = text            # for the excerpt of a review case; it joins `history` when the turn ends
         state = self._graph.invoke({"session": session, "message": text, "steps": []})
         decision = state["decision"]
+        notice, notice_checks = self._outcome_notice(session)
+        reply = notice + "\n\n" + state["reply"] if notice else state["reply"]
         trace = {
             "session_id": session.session_id,
             "steps": state["steps"],
@@ -94,8 +110,8 @@ class Agent:
                           "person_offered": bool(state.get("person_offered", False))},
             "pending_action_bypass": state.get("confirm") is not None,
             "confirm": state.get("confirm"),
-            "checks": state.get("checks", []),
+            "checks": [*state.get("checks", []), *notice_checks],
         }
-        return {"session_id": session.session_id, "reply": state["reply"], "route": decision.route,
+        return {"session_id": session.session_id, "reply": reply, "route": decision.route,
                 "kind": decision.kind, "pending_action": public_pending(session.pending_action),
                 "evidence": state.get("evidence") or {"tool_calls": [], "policy_passages": []}, "trace": trace}

@@ -170,10 +170,12 @@ CREATE TABLE IF NOT EXISTS review_items (
     reason        TEXT NOT NULL,                    -- one plain sentence written by code from the tool result
     excerpt       TEXT,                             -- JSON list of the last messages: {"role": customer|agent, "text"}
     eligibility   TEXT,                             -- JSON of the eligibility result, when one exists
-    status        TEXT NOT NULL DEFAULT 'open' CHECK (status IN ('open','approved','declined')),   -- 5a writes only 'open'
-    decision_note TEXT,                             -- empty in 5a (phase 5b)
-    decided_at    TEXT,                             -- empty in 5a (phase 5b)
-    decided_by    TEXT                              -- empty in 5a (phase 5b)
+    status        TEXT NOT NULL DEFAULT 'open' CHECK (status IN ('open','approved','declined')),   -- 5a wrote only 'open'; 5b decides
+    decision_note TEXT,                             -- the manager's note (phase 5b); never shown to the customer by default
+    decided_at    TEXT,                             -- 5b: set when a decision is claimed (the item stays 'open' until the write is done)
+    decided_by    TEXT,                             -- 5b: who decided; given by the caller, never read from a message
+    customer_notified_at TEXT,                      -- 5b: when the customer was told the outcome in chat; NULL until then
+    refund_method TEXT                              -- 5b: the refund method of a Pay on Delivery return; NULL for any other case
 );
 CREATE INDEX IF NOT EXISTS ix_review_items_case ON review_items(customer_id, order_item_id, kind, status);
 -- review_items:end

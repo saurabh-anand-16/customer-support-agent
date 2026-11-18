@@ -146,7 +146,8 @@ def test_each_queue_write_is_one_entry_in_the_checks_of_the_trace_in_the_4c_form
     entries = checks_named(result, "review_queue_write")
     assert len(entries) == 1 and set(entries[0]) == {"name", "passed", "reason"} and entries[0]["passed"] is True
     assert entries[0]["reason"].startswith("REV-0001 created")
-    assert all(set(c) == {"name", "passed", "reason"} for c in result["trace"]["checks"])
+    assert all(set(c) == {"name", "passed", "reason"} or (set(c) == {"name", "passed", "reason", "status"} and c["status"] == "blocked_by_design")
+               for c in result["trace"]["checks"])           # 5b: only a step blocked by design carries a status
     assert agent.sessions.get(sid).customer_id not in json.dumps(result["trace"])
 
 
@@ -192,11 +193,12 @@ def test_no_tool_schema_shown_to_the_model_mentions_the_queue(tmp_path, tools_rw
         assert word not in shown, word
 
 
-def test_only_the_escalation_module_uses_the_queue_module():
+def test_only_the_escalation_notice_and_decision_modules_use_the_queue_module():
     users = {p.relative_to(ROOT).as_posix() for p in (ROOT / "agent").rglob("*.py")
              if re.search(r"^\s*(from\s+\S*review_queue\s+import|import\s+\S*review_queue)", p.read_text(encoding="utf-8"), flags=re.M)
              and p.name != "review_queue.py"}
-    assert users == {"agent/escalation.py"}, users
+    # the seam writes items (5a); the notice reads and marks them in chat (5b); the decision module is the manager's side and is not in the chat
+    assert users == {"agent/escalation.py", "agent/review_notice.py", "agent/review_decision.py"}, users
 
 
 def test_no_prompt_or_template_in_config_has_a_field_for_queue_data_but_the_reference():

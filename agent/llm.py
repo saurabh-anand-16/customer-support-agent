@@ -138,6 +138,12 @@ class ReviewSettings:
     reply_template: str          # shown to the customer; {reference} is the only field
     error_reply: str             # shown when the queue write failed; no fields
     reasons: dict                # kind -> the one-sentence reason a queue item gets, filled in by code from tool data
+    reasons_by_requested_method: dict   # refund method the customer asked for that is not offered (paper_cheque) -> its own reason sentence (5b)
+    show_note_to_customer: bool  # false: the manager's note is never put in the outcome notice (5b)
+    note_max_chars: int          # a decision note longer than this is refused; a shown note is cut to it
+    default_decided_by: str      # the label scripts use when they give no decided_by
+    notices: dict                # the fixed texts of the outcome notice: approved, refund_line, declined, closed, note_line
+    decision_replies: dict       # the fixed texts a decision gives back to the caller (the manager side)
 
 
 @dataclass(frozen=True)
@@ -194,6 +200,16 @@ RETRY_FIELDS = {"problems", "facts"}
 # callers' own). A kind with no sentence in [review.reasons] could not be written, so every one must be there.
 REVIEW_KINDS = ("customer_asked_for_person", "late_request", "approval_required")
 REVIEW_REASON_FIELDS = {"item_id", "reason", "resolution", "approval_reasons", "day_number", "window_days", "days_late", "last_eligible_date"}
+# Phase 5b: the outcome notice a customer gets, and the texts a decision gives back. Each key has the fields it may use.
+REVIEW_NOTICE_FIELDS = {"approved": {"reference", "product_name", "item_id", "return_id", "refund_line"},
+                        "refund_line": {"amount", "method"},
+                        "declined": {"reference", "product_name", "item_id"},
+                        "closed": {"reference"},
+                        "note_line": {"note"}}
+REVIEW_DECISION_REPLIES = ("approved", "declined", "closed", "bad_decision", "bad_note", "note_too_long", "not_found", "already_decided",
+                           "decision_in_progress", "late_cannot_be_approved", "item_incomplete", "refund_method_missing",
+                           "refund_method_not_offered", "write_refused", "write_failed", "record_failed")
+REVIEW_DECISION_REPLY_FIELDS = {"reference", "message", "return_id", "limit"}
 
 _SPEC = {
     "model": (ModelSettings, {"name": str, "temperature": float, "max_output_tokens": int, "timeout_seconds": int,
@@ -212,7 +228,9 @@ _SPEC = {
     "answer_check": (AnswerCheckSettings, {"enabled": bool, "max_retries": int, "max_facts_listed": int, "max_passage_chars": int,
                                            "allowed_text": list, "retry_instruction": str, "replies": dict}),
     "review": (ReviewSettings, {"excerpt_messages": int, "excerpt_message_chars": int, "dedupe_open_items": bool,
-                                "reply_template": str, "error_reply": str, "reasons": dict}),
+                                "reply_template": str, "error_reply": str, "reasons": dict,
+                                "reasons_by_requested_method": dict, "show_note_to_customer": bool, "note_max_chars": int,
+                                "default_decided_by": str, "notices": dict, "decision_replies": dict}),
     "refund_method": (RefundMethodSettings, {"name": str, "temperature": float, "max_output_tokens": int, "max_message_chars": int,
                                              "not_offered": list, "escalation_kind": str, "prompt": str, "option_texts": dict,
                                              "notes": dict, "replies": dict}),
@@ -391,6 +409,33 @@ def _check_review(r: ReviewSettings, where: str) -> None:
         if found != wanted:
             raise AgentConfigError(f"{where}: [review].{key} must use exactly the fields {sorted(wanted)}, got {sorted(found)}")
     _check_table(where, "review.reasons", r.reasons, REVIEW_KINDS, REVIEW_REASON_FIELDS)
+    for method, text in r.reasons_by_requested_method.items():
+        if not isinstance(text, str) or not text.strip():
+            raise AgentConfigError(f"{where}: [review.reasons_by_requested_method].{method} must be non-empty text")
+        try:
+            used = _fields_of(text)
+        except ValueError as err:
+            raise AgentConfigError(f"{where}: [review.reasons_by_requested_method].{method} cannot be filled in ({err!r})") from err
+        if used - REVIEW_REASON_FIELDS:
+            raise AgentConfigError(f"{where}: [review.reasons_by_requested_method].{method} uses {sorted(used - REVIEW_REASON_FIELDS)}")
+    if r.note_max_chars < 1:
+        raise AgentConfigError(f"{where}: [review].note_max_chars must be 1 or more")
+    if not r.default_decided_by.strip():
+        raise AgentConfigError(f"{where}: [review].default_decided_by must not be empty")
+    for key, allowed in REVIEW_NOTICE_FIELDS.items():
+        text = r.notices.get(key)
+        if not isinstance(text, str) or not text.strip():
+            raise AgentConfigError(f"{where}: [review.notices] needs non-empty text for '{key}'")
+        try:
+            used = _fields_of(text)
+        except ValueError as err:
+            raise AgentConfigError(f"{where}: [review.notices].{key} cannot be filled in ({err!r})") from err
+        if used - allowed:
+            raise AgentConfigError(f"{where}: [review.notices].{key} uses {sorted(used - allowed)}; allowed fields: {', '.join(sorted(allowed))}")
+    extra = set(r.notices) - set(REVIEW_NOTICE_FIELDS)
+    if extra:
+        raise AgentConfigError(f"{where}: [review.notices] has {sorted(extra)}, which are not one of {', '.join(REVIEW_NOTICE_FIELDS)}")
+    _check_table(where, "review.decision_replies", r.decision_replies, REVIEW_DECISION_REPLIES, REVIEW_DECISION_REPLY_FIELDS)
 
 
 def _check_answer_check(a: AnswerCheckSettings, where: str) -> None:

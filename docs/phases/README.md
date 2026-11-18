@@ -25,7 +25,8 @@ Rules for these files:
 | 4d | Refund method question for Pay on Delivery returns | Done, in review ([build report](../builds/phase-04d-build.md)) | | [phase-04d-refund-method.md](phase-04d-refund-method.md) |
 | 4 | Agent: router, six branches, confirm step, answer check | Done as 4a, 4b, 4c and 4d | 3 to 4 | |
 | 5a | Review queue: `review_items` table, real escalation seam | Done, in review ([build report](../builds/phase-05a-build.md)) | | [phase-05a-review-queue.md](phase-05a-review-queue.md) |
-| 5 | Review gate, `request_review`, human help (5a done; 5b approve and decline next) | In progress | 1.5 to 2 | |
+| 5b | Manager decision: approve or decline, outcome notice to the customer | Done, in review ([build report](../builds/phase-05b-build.md)) | | [phase-05b-manager-decision.md](phase-05b-manager-decision.md) |
+| 5 | Review gate, `request_review`, human help | Done as 5a and 5b | 1.5 to 2 | |
 | 6 | Langfuse tracing | Not started | 1 | |
 | 7 | Streamlit shell, Home, persona picker, customer chat | Not started | 2 | |
 | 8 | Manager page | Not started | 1 | |

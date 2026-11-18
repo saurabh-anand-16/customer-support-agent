@@ -5,8 +5,11 @@ The writer is called from CODE, after the customer's yes was read by the confirm
 
   * the customer id comes from the session, never from the pending action and never from the model;
   * `confirmed=True` is written here, as a constant. The model's output is a label, nothing else, and has no way to set it;
-  * `staff_approved` is never passed. Only the review-queue code (phase 5b) may set it. When the tool says a reviewer must
-    approve first, nothing is written to orders or returns and the request goes to the escalation seam, which makes a queue item;
+  * `run_pending` never passes `staff_approved`. When the tool says a reviewer must approve first, nothing is written to
+    orders or returns and the request goes to the escalation seam, which makes a queue item. That refusal is "blocked by design"
+    (a check with status blocked_by_design), not a failure;
+  * `staff_approved=True` is written in ONE place in the whole code base: `run_approved_return`, below (phase 5b). Only
+    agent/review_decision.py calls it, after a manager approved a queue item. No chat path, branch or model reaches it;
   * the tool re-runs every check itself (eligibility, resolution, status), so a pending action that went stale is refused;
   * a Pay on Delivery refund (pending["needs_refund_method"]) carries the refund method the customer chose in the pending action.
     It is checked here against the tool's own list (get_refund_timeline) before it is passed, and it is passed by code only:
@@ -19,7 +22,7 @@ from dataclasses import dataclass, field
 
 from .branches.base import fill
 from .branches.return_or_replace import money
-from .checks import check
+from .checks import blocked_by_design, check
 from .llm import AgentConfig
 from .refund_method import ORDER_TYPE, STAGE_CONFIRM, read_options
 
@@ -68,6 +71,17 @@ def run_pending(session, pending: dict, tools, cfg: AgentConfig, escalate_fn=Non
     return result
 
 
+def run_approved_return(tools, customer_id: str, item_id: str, reason: str, resolution: str, refund_method: str | None = None) -> dict:
+    """
+    Write a return that a manager approved (phase 5b). The ONLY place that sets `staff_approved=True`; the only caller is
+    agent/review_decision.py. `confirmed=True` is set here too, as a constant. The tool still re-runs every other check
+    itself (eligibility and window, resolution, existing return, refund method), so a manager's approval covers the staff-approval
+    rule and nothing else. Returns the tool's own result unchanged.
+    """
+    extra = {} if refund_method is None else {"refund_method": refund_method}
+    return tools.create_return(customer_id, item_id, reason, resolution, confirmed=True, staff_approved=True, **extra)
+
+
 def _checked_method(pending: dict, params: dict, tools, cfg: AgentConfig):
     """
     The refund method of a Pay on Delivery return, checked against the tool's list read now. Returns (method or None, checks).
@@ -103,17 +117,19 @@ def _after_return(session, pending, args, output, tools, cfg, escalate_fn) -> Ac
     if output.get("ok") is not True:
         code = output.get("error_code")
         if code == "staff_approval_required":              # the review gate: nothing was written, the seam is asked
+            # the stored eligibility also keeps the reason code and the resolution, which a manager's approval needs to write the return
             details = {"item_id": args["item_id"], "reason": args["reason"], "resolution": args["resolution"],
-                       "approval_reasons": output.get("approval_reasons", []), "eligibility": _eligibility_of(pending)}
-            if args.get("refund_method"):                      # phase 5b will store this; for now it travels in `details`
+                       "approval_reasons": output.get("approval_reasons", []),
+                       "eligibility": {**_eligibility_of(pending), "reason": args["reason"], "resolution": args["resolution"]}}
+            if args.get("refund_method"):                      # the queue stores it in the refund_method column (phase 5b)
                 details["refund_method"] = args["refund_method"]
             sent = (escalate_fn(session, "approval_required", details, cfg.review.reply_template) if escalate_fn is not None
                     else {"queued": False, "reply": cfg.review.error_reply, "reason": "approval_required", "details": details,
                           "note": "no review queue is wired; nothing was queued",
                           "check": check("review_queue_write", False, "no review queue is wired; nothing was queued")})
             return ActionResult(sent["reply"], escalation=sent, error_code=code,
-                                checks=[check("review_gate", False, f"a reviewer must approve first ({', '.join(output.get('approval_reasons', []))}); nothing was written"),
-                                        check("write", False, "the tool refused: staff_approval_required"), sent["check"]])
+                                checks=[blocked_by_design("review_gate", f"a reviewer must approve first ({', '.join(output.get('approval_reasons', []))}); nothing was written, as designed"),
+                                        blocked_by_design("write", "not written: this request needs a reviewer's approval first (staff_approval_required)"), sent["check"]])
         if code == "refund_method_required":
             return ActionResult(fill(r["refund_method_needed"], options=", ".join(m.replace("_", " ") for m in output.get("valid", []))),
                                 error_code=code, checks=[check("write", False, "the tool needs a refund method (Pay on Delivery); nothing was written")])

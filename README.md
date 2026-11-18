@@ -52,7 +52,7 @@ On Windows use `py` instead of `python` if `python` is not found. Every script p
 | `data/rag/` | The vector index and embedding cache (generated; not committed) |
 | `config/rag.toml` | Every tunable value for policy search: chunking, metadata, embedding, retrieval, profiles |
 | `docs/phases/` | One document per build phase: what it is for, files touched, how it was checked |
-| `tests/` | 1231 tests run by default (67 for the tools, 409 for policy search, 187 for the session and router, 227 for the branch flows, 170 for the confirm step, answer check and guardrails, 97 for the review queue, 73 for the refund-method question, 1 for the database build script), plus 23 `live` tests; run with `python -m pytest` (`-m live` for the live ones) |
+| `tests/` | 1296 tests run by default (67 for the tools, 409 for policy search, 187 for the session and router, 227 for the branch flows, 170 for the confirm step, answer check and guardrails, 97 for the review queue, 73 for the refund-method question, 1 for the database build script, 65 for the manager's decision and the outcome notice), plus 34 `live` tests; run with `python -m pytest` (`-m live` for the live ones) |
 
 ## What each script does
 
@@ -152,6 +152,10 @@ For replies the model writes (order status and policy answers), `agent/answer_ch
 ## The agent: the review queue (phase 5a)
 
 A case that needs a person becomes one row in the `review_items` table (defined in `schema.sql`; the table is the only change to the database, and every older table is identical). Three cases do this today: the customer asks for a person (`customer_asked_for_person`), a request is past the window (`late_request`), and the customer confirms a return that needs staff approval (`approval_required`). `agent/escalation.py` is the one door. It writes the item through `agent/review_queue.py`, which has three functions (create, list, read) and cannot change orders or returns. The reason sentence is written by code from the tool result; the excerpt holds the last few customer and agent messages; the same customer, order item and kind with an open item gives the old reference back instead of a second item. The customer reads one fixed text from `[review]` in `config/agent.toml` with the reference in it, and the model never sees the queue or the customer id. If the write fails, the reply is a fixed error text and the trace holds a failed `review_queue_write` check. Nothing is approved or declined yet: that is phase 5b. `python scripts/12_live_review_paths.py` runs the real model through four cases on a copy of the database.
+
+## The agent: the manager's decision (phase 5b)
+
+A manager approves or declines a queued case with `decide(item_id, decision, note, decided_by, queue=..., tools=..., cfg=...)` in `agent/review_decision.py`. It is not part of the chat: no tool, schema, branch, graph node or confirm step reaches it, and tests fail if one imports it. **There is no manager login yet.** `decided_by` is whatever the caller passes; the Manager page (phase 8) will have no real authentication either, so anyone who can call it can decide. Approving an `approval_required` case writes the return with the order item, reason, resolution and refund method stored with the case (a Pay on Delivery refund with no stored method is refused and stays open). A `late_request` cannot be approved, because the tool never lets staff approval cover the window; it can be declined. A request for a person is simply closed. On the customer's next message the agent puts a fixed-text notice in front of its reply, once, and never shows the manager's note unless `[review].show_note_to_customer` is true. Details and results are in [the phase document](docs/phases/phase-05b-manager-decision.md).
 
 ## Day counting
 

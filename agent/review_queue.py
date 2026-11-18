@@ -1,7 +1,8 @@
 """
 review_queue.py - the review queue: a table of cases a person must look at (phase 5a).
 
-Three functions and nothing else: create_item, list_items, get_item.
+Phase 5a: create_item, list_items, get_item. Phase 5b adds the small steps the decision code and the customer notice need:
+claim, release, finish (record a decision), unnotified and mark_notified. None of them touches orders or returns.
 
 This module only reads and writes the review_items table. It does not import the agent's tools or the writers, and it has no
 function that touches orders or return requests. A test reads this file and fails if that changes.
@@ -11,7 +12,14 @@ reaches a customer is the reference (for example REV-0001), put into a fixed rep
 
 The table is defined once, in schema.sql, between the markers `review_items:begin` and `review_items:end`. A database built
 before this phase gets the table the first time a ReviewQueue is opened on it (CREATE TABLE IF NOT EXISTS; no other table
-is touched).
+is touched). A table made by phase 5a gets the two columns of phase 5b (ADD COLUMN, nothing else is changed).
+
+How a decision is recorded (the decision code is agent/review_decision.py; this module only does the table steps):
+  claim    sets decided_at and decided_by on an item that is still open and has no claim. One item can be claimed once, so
+           two decisions at the same time cannot both go on to write. The status stays 'open' while the claim is held, so
+           nobody (and no customer notice) sees an approval that has not been written yet.
+  release  removes the claim of an item that is still open (the write failed).
+  finish   sets the final status and note on a claimed item.
 """
 import json
 import re
@@ -22,7 +30,12 @@ from pathlib import Path
 SCHEMA_SQL = Path(__file__).resolve().parent.parent / "schema.sql"
 REFERENCE_PREFIX = "REV-"
 
-OPEN = "open"    # the only status phase 5a writes
+OPEN = "open"
+APPROVED, DECLINED = "approved", "declined"
+DECIDED = (APPROVED, DECLINED)
+
+# Columns that phase 5b added to the 5a table: (name, type). A table made before 5b gets them with ADD COLUMN.
+LATER_COLUMNS = (("customer_notified_at", "TEXT"), ("refund_method", "TEXT"))
 
 
 class ReviewQueueError(RuntimeError):
@@ -63,9 +76,13 @@ class ReviewQueue:
             self.con = sqlite3.connect(db, isolation_level=None)
         self.con.row_factory = sqlite3.Row
         self.con.executescript(table_sql())
+        have = {r["name"] for r in self.con.execute("PRAGMA table_info(review_items)")}
+        for name, kind in LATER_COLUMNS:
+            if name not in have:
+                self.con.execute(f"ALTER TABLE review_items ADD COLUMN {name} {kind}")
 
     # -- write ------------------------------------------------------------------------------------------
-    def create_item(self, *, customer_id, kind, reason, order_item_id=None, excerpt=None, eligibility=None, dedupe=True) -> dict:
+    def create_item(self, *, customer_id, kind, reason, order_item_id=None, excerpt=None, eligibility=None, refund_method=None, dedupe=True) -> dict:
         """
         Add one open item. Returns {"item": the stored row, "created": True}.
         With `dedupe`, an open item for the same customer, order item and kind is returned instead of a second one,
@@ -78,6 +95,8 @@ class ReviewQueue:
             raise ValueError("a review item's excerpt must be a list of messages")
         if eligibility is not None and not isinstance(eligibility, dict):
             raise ValueError("a review item's eligibility must be a dict")
+        if refund_method is not None:
+            refund_method = _need_text("refund_method", refund_method)
         self.con.execute("BEGIN IMMEDIATE")        # the check for an open item and the insert happen as one step
         try:
             if dedupe:
@@ -89,11 +108,11 @@ class ReviewQueue:
             last = self.con.execute("SELECT MAX(CAST(SUBSTR(id, ?) AS INTEGER)) FROM review_items", (len(REFERENCE_PREFIX) + 1,)).fetchone()[0]
             item_id = f"{REFERENCE_PREFIX}{(last or 0) + 1:04d}"
             self.con.execute(
-                "INSERT INTO review_items (id, created_at, customer_id, order_item_id, kind, reason, excerpt, eligibility, status) "
-                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                "INSERT INTO review_items (id, created_at, customer_id, order_item_id, kind, reason, excerpt, eligibility, status, refund_method) "
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
                 (item_id, self._now(), customer_id, order_item_id, kind, reason,
                  None if excerpt is None else json.dumps(excerpt, ensure_ascii=False),
-                 None if eligibility is None else json.dumps(eligibility, ensure_ascii=False), OPEN))
+                 None if eligibility is None else json.dumps(eligibility, ensure_ascii=False), OPEN, refund_method))
             self.con.execute("COMMIT")
         except BaseException:
             if self.con.in_transaction:
@@ -120,6 +139,39 @@ class ReviewQueue:
         else:
             rows = self.con.execute("SELECT * FROM review_items WHERE status = ? ORDER BY id", (status,)).fetchall()
         return [self._row(r) for r in rows]
+
+    # -- decision steps (phase 5b) ------------------------------------------------------------------------
+    def claim(self, item_id: str, decided_by: str) -> bool:
+        """Take the item for a decision. True only for the one caller that finds it open and not yet claimed."""
+        done = self.con.execute("UPDATE review_items SET decided_at = ?, decided_by = ? WHERE id = ? AND status = ? AND decided_at IS NULL",
+                                (self._now(), decided_by, item_id, OPEN))
+        return done.rowcount == 1
+
+    def release(self, item_id: str) -> bool:
+        """Give the claim back (the write failed): the item is open and unclaimed again."""
+        done = self.con.execute("UPDATE review_items SET decided_at = NULL, decided_by = NULL, decision_note = NULL WHERE id = ? AND status = ?",
+                                (item_id, OPEN))
+        return done.rowcount == 1
+
+    def finish(self, item_id: str, status: str, note: str | None, decided_by: str) -> bool:
+        """Record the decision on a claimed item. False when the item is not claimed and open (nothing is changed)."""
+        if status not in DECIDED:
+            raise ValueError("a decision is 'approved' or 'declined'")
+        done = self.con.execute("UPDATE review_items SET status = ?, decision_note = ?, decided_by = ? WHERE id = ? AND status = ? AND decided_at IS NOT NULL",
+                                (status, note, decided_by, item_id, OPEN))
+        return done.rowcount == 1
+
+    def unnotified(self, customer_id: str) -> list:
+        """The decided items of this customer, and only this customer, that they have not been told about. Oldest first."""
+        rows = self.con.execute("SELECT * FROM review_items WHERE customer_id = ? AND status IN (?, ?) AND customer_notified_at IS NULL ORDER BY id",
+                                (customer_id, *DECIDED)).fetchall()
+        return [self._row(r) for r in rows]
+
+    def mark_notified(self, item_id: str) -> bool:
+        """True for the one caller that marks the item as told. A second call (or a second chat at the same time) gets False."""
+        done = self.con.execute("UPDATE review_items SET customer_notified_at = ? WHERE id = ? AND status != ? AND customer_notified_at IS NULL",
+                                (self._now(), item_id, OPEN))
+        return done.rowcount == 1
 
     def close(self) -> None:
         self.con.close()

@@ -44,7 +44,8 @@ def test_the_build_script_makes_a_complete_database_in_a_throwaway_copy(tmp_path
             assert con.execute(f"SELECT COUNT(*) FROM {table}").fetchone()[0] >= rows - 1, table
         assert con.execute("SELECT COUNT(*) FROM review_items").fetchone()[0] == 0           # the queue table exists and starts empty
         columns = {r[1] for r in con.execute("PRAGMA table_info(review_items)")}
-        assert {"id", "customer_id", "order_item_id", "kind", "reason", "excerpt", "eligibility", "status"} <= columns
+        assert {"id", "customer_id", "order_item_id", "kind", "reason", "excerpt", "eligibility", "status",
+                "decision_note", "decided_at", "decided_by", "customer_notified_at", "refund_method"} <= columns        # 5b: the two new columns are built too
         assert con.execute("SELECT value FROM config WHERE key='today'").fetchone()[0] == "2026-11-17"
         assert con.execute("SELECT COUNT(*) FROM v_item_eligibility").fetchone()[0] > 0       # the window view is there
         assert con.execute("PRAGMA foreign_key_check").fetchall() == []

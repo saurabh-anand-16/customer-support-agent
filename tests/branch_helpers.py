@@ -139,6 +139,24 @@ FIXED_REVIEW = {
         "late_request": "REASON late item={item_id} day={day_number} window={window_days} late={days_late} last={last_eligible_date}",
         "approval_required": "REASON approval {resolution} item={item_id} because={approval_reasons}",
     },
+    "reasons_by_requested_method": {"paper_cheque": "REASON cheque-exceptional"},
+    "show_note_to_customer": False, "note_max_chars": 60, "default_decided_by": "test-script",
+    "notices": {
+        "approved": "NOTICE-APPROVED {reference} {product_name} {item_id} return={return_id}{refund_line}",
+        "refund_line": " REFUND {amount} -> {method}",
+        "declined": "NOTICE-DECLINED {reference} {product_name} {item_id}",
+        "closed": "NOTICE-CLOSED {reference}",
+        "note_line": " NOTE[{note}]",
+    },
+    "decision_replies": {
+        "approved": "DONE-APPROVED {reference} {return_id}", "declined": "DONE-DECLINED {reference}", "closed": "DONE-CLOSED {reference}",
+        "bad_decision": "BAD-DECISION", "bad_note": "BAD-NOTE", "note_too_long": "NOTE-TOO-LONG {limit}", "not_found": "NO-ITEM {reference}",
+        "already_decided": "ALREADY-DECIDED {reference}", "decision_in_progress": "IN-PROGRESS {reference}",
+        "late_cannot_be_approved": "LATE-CANNOT-APPROVE {reference}", "item_incomplete": "INCOMPLETE {reference}",
+        "refund_method_missing": "METHOD-MISSING {reference}", "refund_method_not_offered": "METHOD-NOT-OFFERED {reference}",
+        "write_refused": "WRITE-REFUSED {message} {reference}", "write_failed": "WRITE-FAILED {reference}",
+        "record_failed": "RECORD-FAILED {return_id} {reference}",
+    },
 }
 
 

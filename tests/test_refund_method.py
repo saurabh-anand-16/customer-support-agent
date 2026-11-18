@@ -308,16 +308,18 @@ def test_a_pay_on_delivery_return_that_needs_approval_asks_the_method_first_and_
     assert result["trace"]["confirm"]["escalation"]["reason"] == "approval_required"
     (name, args, kwargs), = spy.writer_calls                                                          # asked once, refused by the tool
     assert kwargs == {"confirmed": True, "refund_method": "neft_bank_account"} and "staff_approved" not in kwargs
-    assert ("review_gate", False) in check_names(result) and item["customer_id"] not in json.dumps(result["trace"])
+    assert ("review_gate", True) in check_names(result) and item["customer_id"] not in json.dumps(result["trace"])    # blocked by design (5b)
+    assert [c.get("status") for c in result["trace"]["checks"] if c["name"] == "review_gate"] == ["blocked_by_design"]
 
 
-def test_the_method_is_only_in_details_and_the_queue_table_is_unchanged(tmp_path, tools_rw, pick, raw):
+def test_the_method_is_stored_in_the_refund_method_column_of_the_queue(tmp_path, tools_rw, pick, raw):
     agent, _, sid, spy, _, _ = propose_pod(tmp_path, tools_rw, pick, raw, method=[method_label("amazon_pay_balance")], confirm=[label("confirm")],
                                            prepare=restrict)
     agent.respond(sid, "pay balance")
     agent.respond(sid, "yes")
     columns = [r["name"] for r in agent._queue.con.execute("PRAGMA table_info(review_items)")]
-    assert "refund_method" not in columns and "details" not in columns                                # phase 5b adds the column
+    assert "refund_method" in columns and "details" not in columns                                    # phase 5b added the column
+    assert agent._queue.get_item("REV-0001")["refund_method"] == "amazon_pay_balance"                  # the 4d method, stored with the case
 
 
 # === decline, change and unclear after the method was chosen write nothing =========================================================

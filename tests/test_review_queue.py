@@ -36,7 +36,8 @@ def test_an_item_stores_and_reads_every_field():
     assert q.get_item("REV-0001") == {
         "id": "REV-0001", "created_at": NOW, "customer_id": "C-1", "order_item_id": "OI-1", "kind": "late_request",
         "reason": "One plain sentence.", "excerpt": EXCERPT, "eligibility": ELIGIBILITY, "status": "open",
-        "decision_note": None, "decided_at": None, "decided_by": None}
+        "decision_note": None, "decided_at": None, "decided_by": None,
+        "customer_notified_at": None, "refund_method": None}
     assert made["item"] == q.get_item("REV-0001")
 
 
@@ -131,7 +132,7 @@ def test_the_table_has_the_documented_columns_and_only_these_statuses():
     q = make()
     columns = [r["name"] for r in q.con.execute("PRAGMA table_info(review_items)")]
     assert columns == ["id", "created_at", "customer_id", "order_item_id", "kind", "reason", "excerpt", "eligibility", "status",
-                       "decision_note", "decided_at", "decided_by"]
+                       "decision_note", "decided_at", "decided_by", "customer_notified_at", "refund_method"]
     with pytest.raises(sqlite3.IntegrityError):
         q.con.execute("INSERT INTO review_items (id, created_at, customer_id, kind, reason, status) VALUES ('X','t','c','k','r','maybe')")
 
@@ -219,10 +220,11 @@ def test_the_queue_module_names_no_writer_and_no_table_but_its_own():
             assert "review_items" in node.value
 
 
-def test_the_queue_module_has_only_the_three_functions_the_phase_allows():
+def test_the_queue_module_has_only_the_functions_the_phases_allow():
     cls = next(n for n in _tree().body if isinstance(n, ast.ClassDef) and n.name == "ReviewQueue")
     public = {n.name for n in cls.body if isinstance(n, ast.FunctionDef) and not n.name.startswith("_")}
-    assert public == {"create_item", "list_items", "get_item", "close"}
+    assert public == {"create_item", "list_items", "get_item", "close",                      # phase 5a
+                      "claim", "release", "finish", "unnotified", "mark_notified"}         # phase 5b: table steps only
 
 
 def test_the_schema_block_the_queue_runs_touches_only_the_review_table():

@@ -214,12 +214,17 @@ def test_only_actions_dot_py_calls_a_writer():
     assert callers == ["actions.py"], callers
 
 
-def test_actions_dot_py_hardcodes_confirmed_true_and_never_names_staff_approved():
+def test_actions_dot_py_hardcodes_confirmed_true_and_the_chat_path_never_names_staff_approved():
+    import ast
     source = (AGENT_DIR / "actions.py").read_text(encoding="utf-8")
     code = re.sub(r'""".*?"""', "", source, flags=re.S)                          # leave out the module docstring
     code = "\n".join(line for line in code.splitlines() if not line.lstrip().startswith("#"))
-    assert code.count("confirmed=True") == 2
-    assert "staff_approved=" not in code and "customer_id=" not in code
+    assert code.count("confirmed=True") == 3                                     # create_return, cancel_order, and the approved return of 5b
+    assert "customer_id=" not in code
+    # the chat path (run_pending and what it calls) never names staff_approved; only run_approved_return does (phase 5b)
+    functions = {n.name: ast.get_source_segment(source, n) for n in ast.parse(source).body if isinstance(n, ast.FunctionDef)}
+    named = [name for name, text in functions.items() if re.search(r"staff_approved\s*=", text)]
+    assert named == ["run_approved_return"], named
 
 
 def test_the_graph_hands_the_writers_nothing_but_the_session(tmp_path, tools_rw, pick, raw):

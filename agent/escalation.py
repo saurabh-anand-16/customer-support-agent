@@ -9,6 +9,8 @@ approval_required), `details` is plain data from tools, and `reply_template` is 
   * writes the item's one-sentence reason itself, from the details and the fixed texts in config; the model writes none of it;
   * keeps the last [review].excerpt_messages messages of the conversation (customer and agent text only);
   * returns the reply: the fixed template with the reference filled in, and nothing else of the queue;
+  * stores the refund method of a Pay on Delivery return (details["refund_method"], set by agent/actions.py) in the item's
+    refund_method column; any other case leaves it empty (phase 5b);
   * returns one guardrail entry ({name, passed, reason}) for the trace. If the write fails, the reply is the fixed error text,
     the entry is a failed check, and "queued" is False. A failed write never looks like a success.
 
@@ -48,6 +50,8 @@ class Escalator:
     # -- the pieces, each from fixed text and data -----------------------------------------------------------
     def _reason_sentence(self, kind: str, details: dict) -> str:
         template = self.cfg.review.reasons[kind]          # an unknown kind is a KeyError, which is a failed write
+        # a case that asks for a refund method this agent does not offer (a paper cheque) keeps its kind but has its own sentence
+        template = self.cfg.review.reasons_by_requested_method.get(details.get("requested_refund_method"), template)
         approval = self.cfg.branches.approval_texts
         why = ", and ".join(approval.get(code, code) for code in details.get("approval_reasons") or [])
         return fill(template, approval_reasons=why, **{k: v for k, v in details.items() if isinstance(v, (str, int, float))}).strip()
@@ -73,7 +77,7 @@ class Escalator:
             made = self.queue_source().create_item(
                 customer_id=session.customer_id, kind=kind, reason=self._reason_sentence(kind, details),
                 order_item_id=details.get("item_id"), excerpt=self._excerpt(session),
-                eligibility=details.get("eligibility"), dedupe=r.dedupe_open_items)
+                eligibility=details.get("eligibility"), refund_method=details.get("refund_method"), dedupe=r.dedupe_open_items)
         except Exception as err:
             # any failure is a failed write, never a crash and never a success. Only the kind of error is recorded: its text could hold a path or an id
             record["note"] = f"the review queue write failed ({type(err).__name__}); nothing was queued"

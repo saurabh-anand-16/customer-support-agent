@@ -1,5 +1,5 @@
 """
-09_mutation_check.py - break each safety rule on purpose and check that a test notices (phases 4c, 5a and 4d).
+09_mutation_check.py - break each safety rule on purpose and check that a test notices (phases 4c, 5a, 4d and 5b).
 
     python scripts/09_mutation_check.py              # all mutations
     python scripts/09_mutation_check.py M07 M11      # only these
@@ -10,6 +10,9 @@ one change is made to one file in the copy, and the test files below are run the
 one test fails, which is what we want: a test names the rule. A SURVIVOR (all tests pass) means no test checks that rule.
 The original files are never touched. The change is exactly one replacement; if the text to replace is not found exactly
 once, the script stops, because the mutation list is out of date.
+Phase 5b: a rule that the code guards in more than one place (for example "an item is decided once": a check in decide and a
+guard in the queue's claim) is broken in ALL its places by one mutation, which then gives `path`, `old` and `new` as lists of the
+same length. Breaking one place alone leaves the others working, so no test could tell, and that mutant would prove nothing.
 """
 import argparse
 import re
@@ -25,7 +28,7 @@ TESTS = ["tests/test_confirm_step.py", "tests/test_answer_check.py", "tests/test
          "tests/test_tool_adapter.py", "tests/test_agent_branches.py", "tests/test_agent_flow.py", "tests/test_branch_cancel.py",
          "tests/test_branch_return.py", "tests/test_branch_policy.py", "tests/test_branch_order_status.py", "tests/test_session.py",
          "tests/test_review_queue.py", "tests/test_escalation.py", "tests/test_review_safety.py", "tests/test_branch_human_help.py",
-         "tests/test_refund_method.py", "tests/test_build_script.py", "tests/test_router.py"]
+         "tests/test_refund_method.py", "tests/test_build_script.py", "tests/test_router.py", "tests/test_review_decision.py"]
 
 # (id, the rule that is broken, file, text to replace, replacement)
 MUTATIONS = [
@@ -180,7 +183,83 @@ MUTATIONS = [
      "max_unclear_asks = 3 ", "max_unclear_asks = 1 "),
     ("M73", "the build script creates the review queue's table", "scripts/04_build_db.py",
      'con.executescript(SCHEMA_SQL.read_text(encoding="utf-8"))', 'con.executescript(SCHEMA_SQL.read_text(encoding="utf-8").split("-- review_items:begin")[0])'),
+    # --- phase 5b: the manager's decision and the outcome notice ---
+    ("M74", "an item is decided once: only an open, unclaimed item can be decided (every guard)",
+     ["agent/review_decision.py", "agent/review_decision.py", "agent/review_queue.py"],
+     ['if item["status"] != OPEN:', 'if item["decided_at"] is not None:',
+      '"UPDATE review_items SET decided_at = ?, decided_by = ? WHERE id = ? AND status = ? AND decided_at IS NULL",\n                                (self._now(), decided_by, item_id, OPEN))'],
+     ['if False:', 'if False:',
+      '"UPDATE review_items SET decided_at = ?, decided_by = ? WHERE id = ?",\n                                (self._now(), decided_by, item_id))']),
+    ("M75", "a claim cannot be taken twice (the claim itself is atomic)", "agent/review_queue.py",
+     'WHERE id = ? AND status = ? AND decided_at IS NULL",\n                                (self._now(), decided_by, item_id, OPEN))',
+     'WHERE id = ? AND status = ?",\n                                (self._now(), decided_by, item_id, OPEN))'),
+    ("M76", "a write that raises gives the claim back", "agent/review_decision.py",
+     "# a failed write: give the claim back\n            queue.release(item_id)", "# a failed write: give the claim back\n            pass"),
+    ("M77", "a write the tool refuses gives the claim back", "agent/review_decision.py",
+     'if not isinstance(output, dict) or output.get("ok") is not True:\n            queue.release(item_id)',
+     'if not isinstance(output, dict) or output.get("ok") is not True:\n            pass'),
+    ("M78", "release clears the claim completely", "agent/review_queue.py",
+     "SET decided_at = NULL, decided_by = NULL, decision_note = NULL WHERE", "SET decision_note = NULL WHERE"),
+    ("M79", "staff_approved is set in one place only (actions.run_approved_return)", "agent/review_decision.py",
+     'output = run_approved_return(tools, writer_args["customer_id"], writer_args["item_id"], writer_args["reason"],\n                                         writer_args["resolution"], writer_args["refund_method"])',
+     'output = tools.create_return(writer_args["customer_id"], writer_args["item_id"], writer_args["reason"],\n                                         writer_args["resolution"], confirmed=True, staff_approved=True)'),
+    ("M80", "an approval is written with staff_approved set by the approved writer", "agent/actions.py",
+     "confirmed=True, staff_approved=True, **extra)", "confirmed=True, **extra)"),
+    ("M81", "approve on a late request is refused", "agent/review_decision.py",
+     'if decision == APPROVE and kind == "late_request":', "if False:"),
+    ("M82", "a Pay on Delivery case with no stored method is refused on approve", "agent/review_decision.py",
+     "if not isinstance(stored, str) or not stored:", "if False:"),
+    ("M83", "a stored method this agent does not offer is refused on approve", "agent/review_decision.py",
+     "if options.error or stored not in options.offered:", "if options.error:"),
+    ("M84", "decline writes nothing", "agent/review_decision.py",
+     'if decision == APPROVE and kind == "approval_required":', 'if kind == "approval_required":'),
+    ("M85", "a request for a person writes nothing", "agent/review_decision.py",
+     'if decision == APPROVE and kind == "approval_required":', 'if decision == APPROVE and kind != "late_request":'),
+    ("M86", "the error of a failed write is recorded by type only", "agent/review_decision.py",
+     'reason = f"the write failed ({type(err).__name__});', 'reason = f"the write failed ({err});'),
+    ("M87", "the decision records who decided, as given by the caller", "agent/review_decision.py",
+     "    if not queue.finish(item_id, status, note, decided_by):            # the return", "    if not queue.finish(item_id, status, note, 'model'):            # the return"),
+    ("M88", "the default decided_by label comes from config", "agent/review_decision.py",
+     "decided_by = r.default_decided_by", 'decided_by = "script"'),
+    ("M89", "a note over the length limit is refused", "agent/review_decision.py",
+     "if len(note) > r.note_max_chars:", "if False:"),
+    ("M90", "a customer is told only about their own cases", "agent/review_queue.py",
+     "WHERE customer_id = ? AND status IN (?, ?)", "WHERE ? IS NOT NULL AND status IN (?, ?)"),
+    ("M91", "a case already told is not listed again", "agent/review_queue.py",
+     "AND customer_notified_at IS NULL ORDER BY id", "ORDER BY id"),
+    ("M92", "marking as told succeeds for one caller only", "agent/review_queue.py",
+     "WHERE id = ? AND status != ? AND customer_notified_at IS NULL", "WHERE id = ? AND status != ?"),
+    ("M93", "a notice is added only for a case that was marked as told", "agent/review_notice.py",
+     'elif queue.mark_notified(item["id"]):', "elif True:"),
+    ("M94", "the manager's note is not shown to the customer by default", "agent/review_notice.py",
+     'if cfg.review.show_note_to_customer and item.get("decision_note"):', 'if item.get("decision_note"):'),
+    ("M95", "a shown note is cut to the length limit", "agent/review_notice.py",
+     'item["decision_note"][:cfg.review.note_max_chars]', 'item["decision_note"]'),
+    ("M96", "an approval whose return cannot be read is not announced", "agent/review_notice.py",
+     "        if not row:\n", "        if False:\n"),
+    ("M97", "the cheque case has its own reason sentence", "agent/escalation.py",
+     'template = self.cfg.review.reasons_by_requested_method.get(details.get("requested_refund_method"), template)', "pass"),
+    ("M98", "the queue stores the refund method of the case", "agent/escalation.py",
+     'refund_method=details.get("refund_method"), ', ""),
+    ("M99", "the queued case keeps the reason and resolution an approval needs", "agent/actions.py",
+     '"eligibility": {**_eligibility_of(pending), "reason": args["reason"], "resolution": args["resolution"]}}', '"eligibility": _eligibility_of(pending)}'),
+    ("M100", "the review gate of an approval-needed case reads as blocked by design", "agent/actions.py",
+     'blocked_by_design("review_gate", ', 'check("review_gate", False, '),
+    ("M101", "the write of an approval-needed case reads as blocked by design", "agent/actions.py",
+     'blocked_by_design("write", ', 'check("write", False, '),
+    ("M102", "a table made by phase 5a gets the new columns", "agent/review_queue.py",
+     "            if name not in have:", "            if False:"),
+    ("M103", "the build script's table has the refund_method column", "schema.sql",
+     "    refund_method TEXT  ", "    refund_methodX TEXT "),
+    ("M104", "nothing a customer reaches imports the decision module", "agent/branches/base.py",
+     "from ..checks import check\n", "from ..checks import check\nfrom ..review_decision import decide\n"),
+    ("M105", "the agent adds the outcome notice to the reply", "agent/agent.py",
+     'reply = notice + "\\n\\n" + state["reply"] if notice else state["reply"]', 'reply = state["reply"]'),
 ]
+
+
+def as_list(value) -> list:
+    return list(value) if isinstance(value, (list, tuple)) else [value]
 
 
 def run_tests(workdir: Path) -> tuple[int, str]:
@@ -201,7 +280,7 @@ def main() -> int:
     args = parser.parse_args()
     if args.list:
         for mid, rule, path, *_ in MUTATIONS:
-            print(f"{mid}  {path:<40} {rule}")
+            print(f"{mid}  {', '.join(as_list(path)):<40} {rule}")
         return 0
     chosen = [m for m in MUTATIONS if not args.ids or m[0] in args.ids]
     with tempfile.TemporaryDirectory(prefix="mutation_") as tmp:
@@ -220,20 +299,28 @@ def main() -> int:
             return 2
         survivors = []
         for mid, rule, path, old, new in chosen:
-            target = work / path
-            original = target.read_text(encoding="utf-8")
-            if original.count(old) != 1:
-                print(f"{mid}: the text to replace was found {original.count(old)} times in {path}; the mutation list is out of date")
-                return 2
-            target.write_text(original.replace(old, new), encoding="utf-8", newline="")
+            paths, olds, news = as_list(path), as_list(old), as_list(new)
+            originals = {}
+            for one_path, one_old in zip(paths, olds):
+                text = (work / one_path).read_text(encoding="utf-8")
+                originals.setdefault(one_path, text)
+                if text.count(one_old) != 1:
+                    print(f"{mid}: the text to replace was found {text.count(one_old)} times in {one_path}; the mutation list is out of date")
+                    return 2
+            changed = dict(originals)
+            for one_path, one_old, one_new in zip(paths, olds, news):
+                changed[one_path] = changed[one_path].replace(one_old, one_new)
+            for one_path, text in changed.items():
+                (work / one_path).write_text(text, encoding="utf-8", newline="")
             try:
                 code, out = run_tests(work)
             finally:
-                target.write_text(original, encoding="utf-8", newline="")
+                for one_path, text in originals.items():
+                    (work / one_path).write_text(text, encoding="utf-8", newline="")
             status = "SURVIVED" if code == 0 else "killed"
             if code == 0:
                 survivors.append(mid)
-            print(f"{mid} {status:<8} {path:<38} {rule}\n      first failing test: {first_failure(out) or '-'}")
+            print(f"{mid} {status:<8} {', '.join(sorted(set(paths))):<38} {rule}\n      first failing test: {first_failure(out) or '-'}")
         print(f"\n{len(chosen) - len(survivors)} of {len(chosen)} mutations killed" + (f"; survivors: {', '.join(survivors)}" if survivors else ""))
         return 1 if survivors else 0
 
