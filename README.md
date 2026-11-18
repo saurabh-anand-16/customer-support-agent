@@ -50,7 +50,7 @@ On Windows use `py` instead of `python` if `python` is not found. Every script p
 | `data/rag/` | The vector index and embedding cache (generated; not committed) |
 | `config/rag.toml` | Every tunable value for policy search: chunking, metadata, embedding, retrieval, profiles |
 | `docs/phases/` | One document per build phase: what it is for, files touched, how it was checked |
-| `tests/` | 418 tests run by default (67 for the tools, 351 for policy search), plus 4 `live` tests; run with `python -m pytest` (`-m live` for the live ones) |
+| `tests/` | 476 tests run by default (67 for the tools, 409 for policy search), plus 4 `live` tests; run with `python -m pytest` (`-m live` for the live ones) |
 
 ## What each script does
 
@@ -124,6 +124,8 @@ The OpenAI key is read from the `OPENAI_API_KEY` variable or from `.env` (the fi
 `from agent import PolicySearch` and `PolicySearch("hybrid").search_policy("how long does a refund take?")` search the policy pages. The profile (an argument, the `RAG_PROFILE` variable, or the file's default) picks every part from `config/rag.toml`: `baseline_bm25` (keywords only, no index and no extra package), `vector_only`, `hybrid` (both, merged by reciprocal rank fusion), `hybrid_cross_encoder` and `hybrid_llm_rerank`.
 
 The result has one fixed shape: `ok`, `query`, `profile`, `index_fingerprint` and `results` (each with `source_file`, `heading_path`, `text`, `score`, `copied_on`, `in_scope` and `provenance`, which records which retrievers found it, their ranks and scores, the fused score and the position after reranking). A blank question gives `error_code` `empty_query`. If the vector index was built with other settings the answer is `index_out_of_date` and the old index is not searched. If nothing counts as an answer under the no-match rule, `results` is empty and a `note` says the policy pages do not cover it. Pages for cases outside this agent's scope are hidden unless `include_out_of_scope=True`. A reranker that fails never fails the search: the fused order is returned and the provenance says what went wrong.
+
+Scope is decided per page (`[sources].out_of_scope_files`) and, since phase 3c.1, per section: each `[[scope.rules]]` entry in `config/rag.toml` names one page, one exact section heading and a reason. A chunk that matches is stored with `in_scope = false` and the reason, so it is hidden by default and shown (marked out of scope, with the reason in `provenance.scope_reason`) when `include_out_of_scope=True`. A rule that matches no chunk, or a repeated rule, is an error when the config loads, and the rules are part of the index fingerprint (changing them means rebuilding the index; the embedding cache makes that free). These rules are our decision, not Amazon's.
 
 The no-match thresholds in `config/rag.toml` are placeholders; phase 3d calibrates them. Nothing in policy search computes eligibility, windows or refund times.
 

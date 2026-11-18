@@ -137,6 +137,18 @@ class Citations:
     copied_on_suffix: str  # added after the citation when show_copied_on is true
 
 
+@dataclass(frozen=True)
+class ScopeRule:
+    file: str       # the policy page, e.g. "returns-policy.md"
+    heading: str    # one section heading, exact text
+    reason: str     # recorded on every chunk the rule hides
+
+
+@dataclass(frozen=True)
+class Scope:
+    rules: tuple    # of ScopeRule
+
+
 SECTIONS = {
     "sources": Sources, "chunking": Chunking, "metadata": Metadata, "text": Text,
     "embedding": Embedding, "store": Store, "retrieval": Retrieval, "fusion": Fusion,
@@ -169,6 +181,7 @@ class RagConfig:
     rerank: Rerank
     no_match: NoMatch
     citations: Citations
+    scope: Scope
 
     @property
     def fingerprint(self) -> str:
@@ -179,6 +192,9 @@ class RagConfig:
             shaping[name] = {k: v for k, v in values.items() if (name, k) not in _NOT_IN_FINGERPRINT}
         emb = _as_dict(self.embedding)
         shaping["embedding"] = {k: emb[k] for k in _FINGERPRINT_EMBEDDING_KEYS}
+        # Scope is stored in the index (in_scope), so the rules shape it. No rules gives the same hash as before this existed.
+        if self.scope.rules:
+            shaping["scope"] = sorted((_as_dict(rule) for rule in self.scope.rules), key=lambda r: (r["file"], r["heading"]))   # order does not matter
         blob = json.dumps(shaping, sort_keys=True, ensure_ascii=True)
         return hashlib.sha256(blob.encode("utf-8")).hexdigest()[:16]
 
@@ -220,6 +236,57 @@ def _build_section(name: str, cls, data: dict, where: str):
                 f"{where}: [{name}].{key} must be a {_type_name(hints[key])}, got {data[key]!r}")
     kwargs = {k: float(v) if hints[k] is float else v for k, v in data.items()}
     return cls(**kwargs)
+
+
+_RULE_KEYS = ("file", "heading", "reason")
+
+
+def _build_scope(data, where: str) -> Scope:
+    """[[scope.rules]]: each rule needs file, heading and reason (all text). A repeated rule is an error."""
+    if not isinstance(data, dict):
+        raise ConfigError(f"{where}: [scope] must be a table")
+    for key in data:
+        if key != "rules":
+            raise ConfigError(f"{where}: unknown key '{key}' in [scope]. Allowed keys: rules")
+    raw_rules = data.get("rules", [])
+    if not isinstance(raw_rules, list):
+        raise ConfigError(f"{where}: [scope].rules must be a list of [[scope.rules]] tables")
+    rules, seen = [], set()
+    for number, raw in enumerate(raw_rules, start=1):
+        label = f"[[scope.rules]] number {number}"
+        if not isinstance(raw, dict):
+            raise ConfigError(f"{where}: {label} must be a table with file, heading and reason")
+        for key in raw:
+            if key not in _RULE_KEYS:
+                raise ConfigError(f"{where}: unknown key '{key}' in {label}. Allowed keys: {', '.join(_RULE_KEYS)}")
+        for key in _RULE_KEYS:
+            if key not in raw:
+                raise ConfigError(f"{where}: {label} is missing the key '{key}'")
+            if not isinstance(raw[key], str) or not raw[key].strip():
+                raise ConfigError(f"{where}: {label}: '{key}' must be non-empty text, got {raw[key]!r}")
+        rule = ScopeRule(raw["file"], raw["heading"], raw["reason"])
+        if (rule.file, rule.heading) in seen:
+            raise ConfigError(f"{where}: duplicate scope rule for {rule.file} / '{rule.heading}' ({label})")
+        seen.add((rule.file, rule.heading))
+        rules.append(rule)
+    return Scope(tuple(rules))
+
+
+def _check_scope_rules_match(cfg: "RagConfig", where: str) -> None:
+    """Every rule must match at least one real chunk, so a rule that went stale is caught when the config loads."""
+    if not cfg.scope.rules:
+        return
+    from .chunkers import chunk_documents_unscoped   # imported here: the chunkers need this module
+    from .ingest import load_documents, rule_matches
+    chunks = chunk_documents_unscoped(cfg, load_documents(cfg))
+    for rule in cfg.scope.rules:
+        if not any(rule_matches(rule, chunk, cfg.metadata.heading_path_separator) for chunk in chunks):
+            pages = sorted({c.source_file for c in chunks})
+            hint = "" if rule.file in pages else f" (there is no page called {rule.file})"
+            raise ConfigError(
+                f"{where}: scope rule for {rule.file} / '{rule.heading}' matches no chunk{hint}. "
+                "The heading must be the exact text of a section heading on that page; "
+                "if the page or the chunking changed, update or remove the rule")
 
 
 def _merge(base: dict, override: dict) -> dict:
@@ -290,9 +357,10 @@ def load_config(profile: str | None = None, path: str | Path | None = None) -> R
     if not isinstance(default_profile, str):
         raise ConfigError(f"{where}: 'default_profile' (text) is required at the top of the file")
     profiles = raw.pop("profiles", {})
+    scope_data = raw.pop("scope", {})
     for key in raw:
         if key not in SECTIONS:
-            raise ConfigError(f"{where}: unknown section [{key}]. Allowed: {', '.join(SECTIONS)}")
+            raise ConfigError(f"{where}: unknown section [{key}]. Allowed: {', '.join(SECTIONS)}, scope")
 
     chosen = profile or os.environ.get(PROFILE_ENV_VAR) or default_profile
     if chosen not in profiles:
@@ -304,6 +372,7 @@ def load_config(profile: str | None = None, path: str | Path | None = None) -> R
 
     merged = _merge(raw, override)
     built = {name: _build_section(name, cls, merged.get(name, {}), where) for name, cls in SECTIONS.items()}
-    cfg = RagConfig(profile=chosen, root=ROOT, **built)
+    cfg = RagConfig(profile=chosen, root=ROOT, scope=_build_scope(scope_data, where), **built)
     _check_values(cfg, where)
+    _check_scope_rules_match(cfg, where)
     return cfg

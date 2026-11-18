@@ -31,6 +31,7 @@ class Chunk:
     copied_on: str
     in_scope: bool
     page_type: str
+    scope_reason: str = ""   # why a scope rule made this chunk out of scope; empty if none did
 
     def to_row(self, field_names: list[str]) -> dict:
         """The chunk as a dict holding only the configured metadata fields, in that order."""
@@ -62,11 +63,12 @@ class Hit:
     page_type: str
     score: float                                   # the score of the last stage that scored it
     provenance: dict = field(default_factory=new_provenance)
+    scope_reason: str = ""                         # set when a [[scope.rules]] rule hid this section
 
     @classmethod
     def from_chunk(cls, chunk: "Chunk", score: float, provenance: dict) -> "Hit":
         return cls(chunk.chunk_id, chunk.source_file, chunk.page_title, chunk.heading_path, chunk.text,
-                   chunk.copied_on, chunk.in_scope, chunk.page_type, score, provenance)
+                   chunk.copied_on, chunk.in_scope, chunk.page_type, score, provenance, chunk.scope_reason)
 
     def with_provenance(self, **changes) -> "Hit":
         """A copy with some provenance keys replaced (the original is not changed)."""
@@ -81,5 +83,5 @@ class Hit:
             "score": round(self.score, 6),
             "copied_on": self.copied_on,
             "in_scope": self.in_scope,
-            "provenance": {"chunk_id": self.chunk_id, **self.provenance},
+            "provenance": {"chunk_id": self.chunk_id, "scope_reason": self.scope_reason, **self.provenance},
         }

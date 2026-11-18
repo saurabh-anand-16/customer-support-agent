@@ -7,13 +7,15 @@ For each page it:
   - takes the page title from the first "# " heading
   - reads the copy date and the page type (the README section) from policy/README.md
   - marks the page in scope or not, from the out-of-scope list in the config
+Scope rules for single sections ([[scope.rules]]) are applied to the chunks by apply_scope_rules().
 All patterns and file names come from config/rag.toml.
 """
 import re
+from dataclasses import replace
 from pathlib import Path
 
 from .config import RagConfig
-from .types import Document
+from .types import Chunk, Document
 
 
 def remove_toc(text: str, cfg: RagConfig) -> str:
@@ -48,6 +50,32 @@ def read_readme(cfg: RagConfig, policy_dir: Path) -> tuple[str, dict[str, str]]:
             if link:
                 page_types[link.group(1)] = current
     return match.group(1), page_types
+
+
+def rule_matches(rule, chunk: Chunk, separator: str) -> bool:
+    """
+    True when the chunk is on the rule's page and its heading path ends with the rule's heading.
+    Exact text, never a pattern, and the heading must be a whole heading: "Return a Gift" does not
+    match a section called "How to Return a Gift".
+    """
+    return chunk.source_file == rule.file and (
+        chunk.heading_path == rule.heading or chunk.heading_path.endswith(separator + rule.heading))
+
+
+def apply_scope_rules(cfg: RagConfig, chunks: list[Chunk]) -> list[Chunk]:
+    """
+    Mark chunks out of scope when a [[scope.rules]] rule matches them, and record the rule's reason.
+    Other chunks, and the chunks' text, are unchanged. (That every rule matches something is checked
+    when the config loads, against all the pages; here a partial list of chunks is fine.)
+    """
+    rules = cfg.scope.rules
+    if not rules:
+        return list(chunks)
+    out = []
+    for chunk in chunks:
+        rule = next((r for r in rules if rule_matches(r, chunk, cfg.metadata.heading_path_separator)), None)
+        out.append(replace(chunk, in_scope=False, scope_reason=rule.reason) if rule else chunk)
+    return out
 
 
 def load_documents(cfg: RagConfig) -> list[Document]:

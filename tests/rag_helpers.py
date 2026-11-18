@@ -37,7 +37,7 @@ FIXED_CONFIG = {
     },
     "metadata": {
         "fields": ["chunk_id", "source_file", "page_title", "heading_path", "heading_level",
-                   "part_index", "text", "char_count", "copied_on", "in_scope", "page_type"],
+                   "part_index", "text", "char_count", "copied_on", "in_scope", "page_type", "scope_reason"],
         "heading_path_separator": " > ",
         "export_path": "data/clean/test_chunks.csv",
     },
@@ -61,6 +61,7 @@ FIXED_CONFIG = {
                  "note": "not covered"},
     "citations": {"format": "{heading_path} ({source_file})", "show_copied_on": True,
                   "copied_on_suffix": ", copied {copied_on}"},
+    "scope": {"rules": []},
     "profiles": {
         "bare": {},                                  # overrides nothing: tests set everything themselves
         "plain": {"retrieval": {"strategy": "bm25"}, "fusion": {"method": "none"}},
@@ -86,10 +87,18 @@ def _merge(base: dict, extra: dict) -> dict:
 
 def to_toml(data: dict, prefix: str = "") -> str:
     """Write a dict as TOML. Enough for what the config uses: text, numbers, true/false, lists, tables."""
-    lines = [f"{key} = {json.dumps(value)}" for key, value in data.items() if not isinstance(value, dict)]
+    def is_tables(value):    # a list of tables, written as [[name.key]] blocks
+        return isinstance(value, list) and bool(value) and all(isinstance(v, dict) for v in value)
+
+    lines = [f"{key} = {json.dumps(value)}" for key, value in data.items()
+             if not isinstance(value, dict) and not is_tables(value)]
     out = "\n".join(lines) + "\n" if lines else ""
     for key, value in data.items():
-        if isinstance(value, dict):
+        if is_tables(value):
+            name = f"{prefix}.{key}" if prefix else key
+            for table in value:
+                out += f"\n[[{name}]]\n" + "".join(f"{k} = {json.dumps(v)}\n" for k, v in table.items())
+        elif isinstance(value, dict):
             name = f"{prefix}.{key}" if prefix else key
             body = to_toml(value, name)
             has_values = any(not isinstance(v, dict) for v in value.values()) or not value   # an empty table still needs its header

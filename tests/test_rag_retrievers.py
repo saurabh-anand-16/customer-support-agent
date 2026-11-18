@@ -23,6 +23,7 @@ from agent.rag.chunkers import chunk_documents
 from agent.rag.embedders.base import Embedder
 from agent.rag.filters import Filter
 from agent.rag.index import build_index
+from agent.rag.ingest import apply_scope_rules
 from agent.rag.registry import names
 from agent.rag.retrievers import get_retriever, uses_index
 from agent.rag.retrievers.bm25 import Bm25Retriever, tokenize
@@ -78,7 +79,7 @@ class World:
 def make_world(tmp_path, profile="plain", build=True, **overrides) -> World:
     """The fixed config (with overrides) plus the real chunks, a fake embedder and an in-memory index."""
     cfg = make_config(tmp_path, profile, store={"kind": "memory", "meta_path": str(tmp_path / "meta.json")}, **overrides)
-    chunks = list(real_chunks())
+    chunks = apply_scope_rules(cfg, list(real_chunks()))      # the cached chunks have no scope rules; apply this config's
     embedder, store = BowEmbedder(cfg), get_store(cfg)
     if build:
         build_index(cfg, chunks, embedder, store)

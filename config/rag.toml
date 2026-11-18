@@ -38,7 +38,7 @@ table_handling = "split_rows"   # "keep_whole" (a long table stays one chunk) or
 # Columns written for every chunk, in this order. chunk_id and text are required.
 fields = [
   "chunk_id", "source_file", "page_title", "heading_path", "heading_level",
-  "part_index", "text", "char_count", "copied_on", "in_scope", "page_type",
+  "part_index", "text", "char_count", "copied_on", "in_scope", "page_type", "scope_reason",
 ]
 heading_path_separator = " > "
 export_path = "data/clean/policy_chunks.csv"   # written by scripts/05_chunk_policy.py (not part of the fingerprint)
@@ -118,6 +118,37 @@ note = "The policy pages do not cover this."
 format = "{heading_path} ({source_file})"
 show_copied_on = true
 copied_on_suffix = ", copied {copied_on}"
+
+# Scope rules for single sections (phase 3c.1). Out-of-scope pages are listed in [sources].out_of_scope_files;
+# these rules hide one section of an in-scope page. They are OUR decision, not Amazon's.
+# A rule names a page and one section heading. A chunk matches when it is on that page and its heading path
+# ends with that heading: exact text, as a whole heading, never a pattern. A matching chunk is out of scope
+# (hidden unless include_out_of_scope is set) and the reason is recorded on it. A rule that matches no chunk,
+# or a repeated rule, is an error when the config loads. The rules are part of the index fingerprint.
+[[scope.rules]]
+file = "returns-and-replacements-faq.md"
+heading = "5. How can I return a Gift?"
+reason = "gift orders are out of scope for this agent"
+
+[[scope.rules]]
+file = "received-someone-elses-order.md"
+heading = "Return a Gift"
+reason = "gift orders are out of scope for this agent"
+
+[[scope.rules]]
+file = "damaged-or-defective-item.md"
+heading = "4. How to return a damaged product fulfilled by a third-party seller?"
+reason = "seller-fulfilled orders are out of scope for this agent"
+
+[[scope.rules]]
+file = "returns-policy.md"
+heading = "Seller Fulfilled Items"
+reason = "seller-fulfilled orders are out of scope for this agent"
+
+[[scope.rules]]
+file = "about-refunds.md"
+heading = "Refund for Seller-Fulfilled Orders"
+reason = "seller-fulfilled orders are out of scope for this agent"
 
 # Named presets. Each table below overrides keys in the base sections above.
 [profiles.baseline_bm25.retrieval]

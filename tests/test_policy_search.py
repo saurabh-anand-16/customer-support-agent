@@ -52,7 +52,7 @@ def test_a_successful_result_has_exactly_the_agreed_keys(tmp_path, kind):
     assert result["results"]
     for item in result["results"]:
         assert set(item) == {"source_file", "heading_path", "text", "score", "copied_on", "in_scope", "provenance"}
-        assert set(item["provenance"]) == {"chunk_id", "retrievers", "fusion", "fused_score", "rerank"}
+        assert set(item["provenance"]) == {"chunk_id", "scope_reason", "retrievers", "fusion", "fused_score", "rerank"}
         assert isinstance(item["score"], float) and item["copied_on"] == "2026-11-17" and item["in_scope"] is True
 
 

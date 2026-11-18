@@ -8,3 +8,4 @@ returns_agent.db
 # Policy-search index and embedding cache (phase 3b)
 data/rag/
 .vscode/
+try_search.py
