@@ -1,6 +1,6 @@
 # Phase 8c: polish round
 
-**Status:** to build. **Branch:** `phase-8c-polish`. **Follows:** phase 8b (merged). **Next:** phase 6c (richer trace), then phase 9 (Developer trace).
+**Status:** built, in review ([build report](../builds/phase-08c-build.md)). **Branch:** `phase-8c-polish`. **Follows:** phase 8b (merged). **Next:** phase 6c (richer trace), then phase 9 (Developer trace).
 
 A short clean-up of problems found while using the app. No router change, no change to search, no new mutation checks.
 

@@ -144,6 +144,7 @@ class ReviewSettings:
     reasons: dict                # kind -> the one-sentence reason a queue item gets, filled in by code from tool data
     reasons_by_requested_method: dict   # refund method the customer asked for that is not offered (paper_cheque) -> its own reason sentence (5b)
     show_note_to_customer: bool  # false: the manager's note is never put in the outcome notice (5b)
+    product_name_max_chars: int  # phase 8c: a product name longer than this is cut (with an ellipsis) in the notices
     recent_decision_days: int    # phase 8b: a case decided this recently still counts when the customer asks about it again
     note_to_customer: dict       # phase 8b: kind -> whether a manager's reply is shown to the customer (only a person case: true)
     existing_case: dict          # phase 8b: the fixed texts for "you already have a request" (open, closed, approved, declined, ask_new)
@@ -257,6 +258,7 @@ REVIEW_KINDS = ("customer_asked_for_person", "late_request", "approval_required"
 REVIEW_REASON_FIELDS = {"item_id", "reason", "resolution", "approval_reasons", "day_number", "window_days", "days_late", "last_eligible_date"}
 # Phase 5b: the outcome notice a customer gets, and the texts a decision gives back. Each key has the fields it may use.
 REVIEW_NOTICE_FIELDS = {"approved": {"reference", "product_name", "item_id", "return_id", "refund_line"},
+                        "approved_replacement": {"reference", "product_name", "item_id", "return_id", "refund_line"},
                         "refund_line": {"amount", "method"},
                         "declined": {"reference", "product_name", "item_id"},
                         "closed": {"reference"},
@@ -288,7 +290,7 @@ _SPEC = {
     "review": (ReviewSettings, {"excerpt_messages": int, "excerpt_message_chars": int, "dedupe_open_items": bool,
                                 "reply_template": str, "error_reply": str, "reasons": dict,
                                 "reasons_by_requested_method": dict, "show_note_to_customer": bool, "note_max_chars": int,
-                                "recent_decision_days": int, "note_to_customer": dict, "existing_case": dict,
+                                "product_name_max_chars": int, "recent_decision_days": int, "note_to_customer": dict, "existing_case": dict,
                                 "default_decided_by": str, "notices": dict, "decision_replies": dict}),
     "refund_method": (RefundMethodSettings, {"name": str, "temperature": float, "max_output_tokens": int, "max_message_chars": int,
                                              "not_offered": list, "escalation_kind": str, "prompt": str, "option_texts": dict,
@@ -516,6 +518,8 @@ def _check_review(r: ReviewSettings, where: str) -> None:
     _check_table(where, "review.decision_replies", r.decision_replies, REVIEW_DECISION_REPLIES, REVIEW_DECISION_REPLY_FIELDS)
     if _fields_of(r.notices["person_reply"]) != {"reference", "note"}:
         raise AgentConfigError(f"{where}: [review.notices].person_reply must use exactly {{reference}} and {{note}}")
+    if r.product_name_max_chars < 10:
+        raise AgentConfigError(f"{where}: [review].product_name_max_chars must be 10 or more")
     if r.recent_decision_days < 0:
         raise AgentConfigError(f"{where}: [review].recent_decision_days must be 0 or more")
     if set(r.note_to_customer) != set(REVIEW_KINDS) or not all(isinstance(v, bool) for v in r.note_to_customer.values()):

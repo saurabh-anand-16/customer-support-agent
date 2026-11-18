@@ -25,10 +25,11 @@
    toolbar menu, so it covers no page content, no chat input (bottom), no sidebar toggle (top-left). It lets clicks pass through. */
 .corner-tag {
   position: fixed; top: 0.9rem; right: 4.2rem; z-index: 1000000; max-width: 11rem; text-align: right; line-height: 1.25;
-  font-size: 0.68rem; color: var(--muted); background: rgba(247, 247, 244, 0.92); border: 1px solid var(--line); border-radius: 8px;
+  font-size: 0.68rem; color: var(--muted); background: #F7F7F4; border: 1px solid var(--line); border-radius: 8px;
   padding: 0.15rem 0.5rem; pointer-events: none;
 }
 @media (min-width: 640px) { .corner-tag { max-width: none; white-space: nowrap; } }
+.scenario-try { margin-top: 0.4rem; font-size: 0.85rem; font-style: italic; color: var(--ink, #1F2933); }
 .kicker {
   display: inline-block; font-size: 0.78rem; font-weight: 600; letter-spacing: 0.02em; color: var(--teal);
   background: var(--teal-soft); border-radius: 999px; padding: 0.15rem 0.7rem;

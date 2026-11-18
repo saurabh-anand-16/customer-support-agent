@@ -1,6 +1,6 @@
 # Phase 6: tracing
 
-**Status:** steps 1 and 2 done ([build report](../builds/phase-06-build.md)); step 3 (Langfuse) done in phase 6b, in review ([build report](../builds/phase-06b-build.md)). **Branches:** `phase-6-tracing` (steps 1 and 2), `phase-6b-langfuse-export` (step 3). **Follows:** 5b (merged). **Next:** phase 7 (the app).
+**Status:** steps 1 and 2 done ([build report](../builds/phase-06-build.md)); step 3 (Langfuse) done in phase 6b ([build report](../builds/phase-06b-build.md)). **Branches:** `phase-6-tracing` (steps 1 and 2), `phase-6b-langfuse-export` (step 3). **Follows:** 5b (merged). **Next:** phase 7 (the app).
 
 Read `docs/notes/langfuse-notes.md` before you start. It holds the SDK version, variable names, tested behaviour, privacy findings and free-plan limits.
 

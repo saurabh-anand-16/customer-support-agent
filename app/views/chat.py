@@ -10,7 +10,6 @@ from app import chat_flow, components, data, notice_flow, state
 from app.config import load_personas
 
 settings = state.get_settings()
-SUGGESTED = ["Where is my refund?", "What can I not return?", "Cancel my other order"]
 
 
 def notice_turn(notice: dict) -> dict:
@@ -29,6 +28,13 @@ def look_for_notices() -> bool:
 def queue(message: str) -> None:
     """Callback for chips and confirm buttons: the message is sent on the next run, like typed text."""
     st.session_state["outbox"] = message
+
+
+def chip_texts(customer_id: str) -> list[str]:
+    """The suggested messages: the scenario's own `try` text first (when this customer has one), then the general ones from config."""
+    persona = next((p for p in load_personas() if p.customer_id == customer_id), None)
+    first = [persona.try_text] if persona and persona.try_text else []
+    return first + [t for t in settings.suggested_messages if t not in first]
 
 
 def story_line(customer_id: str) -> str | None:
@@ -176,7 +182,7 @@ with chat_col:
                 st.markdown(components.md_text(message))
         waiting_slot = st.empty()         # the agent's bubble is drawn here, after the (disabled) input box exists
     with st.container(key="chips", horizontal=True):
-        for text in SUGGESTED:
+        for text in chip_texts(customer_id):
             st.button(text, key=f"chip-{text}", disabled=busy, on_click=queue, args=(text,))
 if panel_col is not None:
     with panel_col:

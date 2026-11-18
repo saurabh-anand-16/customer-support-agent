@@ -296,6 +296,7 @@ error_reply = "Sorry, I could not pass this to a person just now, so no request 
 # Phase 5b: the manager's decision and the notice the customer gets in their next chat turn.
 show_note_to_customer = false    # the manager's note is never put in the notice unless this is true
 note_max_chars = 500             # a decision note longer than this is refused; a note that is shown is cut to this length
+product_name_max_chars = 60      # phase 8c: a product name is cut at the first " | " and at this length (with an ellipsis) in notices and cards; stored names are never changed
 recent_decision_days = 7         # phase 8b: a case decided this many days ago or less still counts as "your request" when the customer asks about it again
 default_decided_by = "script"    # the label a script uses when it gives no decided_by; the app will give the manager's name later
 
@@ -327,6 +328,7 @@ paper_cheque = "The customer asked for a paper cheque refund, which is only for 
 [review.notices]
 # Fixed texts for the outcome notice. Code fills them from stored data (the queue item and the return row). The model writes none of it.
 approved = "Update on {reference}: a person approved your request for {product_name} (item {item_id}). Your return number is {return_id}.{refund_line}"
+approved_replacement = "Update on {reference}: a person approved your replacement request for {product_name} (item {item_id}). Your replacement request reference is {return_id}.{refund_line}"
 refund_line = " The refund of INR {amount} will go to {method}."
 declined = "Update on {reference}: a person looked at your request for {product_name} (item {item_id}) and could not approve it. Nothing was changed on your order."
 closed = "Update on {reference}: a person has looked at your request and closed it."
@@ -364,4 +366,7 @@ manager_label = "Manager (demo)"                      # Phase 8: the name writte
 claim_stale_minutes = 10                            # Phase 8: a claimed case older than this shows "This claim looks stuck"
 poll_seconds = 3                                    # Phase 8b: the chat page and the sidebar look for news this often (a Streamlit fragment, no JavaScript)
 close_without_reply_note = "Closed without a reply." # Phase 8b: the private note the Manager page records for "Close without a reply" (decide() needs a note)
+# Phase 8c: the general suggested messages under the chat box. TEMPORARY: the two policy questions are here because the real model answered them with
+# sources in a fresh chat under the current search profile. Replace them when the retrieval tuning (phase 3d / 10) is done.
+suggested_messages = ["Where is my refund?", "What happens if my item is damaged or defective?", "How does a Pay on Delivery refund work?"]
 missing_key_help = "The assistant needs an OpenAI API key. Create a file named .env in the project folder with a line OPENAI_API_KEY=your-key, then restart the app. The key is never shown here."

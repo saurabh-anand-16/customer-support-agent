@@ -47,9 +47,10 @@ def corner_tag(text: str) -> None:
 def scenario_card_html(persona, live_line: str | None) -> str:
     tag = '<span class="tag">Start here</span>' if persona.start_here else ""
     live = f'<div class="card-live">{esc(live_line)}</div>' if live_line else ""
+    tried = f'<div class="scenario-try">Try: “{esc(persona.try_text)}”</div>' if getattr(persona, "try_text", None) else ""
     return (f'<div class="scenario-head"><span class="scenario-title">{esc(persona.title)}</span>{tag}</div>'
             f'<div class="scenario-id">{esc(persona.customer_id)}</div>'
-            f'<div class="scenario-story">{esc(persona.story)}</div>{live}')
+            f'<div class="scenario-story">{esc(persona.story)}</div>{live}{tried}')
 
 
 # -- the sidebar ------------------------------------------------------------------------------------------------
@@ -112,7 +113,7 @@ def confirm_card_html(card: dict, state: str | None) -> str:
     """
     item = card.get("item") or {}
     name = item.get("product_name")
-    item_text = f"{data.short_name(name, 70)} ({item.get('item_id')})" if name and item.get("item_id") else (data.short_name(name, 70) if name else item.get("item_id"))
+    item_text = f"{data.short_name(name)} ({item.get('item_id')})" if name and item.get("item_id") else (data.short_name(name) if name else item.get("item_id"))
     window = card.get("return_window") or {}
     window_text = None
     if window.get("last_eligible_date"):
@@ -154,7 +155,7 @@ def nav_dot_html(count: int) -> str:
 def receipt_html(review: dict, status: str | None, item_name: str | None, kind: str | None = None) -> str:
     """The card for a request sent to a person. Reference is from the result; status, kind and item name are read from the database."""
     rows = [("Reference", review.get("reference")), ("Status", receipt_status_word(status, kind)),
-            ("Item", data.short_name(item_name, 70) if item_name else None)]
+            ("Item", data.short_name(item_name) if item_name else None)]
     return ('<div class="receipt-title">Request sent to a person</div>' + _kv(rows) +
             '<div class="receipt-next"><b>What happens next</b> A reviewer approves or declines it. Their answer appears in this chat.</div>')
 

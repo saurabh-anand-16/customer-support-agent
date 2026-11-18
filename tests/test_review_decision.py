@@ -25,6 +25,7 @@ from agent.branches.return_or_replace import money                             #
 from agent.checks import BLOCKED_BY_DESIGN, check                              # noqa: E402
 from agent.llm import DEFAULT_CONFIG, AgentConfigError, load_agent_config       # noqa: E402
 from agent.review_decision import decide                                        # noqa: E402
+from agent.names import short_product_name                                      # noqa: E402
 from agent.review_notice import outcome_notices                                 # noqa: E402
 from agent.review_queue import ReviewQueue                                      # noqa: E402
 
@@ -353,7 +354,7 @@ def test_an_approval_is_told_to_the_same_customer_on_their_next_message_once(tmp
     agent, chat, sid, spy, item = pod_case(tmp_path, tools_rw, pick, raw, method="neft_bank_account")
     do(agent, spy, "approve", note="PRIVATE-MANAGER-NOTE")
     row = returns_for(spy.con, item["item_id"])[0]
-    name = product_name(spy, item["customer_id"], item["item_id"])
+    name = short_product_name(product_name(spy, item["customer_id"], item["item_id"]), 60)      # phase 8c: notices show the short name
     first = agent.respond(sid, "hello")
     expected = (f"NOTICE-APPROVED REV-0001 {name} {item['item_id']} return={row['return_id']} REFUND {money(row['refund_amount_inr'])} -> neft bank account")
     assert first["reply"] == expected + "\n\nREPLY[greeting]"
@@ -368,7 +369,7 @@ def test_an_approval_is_told_to_the_same_customer_on_their_next_message_once(tmp
 def test_a_decline_is_told_with_the_item_name_and_no_numbers_or_note(tmp_path, tools_rw, pick, raw):
     agent, chat, sid, spy, item = prepaid_case(tmp_path, tools_rw, pick, raw)
     do(agent, spy, "decline", note="PRIVATE-MANAGER-NOTE")
-    name = product_name(spy, item["customer_id"], item["item_id"])
+    name = short_product_name(product_name(spy, item["customer_id"], item["item_id"]), 60)      # phase 8c: notices show the short name
     reply = agent.respond(sid, "hello")["reply"]
     assert reply == f"NOTICE-DECLINED REV-0001 {name} {item['item_id']}\n\nREPLY[greeting]"
 

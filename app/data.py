@@ -9,6 +9,9 @@ import sqlite3
 from datetime import date
 from pathlib import Path
 
+from agent.names import short_product_name
+from app.config import product_name_limit
+
 
 def _read_only(db: Path) -> sqlite3.Connection:
     return sqlite3.connect(f"file:{Path(db).as_posix()}?mode=ro", uri=True)
@@ -38,11 +41,9 @@ def short_date(iso: str | None) -> str | None:
     return f"{d.day} {d.strftime('%b')}"
 
 
-def short_name(name: str, limit: int = 60) -> str:
-    name = " ".join(str(name).split())
-    if len(name) <= limit:
-        return name
-    return name[:limit].rsplit(" ", 1)[0].rstrip(",;:|-") + "..."
+def short_name(name: str, limit: int | None = None) -> str:
+    """A product name for display: cut at the first " | " and at the configured length (phase 8c). The stored name is not changed."""
+    return short_product_name(name, limit or product_name_limit())
 
 
 def newest_order(db: Path, customer_id: str) -> dict | None:
@@ -134,7 +135,7 @@ def item_line(info: dict | None) -> str | None:
     """One plain line about an item, from the fields the tool returned. Nothing is typed in."""
     if not info:
         return None
-    parts = [short_name(info["product_name"], 60)]
+    parts = [short_name(info["product_name"])]
     if isinstance(info.get("line_total_inr"), (int, float)):
         parts.append(f"INR {info['line_total_inr']:,.0f}")
     status = info.get("item_status")

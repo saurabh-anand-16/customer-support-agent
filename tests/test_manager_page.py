@@ -306,7 +306,7 @@ def test_a_real_approval_writes_the_replacement_and_moves_the_case_to_approved_w
     assert labels == ["Open (2)", "Approved (1)", "Declined (0)"]
     text = page_text(at)
     assert "What was written: a replacement (R" in text and "The customer will see the outcome in their chat" in text
-    assert "Update on REV-" in text and "Your return number is R" in text           # the notice text
+    assert "Update on REV-" in text and "Your replacement request reference is R" in text   # the notice text (phase 8c: replacement wording)
     assert "Customer not notified yet" in text
     notice = manager_flow.notice_text(backend, ids["approval"])
     assert "SECRET-NOTE-XYZ" not in notice                                          # the note is kept on the record, not in the notice

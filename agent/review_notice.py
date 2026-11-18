@@ -32,6 +32,7 @@ from .branches.base import fill
 from .branches.return_or_replace import money
 from .checks import check
 from .llm import AgentConfig
+from .names import short_product_name
 from .review_queue import APPROVED, ReviewQueue
 
 
@@ -67,10 +68,11 @@ def _text_for(item: dict, tools, cfg: AgentConfig):
         line = ""
         if row.get("refund_amount_inr") is not None and row.get("refund_method"):
             line = fill(n["refund_line"], amount=money(row["refund_amount_inr"]), method=str(row["refund_method"]).replace("_", " "))
-        text = fill(n["approved"], reference=item["id"], product_name=row.get("product_name") or "your item", item_id=item["order_item_id"],
+        key = "approved_replacement" if row.get("resolution_requested") == "replacement" else "approved"     # the stored resolution picks the wording
+        text = fill(n[key], reference=item["id"], product_name=short_product_name(row.get("product_name") or "your item", cfg.review.product_name_max_chars), item_id=item["order_item_id"],
                     return_id=row["return_id"], refund_line=line)
     else:
-        name = _product_name(tools, item["customer_id"], item["order_item_id"]) or "your item"
+        name = short_product_name(_product_name(tools, item["customer_id"], item["order_item_id"]) or "your item", cfg.review.product_name_max_chars)
         text = fill(n["declined"], reference=item["id"], product_name=name, item_id=item["order_item_id"] or "")
     text = text.strip()
     r = cfg.review
