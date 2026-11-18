@@ -1,0 +1,49 @@
+{
+  "file_sha256": "5b26147d50533602a0c0749a58a311257d6f50196a272c119d4c298ac9b1063a",
+  "tables": {
+    "category_policy_map": {
+      "rows": 211,
+      "sha256": "f02e44f1e96ffbff13c6d65cdd9ce9638afb30622e6f5fb5d4e9c8f9f0030dc1"
+    },
+    "config": {
+      "rows": 1,
+      "sha256": "3412c8c2b6d305832c5f8d3b15924a945abcfeff8449944d2b6aa9bb9e4aec8e"
+    },
+    "customers": {
+      "rows": 400,
+      "sha256": "48ef9dc8debf34fc030d134a4625bd33a7c7ed5d6db225b0108aad0ed8af97ba"
+    },
+    "order_items": {
+      "rows": 3281,
+      "sha256": "eab20afc532d76793a0afb9fff5466f00099a986095c58ae84043149daed3552"
+    },
+    "orders": {
+      "rows": 2500,
+      "sha256": "1e138c4b412cdd9385e144728cb7f68a47c1a7f2d8f13c16489dba5a6e337048"
+    },
+    "policy_facts": {
+      "rows": 16,
+      "sha256": "e8c9d025233eca6da3dd05acd52b47d1dc00eb6493b04f301b7328e7618345d5"
+    },
+    "products": {
+      "rows": 1351,
+      "sha256": "71777e08c5026ada5c1192398f063663430648dd4af45d255b9b5f9fbe1bd783"
+    },
+    "refund_timelines": {
+      "rows": 9,
+      "sha256": "f4c45e9e097be36a2987feb9d5230bcba9ba4f618233fcfb06ad2aae87118255"
+    },
+    "return_rules": {
+      "rows": 10,
+      "sha256": "2e3632e74dce0cdede644ef05e4a62605dcd1411a3103f5b533230b73974fb73"
+    },
+    "returns": {
+      "rows": 73,
+      "sha256": "9ec41769e61dc2dfd8286eb83e9dd46b441ca6a471c7cd2b1ba5159c8ced93e1"
+    },
+    "review_items": {
+      "rows": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  }
+}

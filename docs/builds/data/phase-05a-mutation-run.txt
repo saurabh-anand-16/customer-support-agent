@@ -1,0 +1,102 @@
+baseline in the copy (no change): all pass
+M01 killed   agent/confirm.py                       an unusable or missing label must count as unclear, never as yes
+      first failing test: tests/test_confirm_step.py::test_an_unusable_label_counts_as_unclear_and_never_writes[not
+M02 killed   agent/confirm.py                       the pending action is cleared before the writer runs (a second yes cannot write again)
+      first failing test: tests/test_confirm_step.py::test_a_yes_cancels_the_item_once_and_the_database_shows_one_change
+M03 killed   agent/confirm.py                       a no drops the pending action
+      first failing test: tests/test_confirm_step.py::test_a_no_drops_the_action_and_writes_nothing
+M04 killed   agent/confirm.py                       a change drops the pending action
+      first failing test: tests/test_confirm_step.py::test_a_change_drops_the_action_and_the_same_message_goes_to_the_router
+M05 killed   agent/confirm.py                       a pending action expires
+      first failing test: tests/test_confirm_step.py::test_a_pending_action_expires_after_the_configured_number_of_messages
+M06 killed   agent/confirm.py                       an expired action is dropped, not kept
+      first failing test: tests/test_confirm_step.py::test_a_pending_action_expires_after_the_configured_number_of_messages
+M07 killed   agent/confirm.py                       an unclear answer is asked again only as often as the config says, then dropped
+      first failing test: tests/test_confirm_step.py::test_an_unclear_answer_twice_drops_the_action
+M08 killed   agent/confirm.py                       only the label of the model's output is read (confirmed, staff_approved and the rest are ignored)
+      first failing test: tests/test_confirm_step.py::test_a_valid_label_that_comes_with_confirmed_true_is_still_only_its_label
+M09 killed   agent/confirm.py                       the card shown to the UI never carries parameters or the customer id
+      first failing test: tests/test_confirm_step.py::test_the_result_shows_the_pending_return_on_a_card_and_never_the_customer_id
+M10 killed   agent/actions.py                       staff_approved is never passed to a writer
+      first failing test: tests/test_confirm_step.py::test_a_yes_creates_the_return_and_what_is_written_matches_what_was_proposed
+M11 killed   agent/actions.py                       the writer's customer is the session's, never one from the pending action
+      first failing test: tests/test_confirm_step.py::test_a_customer_id_planted_in_the_pending_action_is_never_used_by_the_writer
+M12 killed   agent/actions.py                       a request that needs approval goes to the review seam
+      first failing test: tests/test_confirm_step.py::test_a_request_that_needs_approval_is_not_written_and_goes_to_the_seam
+M13 killed   agent/actions.py                       no agent module reads the test-only column
+      first failing test: tests/test_agent_safety.py::test_no_agent_module_mentions_the_test_only_column
+M14 killed   agent/branches/base.py                 a made-up number, amount or date in a reply is caught
+      first failing test: tests/test_answer_check.py::test_a_made_up_amount_gets_one_retry_and_a_fixed_retry_passes
+M15 killed   agent/branches/base.py                 a retried answer is checked again
+      first failing test: tests/test_answer_check.py::test_a_retry_that_does_not_fix_the_reply_falls_back_to_a_template_from_the_tool_data
+M16 killed   agent/branches/base.py                 a reply that fails twice is replaced by the template, not used
+      first failing test: tests/test_answer_check.py::test_a_retry_that_does_not_fix_the_reply_falls_back_to_a_template_from_the_tool_data
+M17 killed   agent/branches/base.py                 the model gets one retry, not more
+      first failing test: tests/test_answer_check.py::test_a_retry_that_does_not_fix_the_reply_falls_back_to_a_template_from_the_tool_data
+M18 killed   agent/answer_check.py                  a tool error is not a source of facts
+      first failing test: tests/test_answer_check.py::test_a_failed_tool_result_supports_nothing
+M19 killed   agent/answer_check.py                  a citation of a page the search did not return is caught
+      first failing test: tests/test_answer_check.py::test_a_policy_file_that_the_search_did_not_return_is_caught
+M20 killed   agent/answer_check.py                  the parts of a date do not license plain numbers
+      first failing test: tests/test_answer_check.py::test_the_parts_of_a_date_do_not_license_plain_numbers
+M21 killed   agent/checks.py                        a refused or unknown tool is a failed guardrail entry
+      first failing test: tests/test_confirm_step.py::test_a_refused_tool_is_a_failed_check_entry
+M22 killed   agent/tool_adapter.py                  the model never supplies the customer (the adapter uses the session's)
+      first failing test: tests/test_agent_safety.py::test_a_model_that_sends_another_customer_id_changes_nothing
+M23 killed   agent/branches/cancel_item.py          no writer is in any branch's tool list
+      first failing test: tests/test_confirm_step.py::test_a_yes_cancels_the_item_once_and_the_database_shows_one_change
+M24 killed   agent/router.py                        a pending action goes to the confirm step, not the router
+      first failing test: tests/test_confirm_step.py::test_a_yes_cancels_the_item_once_and_the_database_shows_one_change
+M25 killed   agent/branches/return_or_replace.py    a request past the window is never proposed
+      first failing test: tests/test_agent_safety.py::test_a_request_past_the_window_creates_no_return_and_goes_to_the_seam
+M26 killed   agent/review_queue.py                  the same case is one item: dedupe is on
+      first failing test: tests/test_review_queue.py::test_the_same_customer_item_and_kind_gives_the_existing_item_back
+M27 killed   agent/escalation.py                    the same case is one item: the config switch is passed on
+      first failing test: tests/test_escalation.py::test_the_same_case_again_gives_the_same_reference_and_no_second_item
+M28 killed   agent/review_queue.py                  the same case: a different kind is a different case
+      first failing test: tests/test_review_queue.py::test_a_different_kind_item_or_customer_is_a_second_item[change0]
+M29 killed   agent/review_queue.py                  the same case: a different order item is a different case
+      first failing test: tests/test_review_queue.py::test_references_count_up_and_list_items_is_oldest_first_and_can_filter_by_status
+M30 killed   agent/review_queue.py                  the same case: a different customer is a different case
+      first failing test: tests/test_review_queue.py::test_a_different_kind_item_or_customer_is_a_second_item[change2]
+M31 killed   agent/review_queue.py                  the same case: an item that is no longer open does not block a new one
+      first failing test: tests/test_review_queue.py::test_an_item_that_is_no_longer_open_does_not_block_a_new_one
+M32 killed   agent/review_queue.py                  the queue module cannot import the writers
+      first failing test: tests/test_review_queue.py::test_the_queue_module_imports_nothing_of_the_agent
+M33 killed   agent/review_queue.py                  the queue module has no function that touches returns
+      first failing test: tests/test_review_queue.py::test_the_queue_module_names_no_writer_and_no_table_but_its_own
+M34 killed   agent/escalation.py                    the excerpt is cut to N messages
+      first failing test: tests/test_escalation.py::test_the_excerpt_is_cut_to_the_last_n_messages_with_the_current_one_last
+M35 killed   agent/escalation.py                    each excerpt message is cut to the configured length
+      first failing test: tests/test_escalation.py::test_each_excerpt_message_is_cut_to_the_configured_length
+M36 killed   agent/agent.py                         the message being answered is in the excerpt
+      first failing test: tests/test_review_safety.py::test_asking_for_a_person_makes_one_item_and_changes_nothing_else
+M37 killed   agent/escalation.py                    the reason is written by code from the tool result, not taken from the model's fields
+      first failing test: tests/test_review_safety.py::test_a_late_return_makes_one_item_with_the_numbers_from_the_tool_and_the_eligibility_result
+M38 killed   agent/escalation.py                    the reply holds the reference and no other queue data
+      first failing test: tests/test_confirm_step.py::test_a_request_that_needs_approval_is_not_written_and_goes_to_the_seam
+M39 killed   agent/escalation.py                    the customer id is removed from stored and traced data
+      first failing test: tests/test_escalation.py::test_the_eligibility_result_is_stored_without_a_customer_id
+M40 killed   agent/escalation.py                    a failed queue write is a failed check
+      first failing test: tests/test_escalation.py::test_a_failed_write_gives_the_fixed_error_reply_and_a_failed_entry[error0]
+M41 killed   agent/escalation.py                    a failed queue write gives the fixed error reply, not the success text
+      first failing test: tests/test_escalation.py::test_a_failed_write_gives_the_fixed_error_reply_and_a_failed_entry[error0]
+M42 killed   agent/branches/base.py                 a branch with no seam wired is a failed write
+      first failing test: tests/test_review_safety.py::test_a_branch_with_no_seam_wired_is_a_failed_write_not_a_success
+M43 killed   agent/branches/human_help.py           a human-help case adds its entry to the checks
+      first failing test: tests/test_review_safety.py::test_each_queue_write_is_one_entry_in_the_checks_of_the_trace_in_the_4c_format[human]
+M44 killed   agent/branches/return_or_replace.py    a late-return case adds its entry to the checks
+      first failing test: tests/test_review_safety.py::test_the_same_late_request_twice_gives_one_item_and_the_same_reference
+M45 killed   agent/actions.py                       a needs-approval case adds its entry to the checks
+      first failing test: tests/test_review_safety.py::test_each_queue_write_is_one_entry_in_the_checks_of_the_trace_in_the_4c_format[approval]
+M46 killed   agent/actions.py                       the needs-approval case is queued under its own kind
+      first failing test: tests/test_confirm_step.py::test_a_request_that_needs_approval_is_not_written_and_goes_to_the_seam
+M47 killed   agent/review_queue.py                  a new item is always open
+      first failing test: tests/test_review_queue.py::test_an_item_stores_and_reads_every_field
+M48 killed   config/agent.toml                      the real config reply carries the reference
+      first failing test: tests/test_confirm_config.py::test_LIVE_FILE_the_real_config_loads_and_every_reply_uses_only_known_fields
+M49 killed   agent/branches/base.py                 no module but the seam uses the queue
+      first failing test: tests/test_review_safety.py::test_only_the_escalation_module_uses_the_queue_module
+
+49 of 49 mutations killed
+exit 0

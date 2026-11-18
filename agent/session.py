@@ -12,6 +12,8 @@ A Session holds:
   pending_age      messages the customer has sent while that action waited (the confirm step counts them)
   pending_unclear  how many times an unclear answer was asked about again
   off_topic_count  off-topic messages in a row
+  current_message  the message being answered now (set by Agent.respond); it is not in `history` until the turn ends, and the
+                   review queue keeps it in the excerpt of a case
 """
 import uuid
 from dataclasses import dataclass, field
@@ -30,6 +32,7 @@ class Session:
     pending_age: int = 0
     pending_unclear: int = 0
     off_topic_count: int = 0
+    current_message: str = ""
 
     def __post_init__(self):
         if not isinstance(self.customer_id, str) or not self.customer_id.strip():

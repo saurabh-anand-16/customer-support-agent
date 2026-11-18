@@ -166,7 +166,7 @@ def test_a_request_above_the_approval_limit_does_not_write_without_approval(tmp_
     assert first["pending_action"]["needs_staff_approval"] is True
     before = db_state(spy.con)
     result = agent.respond(sid, "yes")
-    assert db_state(spy.con) == before and result["reply"] == "APPROVAL-NEEDED-NOT-BUILT"
+    assert db_state(spy.con) == before and result["reply"] == "QUEUED-FOR-A-PERSON ref=REV-0001"
     assert result["trace"]["confirm"]["error_code"] == "staff_approval_required"
 
 

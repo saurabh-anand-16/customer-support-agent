@@ -48,14 +48,14 @@ class State(TypedDict, total=False):
 
 
 def build_graph(cfg: AgentConfig, router: Router, replies: Replies, chat: ChatModel, adapter: ToolAdapter,
-                confirm: ConfirmStep | None = None):
+                confirm: ConfirmStep | None = None, escalate=None):
     """Compile the graph for this config. A label with a branch in agent/branches/ runs it; any other label is a stub."""
     friendly = set(cfg.session.friendly_kinds)
     already_offers = set(cfg.session.offer_in_reply)
     limit = cfg.session.off_topic_limit
     special = {"out_of_scope", "clarify"}
     branch_labels = [label for label in cfg.router.labels if label not in special]
-    confirm = confirm or ConfirmStep(cfg, chat, adapter)
+    confirm = confirm or ConfirmStep(cfg, chat, adapter, escalate)
 
     def route_node(state: State) -> dict:
         return {"decision": router.decide(state["session"], state["message"]), "steps": [*state.get("steps", []), "router"]}
@@ -95,7 +95,7 @@ def build_graph(cfg: AgentConfig, router: Router, replies: Replies, chat: ChatMo
 
         def node(state: State) -> dict:
             session = state["session"]
-            ctx = BranchContext(cfg, chat, adapter, session, state["message"])
+            ctx = BranchContext(cfg, chat, adapter, session, state["message"], escalate)
             prior = state.get("checks", [])
             try:
                 result = branch.run(ctx)

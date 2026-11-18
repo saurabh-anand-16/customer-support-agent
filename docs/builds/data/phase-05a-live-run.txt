@@ -1,0 +1,74 @@
+customers chosen from tool output (same id may serve two steps):
+  person: {"customer_id": "C0001"}
+  late: {"customer_id": "C0001", "order_id": "642-9700779-8286746", "item_id": "OI002234", "product_name": "JBL Go 2, Wireless Portable Bluetooth Speaker with Mic, JBL Signature Sound, Vibrant Color Options with IPX7 Waterproof & AUX (Blue)", "days_late": 1, "window_days": 7}
+  approval: {"customer_id": "C0002", "order_id": "722-3049201-6460158", "item_id": "OI001158", "product_name": "Samsung 138 cm (55 inches) Crystal 4K Series Ultra HD Smart LED TV UA55AUE60AKLXL (Black)", "approval_reasons": ["high_value"], "line_total_inr": 45999.0}
+
+=== 1. asks for a person ===
+  customer: I want to talk to a person.
+  agent:    I have asked a person to review this. Your reference is REV-0001. Nothing has been changed on your order yet, and a person will decide.
+            [route=human_help steps=router>branch_human_help>finish; queue checks: [{'name': 'review_queue_write', 'passed': True, 'reason': 'REV-0001 created (customer_asked_for_person)'}]; failed checks: none]
+  returns rows 73 -> 73; cancelled items 152 -> 152
+  review_items after this step: 1 row(s)
+    {"id": "REV-0001", "customer_id": "C0001", "order_item_id": null, "kind": "customer_asked_for_person", "reason": "The customer asked to speak to a person.", "status": "open", "decision_note": null, "decided_at": null, "decided_by": null}
+     excerpt: [{"role": "customer", "text": "I want to talk to a person."}]
+     eligibility: null
+
+=== 2. late return ===
+  customer: The JBL Go 2, Wireless Portable Bluetooth Speaker with Mic, JBL Signature Sound, Vibrant Color Options with IPX7 Waterproof & AUX (Blue) from order 642-9700779-8286746 (item OI002234) arrived damaged. I know it is late, but I want to return it for a refund.
+  agent:    JBL Go 2, Wireless Portable Bluetooth Speaker with Mic, JBL Signature Sound, Vibrant Color Options with IPX7 Waterproof & AUX (Blue) was delivered on 2026-11-10. Today is day 8 and the window for this kind of request is 7 days (the last day was 2026-11-16), so it is 1 days past the window. I can't grant an exception myself. I have asked a person to review this. Your reference is REV-0002. Nothing has been changed on your order yet, and a person will decide.
+            [route=return_or_replace steps=router>branch_return_or_replace>finish; queue checks: [{'name': 'review_queue_write', 'passed': True, 'reason': 'REV-0002 created (late_request)'}]; failed checks: none]
+  returns rows 73 -> 73; cancelled items 152 -> 152
+  review_items after this step: 2 row(s)
+    {"id": "REV-0001", "customer_id": "C0001", "order_item_id": null, "kind": "customer_asked_for_person", "reason": "The customer asked to speak to a person.", "status": "open", "decision_note": null, "decided_at": null, "decided_by": null}
+     excerpt: [{"role": "customer", "text": "I want to talk to a person."}]
+     eligibility: null
+    {"id": "REV-0002", "customer_id": "C0001", "order_item_id": "OI002234", "kind": "late_request", "reason": "The customer asked to return item OI002234, which is past the return window: day 8, window 7 days, 1 days late (last eligible date 2026-11-16).", "status": "open", "decision_note": null, "decided_at": null, "decided_by": null}
+     excerpt: [{"role": "customer", "text": "The JBL Go 2, Wireless Portable Bluetooth Speaker with Mic, JBL Signature Sound, Vibrant Color Options with IPX7 Waterproof & AUX (Blue) from order 642-9700779-8286746 (item OI002234) arrived damaged. I know it is late, but I want to return it for a refund."}]
+     eligibility: {"reason": "damaged", "today": "2026-11-17", "policy_code": "REPL_7", "policy_label": "7 Days Replacement", "delivered_at": "2026-11-10", "sources": ["returns-policy.md"], "day_number": 8, "window_days_applied": 7, "days_left": -1, "last_eligible_date": "2026-11-16", "decision": "not_eligible", "reason_code": "window_expired", "days_late": 1, "exception_can_be_requested": true, "allowed_resolutions": [], "staff_approval_required": false, "approval_reasons": [], "ok": true, "item_id": "OI002234", "product_name": "JBL Go 2, Wireless Portable Bluetooth Speaker with Mic, JBL Signature Sound, Vibrant Color Options with IPX7 Waterproof & AUX (Blue)", "payment_type": "prepaid", "line_total_inr": 1999.0}
+
+=== 3. the same late return again (new session) ===
+  customer: The JBL Go 2, Wireless Portable Bluetooth Speaker with Mic, JBL Signature Sound, Vibrant Color Options with IPX7 Waterproof & AUX (Blue) from order 642-9700779-8286746 (item OI002234) arrived damaged. I know it is late, but I want to return it for a refund.
+  agent:    JBL Go 2, Wireless Portable Bluetooth Speaker with Mic, JBL Signature Sound, Vibrant Color Options with IPX7 Waterproof & AUX (Blue) was delivered on 2026-11-10. Today is day 8 and the window for this kind of request is 7 days (the last day was 2026-11-16), so it is 1 days past the window. I can't grant an exception myself. I have asked a person to review this. Your reference is REV-0002. Nothing has been changed on your order yet, and a person will decide.
+            [route=return_or_replace steps=router>branch_return_or_replace>finish; queue checks: [{'name': 'review_queue_write', 'passed': True, 'reason': 'REV-0002 already open for this case (late_request); no second item created'}]; failed checks: none]
+  returns rows 73 -> 73; cancelled items 152 -> 152
+  review_items after this step: 2 row(s)
+    {"id": "REV-0001", "customer_id": "C0001", "order_item_id": null, "kind": "customer_asked_for_person", "reason": "The customer asked to speak to a person.", "status": "open", "decision_note": null, "decided_at": null, "decided_by": null}
+     excerpt: [{"role": "customer", "text": "I want to talk to a person."}]
+     eligibility: null
+    {"id": "REV-0002", "customer_id": "C0001", "order_item_id": "OI002234", "kind": "late_request", "reason": "The customer asked to return item OI002234, which is past the return window: day 8, window 7 days, 1 days late (last eligible date 2026-11-16).", "status": "open", "decision_note": null, "decided_at": null, "decided_by": null}
+     excerpt: [{"role": "customer", "text": "The JBL Go 2, Wireless Portable Bluetooth Speaker with Mic, JBL Signature Sound, Vibrant Color Options with IPX7 Waterproof & AUX (Blue) from order 642-9700779-8286746 (item OI002234) arrived damaged. I know it is late, but I want to return it for a refund."}]
+     eligibility: {"reason": "damaged", "today": "2026-11-17", "policy_code": "REPL_7", "policy_label": "7 Days Replacement", "delivered_at": "2026-11-10", "sources": ["returns-policy.md"], "day_number": 8, "window_days_applied": 7, "days_left": -1, "last_eligible_date": "2026-11-16", "decision": "not_eligible", "reason_code": "window_expired", "days_late": 1, "exception_can_be_requested": true, "allowed_resolutions": [], "staff_approval_required": false, "approval_reasons": [], "ok": true, "item_id": "OI002234", "product_name": "JBL Go 2, Wireless Portable Bluetooth Speaker with Mic, JBL Signature Sound, Vibrant Color Options with IPX7 Waterproof & AUX (Blue)", "payment_type": "prepaid", "line_total_inr": 1999.0}
+
+=== 4. return that needs staff approval ===
+  customer: The Samsung 138 cm (55 inches) Crystal 4K Series Ultra HD Smart LED TV UA55AUE60AKLXL (Black) from order 722-3049201-6460158 (item OI001158) arrived damaged. I want a replacement.
+  agent:    You want to get a replacement for Samsung 138 cm (55 inches) Crystal 4K Series Ultra HD Smart LED TV UA55AUE60AKLXL (Black) (item OI001158, order 722-3049201-6460158, INR 45,999) because it arrived damaged. A reviewer has to approve this first, because the item value is above the approval limit. Keep the item in its original condition with the brand box, MRP tags, manual, warranty cards and all accessories. Amazon may verify before refunding or replacing. Shall I go ahead? Yes or no.
+            [route=return_or_replace steps=router>branch_return_or_replace>finish; queue checks: []; failed checks: none]
+  customer: Yes, please go ahead.
+  agent:    I have asked a person to review this. Your reference is REV-0003. Nothing has been changed on your order yet, and a person will decide.
+            [route=confirm_step steps=router>confirm_step>finish; queue checks: [{'name': 'review_queue_write', 'passed': True, 'reason': 'REV-0003 created (approval_required)'}]; failed checks: ['review_gate', 'write']]
+  returns rows 73 -> 73; cancelled items 152 -> 152
+  review_items after this step: 3 row(s)
+    {"id": "REV-0001", "customer_id": "C0001", "order_item_id": null, "kind": "customer_asked_for_person", "reason": "The customer asked to speak to a person.", "status": "open", "decision_note": null, "decided_at": null, "decided_by": null}
+     excerpt: [{"role": "customer", "text": "I want to talk to a person."}]
+     eligibility: null
+    {"id": "REV-0002", "customer_id": "C0001", "order_item_id": "OI002234", "kind": "late_request", "reason": "The customer asked to return item OI002234, which is past the return window: day 8, window 7 days, 1 days late (last eligible date 2026-11-16).", "status": "open", "decision_note": null, "decided_at": null, "decided_by": null}
+     excerpt: [{"role": "customer", "text": "The JBL Go 2, Wireless Portable Bluetooth Speaker with Mic, JBL Signature Sound, Vibrant Color Options with IPX7 Waterproof & AUX (Blue) from order 642-9700779-8286746 (item OI002234) arrived damaged. I know it is late, but I want to return it for a refund."}]
+     eligibility: {"reason": "damaged", "today": "2026-11-17", "policy_code": "REPL_7", "policy_label": "7 Days Replacement", "delivered_at": "2026-11-10", "sources": ["returns-policy.md"], "day_number": 8, "window_days_applied": 7, "days_left": -1, "last_eligible_date": "2026-11-16", "decision": "not_eligible", "reason_code": "window_expired", "days_late": 1, "exception_can_be_requested": true, "allowed_resolutions": [], "staff_approval_required": false, "approval_reasons": [], "ok": true, "item_id": "OI002234", "product_name": "JBL Go 2, Wireless Portable Bluetooth Speaker with Mic, JBL Signature Sound, Vibrant Color Options with IPX7 Waterproof & AUX (Blue)", "payment_type": "prepaid", "line_total_inr": 1999.0}
+    {"id": "REV-0003", "customer_id": "C0002", "order_item_id": "OI001158", "kind": "approval_required", "reason": "The customer confirmed a replacement for item OI001158, which needs staff approval because the item value is above the approval limit.", "status": "open", "decision_note": null, "decided_at": null, "decided_by": null}
+     excerpt: [{"role": "customer", "text": "The Samsung 138 cm (55 inches) Crystal 4K Series Ultra HD Smart LED TV UA55AUE60AKLXL (Black) from order 722-3049201-6460158 (item OI001158) arrived damaged. I want a replacement."}, {"role": "agent", "text": "You want to get a replacement for Samsung 138 cm (55 inches) Crystal 4K Series Ultra HD Smart LED TV UA55AUE60AKLXL (Black) (item OI001158, order 722-3049201-6460158, INR 45,999) because it arrived damaged. A reviewer has to approve this first, because the item value is above the approval limit. Keep the item in its original condition with the brand box, MRP tags, manual, warranty cards and all accessories. Amazon may verify before refunding or replacing. Shall I go ahead? Yes or no."}, {"role": "customer", "text": "Yes, please go ahead."}]
+     eligibility: {"decision": "eligible", "needs_staff_approval": true, "approval_reasons": ["high_value"], "resolution": "replacement", "refund_amount_inr": null, "return_window": {"window_days": 10, "day_number": 8, "last_eligible_date": "2026-11-19", "days_left": 2}}
+
+old tables, before and after the whole run (row count, hash):
+  category_policy_map      211   211  identical
+  config                     1     1  identical
+  customers                400   400  identical
+  order_items             3281  3281  identical
+  orders                  2500  2500  identical
+  policy_facts              16    16  identical
+  products                1351  1351  identical
+  refund_timelines           9     9  identical
+  return_rules              10    10  identical
+  returns                   73    73  identical
+
+real database hash before ab517294dfd8f1e2d7790eb9b8324bffdff11bf75821e561ab05859d2f91f898
+real database hash after  ab517294dfd8f1e2d7790eb9b8324bffdff11bf75821e561ab05859d2f91f898  (unchanged)

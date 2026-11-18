@@ -48,8 +48,6 @@ FIXED_BRANCHES = {
         "cancel_delivered": "CANCEL-DELIVERED {product_name}",
         "cancel_cancelled": "CANCEL-ALREADY {product_name}",
         "cancel_other": "CANCEL-OTHER {product_name}",
-        "escalation_not_built_late": "ESCALATION-LATE-NOT-BUILT",
-        "escalation_not_built_human": "ESCALATION-HUMAN-NOT-BUILT",
     },
 }
 
@@ -111,7 +109,6 @@ FIXED_CONFIRM = {
         "unclear_ask": "UNCLEAR-ASK {question}",
         "unclear_drop": "UNCLEAR-DROPPED",
         "expired": "EXPIRED-NOTHING-DONE",
-        "approval_needed": "APPROVAL-NEEDED-NOT-BUILT",
         "refund_method_needed": "REFUND-METHOD-NEEDED {options}",
         "refused": "REFUSED {message}",
     },
@@ -128,5 +125,18 @@ FIXED_ANSWER_CHECK = {
         "fallback_timeline_line": "TIMELINE {order_type} | {refund_method} | {time_text}",
         "fallback_policy_line": "POLICY: {passage}",
         "fallback_nothing": "FALLBACK-NOTHING",
+    },
+}
+
+
+# --- phase 5a: the review queue (fixed, recognisable wording; the tests never read config/agent.toml) ---
+FIXED_REVIEW = {
+    "excerpt_messages": 4, "excerpt_message_chars": 40, "dedupe_open_items": True,
+    "reply_template": "QUEUED-FOR-A-PERSON ref={reference}",
+    "error_reply": "QUEUE-WRITE-FAILED",
+    "reasons": {
+        "customer_asked_for_person": "REASON person",
+        "late_request": "REASON late item={item_id} day={day_number} window={window_days} late={days_late} last={last_eligible_date}",
+        "approval_required": "REASON approval {resolution} item={item_id} because={approval_reasons}",
     },
 }

@@ -303,8 +303,8 @@ def test_a_request_that_needs_approval_is_not_written_and_goes_to_the_seam(tmp_p
     assert first["pending_action"]["needs_staff_approval"] is True
     before = db_state(spy.con)
     result = agent.respond(sid, "yes")
-    assert result["reply"] == "APPROVAL-NEEDED-NOT-BUILT" and db_state(spy.con) == before
-    assert result["trace"]["confirm"]["escalation"]["reason"] == "approval_required" and result["trace"]["confirm"]["escalation"]["queued"] is False
+    assert result["reply"] == "QUEUED-FOR-A-PERSON ref=REV-0001" and db_state(spy.con) == before
+    assert result["trace"]["confirm"]["escalation"]["reason"] == "approval_required" and result["trace"]["confirm"]["escalation"]["queued"] is True
     assert ("review_gate", False) in check_names(result) and item["customer_id"] not in json.dumps(result["trace"])
     assert len(spy.writer_calls) == 1 and spy.writer_calls[0][2] == {"confirmed": True}      # the tool was asked, and refused; staff_approved was not passed
 

@@ -1,6 +1,6 @@
 # Phase 5a: the review queue
 
-**Status:** to build. **Branch:** `phase-5a-review-queue`. **Follows:** 4c (merged). **Next:** 5b.
+**Status:** Done, in review ([build report](../builds/phase-05a-build.md)). **Branch:** `phase-5a-review-queue`. **Follows:** 4c (merged). **Next:** 5b.
 
 ## Why this phase exists
 
@@ -81,3 +81,19 @@ Use a copy of the database. Pick customers from tool output only. Run: (1) a cus
 ## Not in 5a
 
 Approve and decline, the `staff_approved` write path, telling the customer the outcome, the Manager page, and the refund method for Pay on Delivery. These are 5b, phase 8 and a later small phase.
+
+## What was really built
+
+The plan above was followed, with the differences listed in the [build report](../builds/phase-05a-build.md). The ones that change what the document says:
+
+- **Kinds.** The three existing callers use `customer_asked_for_person`, `late_request` and `approval_required`, so those are the kinds. `could_not_handle` has no caller and was not built.
+- **Config.** `[review]` has three more keys than listed (`excerpt_message_chars`, `error_reply`, and a `[review.reasons]` table with one sentence per kind). The two old "not built" reply texts and `confirm.replies.approval_needed` were removed.
+- **Call shape.** Callers still pass `(session, kind, details, reply_template)`, but the function now comes from the branch context (`ctx.ask_for_person`) and, in the confirm step, from the `Agent`. `Session` has one new field, `current_message`, so the excerpt can hold the message being answered.
+- **Database.** One new table, `review_items`, in `schema.sql`. A database built earlier gets the table the first time a queue is opened on it. Every older table is identical (row counts and per-table hashes in the build report).
+
+## Results
+
+- `python -m pytest`: 1157 passed, 17 `live` tests left out (12 before, 5 new).
+- `python scripts/09_mutation_check.py`: see the build report for the result of all 49 mutations (25 from phase 4c, 24 new).
+- `python scripts/12_live_review_paths.py`: four real-model steps on a copy of the database; items REV-0001 to REV-0003, no second item for the repeated late return, `returns` stayed at 73 rows and cancelled items at 152 in every step.
+

@@ -155,3 +155,25 @@ SELECT
     CASE WHEN day_number IS NULL THEN 0
          WHEN day_number <= defect_report_window_days THEN 1 ELSE 0 END AS in_defect_window
 FROM v_item_return_window v;
+
+-- Phase 5a: the review queue. One row per case a person must look at. It has no foreign keys on purpose: the queue
+-- never changes orders or return requests, and a case must still be stored if the item it names is gone.
+-- agent/review_queue.py reads the block between the two markers below to create the table in a database that was
+-- built before this phase, so the text is written once, here.
+-- review_items:begin
+CREATE TABLE IF NOT EXISTS review_items (
+    id            TEXT PRIMARY KEY,                 -- the reference the customer sees, e.g. REV-0001
+    created_at    TEXT NOT NULL,                    -- ISO time, UTC
+    customer_id   TEXT NOT NULL,                    -- stored as data; never in a model prompt or tool schema
+    order_item_id TEXT,                             -- the item the case is about; NULL when there is none
+    kind          TEXT NOT NULL,                    -- why it was sent (the kinds are the keys of [review.reasons] in config/agent.toml)
+    reason        TEXT NOT NULL,                    -- one plain sentence written by code from the tool result
+    excerpt       TEXT,                             -- JSON list of the last messages: {"role": customer|agent, "text"}
+    eligibility   TEXT,                             -- JSON of the eligibility result, when one exists
+    status        TEXT NOT NULL DEFAULT 'open' CHECK (status IN ('open','approved','declined')),   -- 5a writes only 'open'
+    decision_note TEXT,                             -- empty in 5a (phase 5b)
+    decided_at    TEXT,                             -- empty in 5a (phase 5b)
+    decided_by    TEXT                              -- empty in 5a (phase 5b)
+);
+CREATE INDEX IF NOT EXISTS ix_review_items_case ON review_items(customer_id, order_item_id, kind, status);
+-- review_items:end

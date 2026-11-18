@@ -23,7 +23,8 @@ Rules for these files:
 | 4b | The five branch flows (tools, pending actions, evidence) | Done, in review ([build report](../builds/phase-04b-build.md)) | | [phase-04b-branch-flows.md](phase-04b-branch-flows.md) |
 | 4c | Confirm step, writes, answer check, guardrail tests | Done, in review ([build report](../builds/phase-04c-build.md)) | | [phase-04c-confirm-and-answer-check.md](phase-04c-confirm-and-answer-check.md) |
 | 4 | Agent: router, six branches, confirm step, answer check | Done as 4a, 4b and 4c | 3 to 4 | |
-| 5 | Review gate, `request_review`, human help | Not started | 1.5 to 2 | |
+| 5a | Review queue: `review_items` table, real escalation seam | Done, in review ([build report](../builds/phase-05a-build.md)) | | [phase-05a-review-queue.md](phase-05a-review-queue.md) |
+| 5 | Review gate, `request_review`, human help (5a done; 5b approve and decline next) | In progress | 1.5 to 2 | |
 | 6 | Langfuse tracing | Not started | 1 | |
 | 7 | Streamlit shell, Home, persona picker, customer chat | Not started | 2 | |
 | 8 | Manager page | Not started | 1 | |

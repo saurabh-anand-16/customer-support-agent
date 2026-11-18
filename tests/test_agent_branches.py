@@ -93,7 +93,7 @@ def test_a_late_return_is_never_proposed_and_the_trace_shows_the_escalation_seam
     replies = [router("return_or_replace"), final(outcome="decide", item_id=item["item_id"], reason="damaged", resolution="refund")]
     agent, _, sid, _ = make_agent(tmp_path, spy, replies, item["customer_id"])
     result = agent.respond(sid, "return it please")
-    assert agent.sessions.get(sid).pending_action is None and result["reply"].startswith("LATE ") and result["reply"].endswith("ESCALATION-LATE-NOT-BUILT")
+    assert agent.sessions.get(sid).pending_action is None and result["reply"].startswith("LATE ") and result["reply"].endswith("QUEUED-FOR-A-PERSON ref=REV-0001")
     assert result["trace"]["branch"]["notes"]["escalation"]["reason"] == "late_request"
 
 
@@ -110,7 +110,7 @@ def test_cancel_of_a_processing_item_stores_a_pending_action_and_a_shipped_one_d
 def test_human_help_calls_no_tool_and_one_model_call_only(tmp_path, spy):
     agent, chat, sid, _ = make_agent(tmp_path, spy, [router("human_help")], "C-TEST")
     result = agent.respond(sid, "I want to speak to a person")
-    assert result["reply"] == "ESCALATION-HUMAN-NOT-BUILT" and len(chat.calls) == 1 and spy.calls == []
+    assert result["reply"] == "QUEUED-FOR-A-PERSON ref=REV-0001" and len(chat.calls) == 1 and spy.calls == []
     assert result["trace"]["branch"]["notes"]["escalation"]["reason"] == "customer_asked_for_person"
 
 

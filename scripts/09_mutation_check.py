@@ -20,10 +20,11 @@ import tempfile
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-COPY = ["agent", "config", "tests", "returns_agent.db", "pytest.ini", "schema.sql"]
+COPY = ["agent", "config", "tests", "scripts", "returns_agent.db", "pytest.ini", "schema.sql"]
 TESTS = ["tests/test_confirm_step.py", "tests/test_answer_check.py", "tests/test_agent_safety.py", "tests/test_confirm_config.py",
          "tests/test_tool_adapter.py", "tests/test_agent_branches.py", "tests/test_agent_flow.py", "tests/test_branch_cancel.py",
-         "tests/test_branch_return.py", "tests/test_branch_policy.py", "tests/test_branch_order_status.py", "tests/test_session.py"]
+         "tests/test_branch_return.py", "tests/test_branch_policy.py", "tests/test_branch_order_status.py", "tests/test_session.py",
+         "tests/test_review_queue.py", "tests/test_escalation.py", "tests/test_review_safety.py", "tests/test_branch_human_help.py"]
 
 # (id, the rule that is broken, file, text to replace, replacement)
 MUTATIONS = [
@@ -78,6 +79,57 @@ MUTATIONS = [
      "        if session.pending_action is not None:", "        if False:"),
     ("M25", "a request past the window is never proposed", "agent/branches/return_or_replace.py",
      'if decision in ("eligible", "review_required"):', 'if decision in ("eligible", "review_required", "not_eligible"):'),
+    # --- phase 5a: the review queue ---
+    ("M26", "the same case is one item: dedupe is on", "agent/review_queue.py",
+     "            if dedupe:\n", "            if False:\n"),
+    ("M27", "the same case is one item: the config switch is passed on", "agent/escalation.py",
+     "dedupe=r.dedupe_open_items", "dedupe=False"),
+    ("M28", "the same case: a different kind is a different case", "agent/review_queue.py",
+     'AND kind = ? AND status = ?",\n                                        (customer_id, order_item_id, kind, OPEN))',
+     'AND status = ?",\n                                        (customer_id, order_item_id, OPEN))'),
+    ("M29", "the same case: a different order item is a different case", "agent/review_queue.py",
+     "AND order_item_id IS ? AND", "AND (order_item_id IS ? OR 1) AND"),
+    ("M30", "the same case: a different customer is a different case", "agent/review_queue.py",
+     "WHERE customer_id = ? AND order_item_id", "WHERE (customer_id = ? OR 1) AND order_item_id"),
+    ("M31", "the same case: an item that is no longer open does not block a new one", "agent/review_queue.py",
+     'AND status = ?",\n', 'AND (status = ? OR 1)",\n'),
+    ("M32", "the queue module cannot import the writers", "agent/review_queue.py",
+     "import json\nimport re\n", "import json\nimport re\nfrom .tools import ReturnsTools\n"),
+    ("M33", "the queue module has no function that touches returns", "agent/review_queue.py",
+     "    def close(self) -> None:",
+     "    def reopen(self):\n        self.con.execute(\"UPDATE returns SET return_status = 'x'\")\n\n    def close(self) -> None:"),
+    ("M34", "the excerpt is cut to N messages", "agent/escalation.py",
+     "kept = messages[-r.excerpt_messages:] if r.excerpt_messages > 0 else []", "kept = messages"),
+    ("M35", "each excerpt message is cut to the configured length", "agent/escalation.py",
+     '"text": str(m["text"])[:r.excerpt_message_chars]}', '"text": str(m["text"])}'),
+    ("M36", "the message being answered is in the excerpt", "agent/agent.py",
+     "        session.current_message = text ", "        pass #"),
+    ("M37", "the reason is written by code from the tool result, not taken from the model's fields", "agent/escalation.py",
+     "reason=self._reason_sentence(kind, details),", 'reason=str(details.get("reason") or self._reason_sentence(kind, details)),'),
+    ("M38", "the reply holds the reference and no other queue data", "agent/escalation.py",
+     "reply=fill(reply or r.reply_template, reference=reference))", 'reply=fill(reply or r.reply_template, reference=reference) + " " + made["item"]["reason"])'),
+    ("M39", "the customer id is removed from stored and traced data", "agent/escalation.py",
+     "details = _scrub(dict(details))", "details = dict(details)"),
+    ("M40", "a failed queue write is a failed check", "agent/escalation.py",
+     'record["check"] = check("review_queue_write", False, record["note"])', 'record["check"] = check("review_queue_write", True, record["note"])'),
+    ("M41", "a failed queue write gives the fixed error reply, not the success text", "agent/escalation.py",
+     '"reply": r.error_reply, "reason": kind,', '"reply": r.reply_template, "reason": kind,'),
+    ("M42", "a branch with no seam wired is a failed write", "agent/branches/base.py",
+     '"reply": self.cfg.review.error_reply, "reason": kind,', '"reply": self.cfg.review.reply_template, "reason": kind,'),
+    ("M43", "a human-help case adds its entry to the checks", "agent/branches/human_help.py",
+     '        run.checks.append(sent["check"])', "        pass"),
+    ("M44", "a late-return case adds its entry to the checks", "agent/branches/return_or_replace.py",
+     '        run.checks.append(sent["check"])', "        pass"),
+    ("M45", "a needs-approval case adds its entry to the checks", "agent/actions.py",
+     'check("write", False, "the tool refused: staff_approval_required"), sent["check"]])', 'check("write", False, "the tool refused: staff_approval_required")])'),
+    ("M46", "the needs-approval case is queued under its own kind", "agent/actions.py",
+     'escalate_fn(session, "approval_required", details,', 'escalate_fn(session, "late_request", details,'),
+    ("M47", "a new item is always open", "agent/review_queue.py",
+     'OPEN = "open" ', 'OPEN = "approved" '),
+    ("M48", "the real config reply carries the reference", "config/agent.toml",
+     "Your reference is {reference}.", "Your reference is REV."),
+    ("M49", "no module but the seam uses the queue", "agent/branches/base.py",
+     "from ..checks import check\n", "from ..checks import check\nfrom ..review_queue import ReviewQueue\n"),
 ]
 
 

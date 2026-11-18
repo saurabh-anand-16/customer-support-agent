@@ -25,7 +25,6 @@ from dataclasses import dataclass, field
 
 from .actions import fill, run_pending
 from .checks import check
-from .escalation import escalate
 from .llm import AgentConfig, ChatModel, LlmError
 from .session import Session
 from .tool_adapter import ToolAdapter
@@ -67,7 +66,7 @@ class ConfirmOutcome:
 
 
 class ConfirmStep:
-    def __init__(self, cfg: AgentConfig, chat: ChatModel, adapter: ToolAdapter, escalate_fn=escalate):
+    def __init__(self, cfg: AgentConfig, chat: ChatModel, adapter: ToolAdapter, escalate_fn=None):
         self.cfg, self.chat, self.adapter, self.escalate_fn = cfg, chat, adapter, escalate_fn
 
     # -- the model's label -------------------------------------------------------------------------------

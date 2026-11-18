@@ -160,8 +160,6 @@ cancel_shipped = "{product_name} has already shipped, so it can't be cancelled. 
 cancel_delivered = "{product_name} has already been delivered, so it can't be cancelled. You can ask about returning it instead."
 cancel_cancelled = "{product_name} has already been cancelled."
 cancel_other = "{product_name} can't be cancelled."
-escalation_not_built_late = "I can ask for a reviewer to look at this, but the review queue is not built yet, so nothing has been requested."
-escalation_not_built_human = "I would pass this to a person, but the review queue is not built yet, so I can't create a request. Nothing has been sent."
 
 [replies]
 # Fixed text for every out-of-scope kind. The model only picks the kind; it never writes these.
@@ -210,7 +208,6 @@ declined = "Okay, I have not done anything. Is there something else I can help w
 unclear_ask = "Sorry, I did not catch that. {question}"
 unclear_drop = "I will leave it for now. Nothing has been changed. Tell me if you want to try again."
 expired = "The earlier request was not confirmed in time, so nothing was done."
-approval_needed = "This one needs a reviewer's approval first, and the review queue is not built yet, so I could not send it. Nothing has been changed."
 refund_method_needed = "This was a Pay on Delivery order, so I need to know where to send the refund ({options}). I can't take that choice here yet, so nothing has been changed."
 refused = "I could not do that: {message} Nothing has been changed."
 
@@ -234,3 +231,17 @@ fallback_return_line = "Return {return_id} for {product_name} (item {item_id}): 
 fallback_timeline_line = "Refund time for {order_type} orders paid by {refund_method}: {time_text}"
 fallback_policy_line = "The policy says: {passage}"
 fallback_nothing = "I could not find that in the records I can see. Could you tell me the order ID and the item you mean?"
+
+[review]
+# Phase 5a: the review queue. A case that needs a person becomes one queue item; the customer gets the reference.
+excerpt_messages = 6             # the last messages (customer and agent) kept in a queue item
+excerpt_message_chars = 500      # each kept message is cut to this length
+dedupe_open_items = true         # the same customer, order item and kind with an open item gives that item back
+reply_template = "I have asked a person to review this. Your reference is {reference}. Nothing has been changed on your order yet, and a person will decide."
+error_reply = "Sorry, I could not pass this to a person just now, so no request has been made. Please try again in a moment."
+
+[review.reasons]
+# One plain sentence per kind, filled in by code from tool data. The model writes none of it.
+customer_asked_for_person = "The customer asked to speak to a person."
+late_request = "The customer asked to return item {item_id}, which is past the return window: day {day_number}, window {window_days} days, {days_late} days late (last eligible date {last_eligible_date})."
+approval_required = "The customer confirmed a {resolution} for item {item_id}, which needs staff approval because {approval_reasons}."

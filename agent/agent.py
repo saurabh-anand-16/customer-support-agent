@@ -26,6 +26,7 @@ imported when an Agent is created, so the other agent modules work without it.
 from pathlib import Path
 
 from .confirm import ConfirmStep, public_pending
+from .escalation import Escalator, queue_for_tools
 from .llm import ROOT, AgentConfig, ChatModel, OpenAIChat, load_agent_config
 from .replies import Replies
 from .router import Router
@@ -37,11 +38,13 @@ DEFAULT_DB = ROOT / "returns_agent.db"
 
 class Agent:
     def __init__(self, config: AgentConfig | None = None, chat: ChatModel | None = None, sessions: SessionStore | None = None,
-                 tools=None, policy_search=None, db_path: str | Path | None = None):
+                 tools=None, policy_search=None, db_path: str | Path | None = None, review_queue=None):
         """
         `config` defaults to config/agent.toml, `chat` to the OpenAI model named in it. Tests give a fixed config and a fake.
         `tools` (a ReturnsTools) and `policy_search` (a PolicySearch) default to the real ones, opened only when first used;
         `db_path` chooses the database for the default tools. Tests give a fake policy search.
+        `review_queue` (a ReviewQueue) is where cases for a person are written; by default the queue is opened, when first
+        needed, on the same database file the tools use.
         """
         try:
             from .graph import build_graph
@@ -61,8 +64,16 @@ class Agent:
             return PolicySearch()
 
         self.adapter = ToolAdapter(tools, policy_search, open_tools, open_policy, top_k=self.cfg.branches.policy_top_k)
-        self.confirm = ConfirmStep(self.cfg, self.chat, self.adapter)
-        self._graph = build_graph(self.cfg, self.router, self.replies, self.chat, self.adapter, self.confirm)
+        self._queue = review_queue
+
+        def queue_source():
+            if self._queue is None:
+                self._queue = queue_for_tools(self.adapter.tools)
+            return self._queue
+
+        self.escalator = Escalator(queue_source, self.cfg)
+        self.confirm = ConfirmStep(self.cfg, self.chat, self.adapter, self.escalator)
+        self._graph = build_graph(self.cfg, self.router, self.replies, self.chat, self.adapter, self.confirm, self.escalator)
 
     def start_session(self, customer_id: str) -> str:
         """A new conversation for this customer. The customer cannot be changed afterwards. Returns the session id."""
@@ -71,6 +82,7 @@ class Agent:
     def respond(self, session_id: str, message: str) -> dict:
         session = self.sessions.get(session_id)        # raises UnknownSession for an id that was never issued
         text = message if isinstance(message, str) else ""
+        session.current_message = text            # for the excerpt of a review case; it joins `history` when the turn ends
         state = self._graph.invoke({"session": session, "message": text, "steps": []})
         decision = state["decision"]
         trace = {

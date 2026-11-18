@@ -65,3 +65,20 @@ def pick(raw):
             pytest.fail(f"The data has no example item for: {where}")
         return dict(row)
     return _pick
+
+
+# --- phase 5a: no test may write a review item into the real database -----------------------------------------------------
+def in_memory_queue(now=None):
+    """A review queue in memory, with its own connection. Tests that need to look at the queue make one and pass it to the Agent."""
+    from agent.review_queue import ReviewQueue
+    return ReviewQueue(sqlite3.connect(":memory:", isolation_level=None), now=now)
+
+
+@pytest.fixture(autouse=True)
+def _agents_never_open_the_real_queue(monkeypatch):
+    """
+    An Agent that is not given a review queue opens one on the database file its tools use. Many tests build an Agent over
+    the real database (tools_ro), so by default the queue they get is an in-memory one. A test about the real behaviour of
+    `queue_for_tools` imports it from agent.escalation (this patch changes the name inside agent.agent only).
+    """
+    monkeypatch.setattr("agent.agent.queue_for_tools", lambda tools: in_memory_queue())

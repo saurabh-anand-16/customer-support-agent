@@ -16,6 +16,7 @@ import dataclasses
 import json
 import time
 from dataclasses import dataclass, field
+from typing import Callable
 
 from ..answer_check import describe_facts, describe_problems, facts_from, find_problems
 from ..checks import check
@@ -33,6 +34,15 @@ class BranchContext:
     adapter: ToolAdapter
     session: Session
     message: str
+    escalate: Callable | None = None          # the escalation seam (agent/escalation.py); None means no queue is wired
+
+    def ask_for_person(self, kind: str, details: dict) -> dict:
+        """Hand a case to the review queue through the seam. With no seam wired the result is a failed write, never a success."""
+        if self.escalate is None:
+            return {"queued": False, "created": None, "reference": None, "reply": self.cfg.review.error_reply, "reason": kind,
+                    "details": dict(details), "note": "no review queue is wired; nothing was queued",
+                    "check": check("review_queue_write", False, "no review queue is wired; nothing was queued")}
+        return self.escalate(self.session, kind, details, self.cfg.review.reply_template)
 
 
 @dataclass

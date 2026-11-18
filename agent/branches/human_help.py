@@ -1,10 +1,9 @@
 """
 human_help.py - "let me talk to a person".
 
-No tools and no model call. The branch hands the request to the escalation seam and shows its reply, which in this
-phase says plainly that the review queue is not built yet (phase 5 will create a queue entry and say what happens next).
+No tools and no model call. The branch hands the request to the escalation seam (through the context), which writes a
+review-queue item and returns the fixed reply with the reference in it. The seam's guardrail entry goes into the trace.
 """
-from ..escalation import escalate
 from .base import Branch, BranchContext, BranchResult, Run
 
 
@@ -14,7 +13,7 @@ class HumanHelpBranch(Branch):
 
     def run(self, ctx: BranchContext) -> BranchResult:
         run = Run()
-        sent = escalate(ctx.session, "customer_asked_for_person", {"message": ctx.message.strip()[:200]},
-                        ctx.cfg.branches.replies["escalation_not_built_human"])
+        sent = ctx.ask_for_person("customer_asked_for_person", {"message": ctx.message.strip()[:200]})
         run.notes["escalation"] = sent
+        run.checks.append(sent["check"])
         return BranchResult(sent["reply"], run)

@@ -143,7 +143,7 @@ def test_a_request_past_the_window_is_explained_with_the_tool_numbers_and_never_
     assert result.pending_action is None
     assert result.reply == (f"LATE {check['product_name']} delivered={check['delivered_at']} day={check['day_number']} "
                             f"window={check['window_days_applied']} last={check['last_eligible_date']} late={check['days_late']} "
-                            "ESCALATION-LATE-NOT-BUILT")
+                            "QUEUED-FOR-A-PERSON ref=REV-0001")
     assert check["days_late"] == check["day_number"] - check["window_days_applied"] > 0
 
 
@@ -151,7 +151,7 @@ def test_a_late_request_is_recorded_for_the_trace_through_the_seam(tmp_path, pic
     item = pick("e.policy_code='RET_10' AND e.day_number BETWEEN 13 AND 20")
     result, _ = run_branch(tmp_path, spy, full_script(raw, item), item["customer_id"])
     sent = result.run.notes["escalation"]
-    assert sent["queued"] is False and sent["reason"] == "late_request" and "not built yet" in sent["note"]
+    assert sent["queued"] is True and sent["reason"] == "late_request" and sent["reference"] == "REV-0001" and "REV-0001 was created" in sent["note"]
     assert sent["details"]["item_id"] == item["item_id"] and sent["details"]["days_late"] > 0
     assert item["customer_id"] not in json.dumps(result.run.notes)
 

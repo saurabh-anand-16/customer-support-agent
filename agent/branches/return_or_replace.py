@@ -13,7 +13,6 @@ or asks one short question. After that, code does the rest:
   * any other "not eligible" and the other decisions: an explanation from fixed text and the tool's data.
 """
 from .. import eligibility as elig
-from ..escalation import escalate
 from .base import Branch, BranchContext, BranchResult, Run, conversation_text, fill, question_or_generic, tool_loop
 
 
@@ -119,10 +118,10 @@ class ReturnOrReplaceBranch(Branch):
     def late(self, ctx, run: Run, check: dict, fields: dict) -> BranchResult:
         """Past the window: the agent never grants it. It explains, then hands the request to the escalation seam."""
         b = ctx.cfg.branches
-        sent = escalate(ctx.session, "late_request",
-                        {"item_id": fields["item_id"], "reason": check["reason"], "day_number": check.get("day_number"),
-                         "window_days": check.get("window_days_applied"), "days_late": check.get("days_late"),
-                         "last_eligible_date": check.get("last_eligible_date")},
-                        b.replies["escalation_not_built_late"])
+        sent = ctx.ask_for_person("late_request",
+                                  {"item_id": fields["item_id"], "reason": check["reason"], "day_number": check.get("day_number"),
+                                   "window_days": check.get("window_days_applied"), "days_late": check.get("days_late"),
+                                   "last_eligible_date": check.get("last_eligible_date"), "eligibility": check})
         run.notes["escalation"] = sent
+        run.checks.append(sent["check"])
         return BranchResult(f"{fill(b.replies['explain_window_expired'], **fields)} {sent['reply']}", run)

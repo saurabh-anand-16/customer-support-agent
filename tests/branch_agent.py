@@ -7,11 +7,13 @@ The read tools run against the real generated database through the `tools_ro` / 
 import json
 
 from agent.branches import BranchContext
+from agent.escalation import Escalator
 from agent.llm import FakeChat
 from agent.session import Session
 from agent.tool_adapter import ToolAdapter
 
 from .branch_helpers import FakePolicy
+from .conftest import in_memory_queue
 from .test_router import agent_config
 
 
@@ -44,7 +46,9 @@ def make_ctx(tmp_path, tools, replies, customer, policy=None, message="some mess
     chat = FakeChat(replies)
     policy = policy or FakePolicy()
     adapter = ToolAdapter(tools=tools, policy_search=policy, top_k=cfg.branches.policy_top_k)
-    return BranchContext(cfg, chat, adapter, session or Session("s1", customer), message), chat, policy
+    queue = in_memory_queue()
+    ctx = BranchContext(cfg, chat, adapter, session or Session("s1", customer), message, Escalator(lambda: queue, cfg))
+    return ctx, chat, policy
 
 
 def make_agent(tmp_path, tools, replies, customer, policy=None, **changes):

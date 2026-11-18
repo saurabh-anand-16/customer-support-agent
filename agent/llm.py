@@ -115,6 +115,17 @@ class AnswerCheckSettings:
 
 
 @dataclass(frozen=True)
+class ReviewSettings:
+    """[review]: the review queue (phase 5a). The reply texts are fixed; the model writes none of them."""
+    excerpt_messages: int        # how many of the last messages (customer and agent) are kept in a queue item
+    excerpt_message_chars: int   # each kept message is cut to this length
+    dedupe_open_items: bool      # the same customer, order item and kind with an open item gives that item back, not a second one
+    reply_template: str          # shown to the customer; {reference} is the only field
+    error_reply: str             # shown when the queue write failed; no fields
+    reasons: dict                # kind -> the one-sentence reason a queue item gets, filled in by code from tool data
+
+
+@dataclass(frozen=True)
 class EvalSettings:
     test_fraction: float
 
@@ -129,6 +140,7 @@ class AgentConfig:
     branches: BranchSettings
     confirm: ConfirmSettings
     answer_check: AnswerCheckSettings
+    review: ReviewSettings
     replies: dict     # kind -> text, plus person_offer, not_built, blank_message
     eval: EvalSettings
 
@@ -143,8 +155,7 @@ BRANCH_REPLIES = ("no_policy_match", "sources_line", "tool_limit", "branch_error
                   "ask_resolution", "confirm_return", "approval_note", "confirm_cancel", "explain_window_expired",
                   "explain_non_returnable", "explain_change_of_mind_not_allowed", "explain_not_yet_delivered",
                   "explain_return_already_opened", "explain_item_cancelled", "explain_guidance_only", "explain_other",
-                  "cancel_shipped", "cancel_delivered", "cancel_cancelled", "cancel_other",
-                  "escalation_not_built_late", "escalation_not_built_human")
+                  "cancel_shipped", "cancel_delivered", "cancel_cancelled", "cancel_other")
 BRANCH_RESOLUTIONS = ("refund", "replacement", "exchange", "brand_service")
 BRANCH_APPROVALS = ("account_restricted", "high_value", "repeat_returner")
 BRANCH_REPLY_FIELDS = {"product_name", "item_id", "order_id", "amount", "reason", "resolution", "options", "condition_note",
@@ -152,7 +163,7 @@ BRANCH_REPLY_FIELDS = {"product_name", "item_id", "order_id", "amount", "reason"
                        "last_eligible_date", "days_late", "days_left", "return_id", "sources"}
 
 CONFIRM_REPLIES = ("done_return", "done_return_refund_line", "done_cancel", "declined", "unclear_ask", "unclear_drop", "expired",
-                   "approval_needed", "refund_method_needed", "refused")
+                   "refund_method_needed", "refused")
 CONFIRM_REPLY_FIELDS = {"product_name", "item_id", "order_id", "return_id", "resolution", "refund_line", "next_step", "question",
                         "message", "options", "amount", "method", "timeline"}
 ANSWER_CHECK_REPLIES = ("fallback_intro", "fallback_order_line", "fallback_item_line", "fallback_return_line", "fallback_timeline_line",
@@ -160,6 +171,11 @@ ANSWER_CHECK_REPLIES = ("fallback_intro", "fallback_order_line", "fallback_item_
 ANSWER_CHECK_REPLY_FIELDS = {"order_id", "ordered_at", "product_name", "item_id", "item_status", "delivered_at", "return_id", "return_status",
                              "refund_line", "order_type", "refund_method", "time_text", "passage", "sources", "payment_type"}
 RETRY_FIELDS = {"problems", "facts"}
+
+# [review]: the reasons that callers of the escalation seam use today (the document for phase 5a names four kinds; these are the
+# callers' own). A kind with no sentence in [review.reasons] could not be written, so every one must be there.
+REVIEW_KINDS = ("customer_asked_for_person", "late_request", "approval_required")
+REVIEW_REASON_FIELDS = {"item_id", "reason", "resolution", "approval_reasons", "day_number", "window_days", "days_late", "last_eligible_date"}
 
 _SPEC = {
     "model": (ModelSettings, {"name": str, "temperature": float, "max_output_tokens": int, "timeout_seconds": int,
@@ -177,6 +193,8 @@ _SPEC = {
                                   "pending_max_turns": int, "max_unclear_asks": int, "prompt": str, "replies": dict}),
     "answer_check": (AnswerCheckSettings, {"enabled": bool, "max_retries": int, "max_facts_listed": int, "max_passage_chars": int,
                                            "allowed_text": list, "retry_instruction": str, "replies": dict}),
+    "review": (ReviewSettings, {"excerpt_messages": int, "excerpt_message_chars": int, "dedupe_open_items": bool,
+                                "reply_template": str, "error_reply": str, "reasons": dict}),
     "eval": (EvalSettings, {"test_fraction": float}),
 }
 
@@ -274,6 +292,7 @@ def _check(cfg: AgentConfig, where: str) -> None:
     _check_branches(cfg.branches, where)
     _check_confirm(cfg.confirm, where)
     _check_answer_check(cfg.answer_check, where)
+    _check_review(cfg.review, where)
 
 
 def _fields_of(text: str) -> set:
@@ -308,6 +327,24 @@ def _check_confirm(c: ConfirmSettings, where: str) -> None:
     _check_table(where, "confirm.replies", c.replies, CONFIRM_REPLIES, CONFIRM_REPLY_FIELDS)
     if not c.prompt.strip():
         raise AgentConfigError(f"{where}: [confirm].prompt must not be empty")      # used as written: it is not a template
+
+
+def _check_review(r: ReviewSettings, where: str) -> None:
+    if r.excerpt_messages < 0:
+        raise AgentConfigError(f"{where}: [review].excerpt_messages must be 0 or more")
+    if r.excerpt_message_chars < 1:
+        raise AgentConfigError(f"{where}: [review].excerpt_message_chars must be 1 or more")
+    for key, wanted in (("reply_template", {"reference"}), ("error_reply", set())):
+        text = getattr(r, key)
+        if not text.strip():
+            raise AgentConfigError(f"{where}: [review].{key} must not be empty")
+        try:
+            found = _fields_of(text)
+        except ValueError as err:
+            raise AgentConfigError(f"{where}: [review].{key} cannot be filled in ({err!r})") from err
+        if found != wanted:
+            raise AgentConfigError(f"{where}: [review].{key} must use exactly the fields {sorted(wanted)}, got {sorted(found)}")
+    _check_table(where, "review.reasons", r.reasons, REVIEW_KINDS, REVIEW_REASON_FIELDS)
 
 
 def _check_answer_check(a: AnswerCheckSettings, where: str) -> None:

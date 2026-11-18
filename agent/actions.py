@@ -5,8 +5,8 @@ The writer is called from CODE, after the customer's yes was read by the confirm
 
   * the customer id comes from the session, never from the pending action and never from the model;
   * `confirmed=True` is written here, as a constant. The model's output is a label, nothing else, and has no way to set it;
-  * `staff_approved` is never passed. Only the review-queue code (phase 5) may set it. When the tool says a reviewer must
-    approve first, nothing is written and the request goes to the escalation seam instead;
+  * `staff_approved` is never passed. Only the review-queue code (phase 5b) may set it. When the tool says a reviewer must
+    approve first, nothing is written to orders or returns and the request goes to the escalation seam, which makes a queue item;
   * the tool re-runs every check itself (eligibility, resolution, status), so a pending action that went stale is refused.
 
 The reply is built from the tool's result and, for a return, from reading the new row back (get_return_status), so what
@@ -17,7 +17,6 @@ from dataclasses import dataclass, field
 from .branches.base import fill
 from .branches.return_or_replace import money
 from .checks import check
-from .escalation import escalate
 from .llm import AgentConfig
 
 _RETURN_KEYS = ("item_id", "reason", "resolution")
@@ -39,7 +38,7 @@ def _record(tool: str, args: dict, output: dict) -> dict:
     return {"tool": tool, "input": dict(args), "dropped_arguments": [], "output": output, "refused": None}
 
 
-def run_pending(session, pending: dict, tools, cfg: AgentConfig, escalate_fn=escalate) -> ActionResult:
+def run_pending(session, pending: dict, tools, cfg: AgentConfig, escalate_fn=None) -> ActionResult:
     """Do the pending action once. The caller has already cleared it from the session, so it cannot run twice."""
     kind, params = (pending or {}).get("type"), (pending or {}).get("parameters")
     needed = _RETURN_KEYS if kind == "return" else _CANCEL_KEYS if kind == "cancel" else None
@@ -63,17 +62,28 @@ def _refused(output: dict, cfg: AgentConfig) -> ActionResult:
                         checks=[check("write", False, f"the tool refused: {code}")])
 
 
+def _eligibility_of(pending: dict) -> dict:
+    """What the eligibility check said about this request, as held in the pending action (it came from check_eligibility)."""
+    shown = (pending.get("display") or {})
+    return {"decision": pending.get("decision"), "needs_staff_approval": pending.get("needs_staff_approval"),
+            "approval_reasons": list(pending.get("approval_reasons") or []), "resolution": shown.get("resolution"),
+            "refund_amount_inr": shown.get("refund_amount_inr"), "return_window": shown.get("return_window")}
+
+
 def _after_return(session, pending, args, output, tools, cfg, escalate_fn) -> ActionResult:
     r = cfg.confirm.replies
     if output.get("ok") is not True:
         code = output.get("error_code")
         if code == "staff_approval_required":              # the review gate: nothing was written, the seam is asked
-            sent = escalate_fn(session, "approval_required",
-                               {"item_id": args["item_id"], "reason": args["reason"], "resolution": args["resolution"],
-                                "approval_reasons": output.get("approval_reasons", [])}, r["approval_needed"])
+            details = {"item_id": args["item_id"], "reason": args["reason"], "resolution": args["resolution"],
+                       "approval_reasons": output.get("approval_reasons", []), "eligibility": _eligibility_of(pending)}
+            sent = (escalate_fn(session, "approval_required", details, cfg.review.reply_template) if escalate_fn is not None
+                    else {"queued": False, "reply": cfg.review.error_reply, "reason": "approval_required", "details": details,
+                          "note": "no review queue is wired; nothing was queued",
+                          "check": check("review_queue_write", False, "no review queue is wired; nothing was queued")})
             return ActionResult(sent["reply"], escalation=sent, error_code=code,
                                 checks=[check("review_gate", False, f"a reviewer must approve first ({', '.join(output.get('approval_reasons', []))}); nothing was written"),
-                                        check("write", False, "the tool refused: staff_approval_required")])
+                                        check("write", False, "the tool refused: staff_approval_required"), sent["check"]])
         if code == "refund_method_required":
             return ActionResult(fill(r["refund_method_needed"], options=", ".join(m.replace("_", " ") for m in output.get("valid", []))),
                                 error_code=code, checks=[check("write", False, "the tool needs a refund method (Pay on Delivery); nothing was written")])
