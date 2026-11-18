@@ -49,10 +49,11 @@ On Windows use `py` instead of `python` if `python` is not found. Every script p
 | `agent/` | The agent's seven tools (`tools.py`), the pure decision logic (`eligibility.py`) and policy search (`policy_search.py`) |
 | `agent/rag/` | Policy search parts: config loader, page reader, chunkers (3a), embedders, vector stores and index build (3b), retrievers, fusion, rerankers, filters, no-match rule and pipeline (3c) |
 | `requirements-rag.txt` | Extra packages for policy search (`chromadb`, `openai`); the core `requirements.txt` is unchanged |
+| `requirements-tracing.txt` | `langfuse`, pinned, only for the optional Langfuse copy of the traces (phase 6b) |
 | `data/rag/` | The vector index and embedding cache (generated; not committed) |
 | `config/rag.toml` | Every tunable value for policy search: chunking, metadata, embedding, retrieval, profiles |
 | `docs/phases/` | One document per build phase: what it is for, files touched, how it was checked |
-| `tests/` | 1339 tests run by default (67 for the tools, 409 for policy search, 187 for the session and router, 227 for the branch flows, 170 for the confirm step, answer check and guardrails, 97 for the review queue, 73 for the refund-method question, 1 for the database build script, 65 for the manager's decision and the outcome notice, 43 for the trace file and its reader), plus 34 `live` tests; run with `python -m pytest` (`-m live` for the live ones) |
+| `tests/` | 1379 tests run by default (67 for the tools, 409 for policy search, 187 for the session and router, 227 for the branch flows, 170 for the confirm step, answer check and guardrails, 97 for the review queue, 73 for the refund-method question, 1 for the database build script, 65 for the manager's decision and the outcome notice, 43 for the trace file and its reader, 40 for the Langfuse copy), plus 34 `live` tests; run with `python -m pytest` (`-m live` for the live ones) |
 
 ## What each script does
 
@@ -156,6 +157,14 @@ A case that needs a person becomes one row in the `review_items` table (defined 
 ## The agent: the manager's decision (phase 5b)
 
 A manager approves or declines a queued case with `decide(item_id, decision, note, decided_by, queue=..., tools=..., cfg=...)` in `agent/review_decision.py`. It is not part of the chat: no tool, schema, branch, graph node or confirm step reaches it, and tests fail if one imports it. **There is no manager login yet.** `decided_by` is whatever the caller passes; the Manager page (phase 8) will have no real authentication either, so anyone who can call it can decide. Approving an `approval_required` case writes the return with the order item, reason, resolution and refund method stored with the case (a Pay on Delivery refund with no stored method is refused and stays open). A `late_request` cannot be approved, because the tool never lets staff approval cover the window; it can be declined. A request for a person is simply closed. On the customer's next message the agent puts a fixed-text notice in front of its reply, once, and never shows the manager's note unless `[review].show_note_to_customer` is true. Details and results are in [the phase document](docs/phases/phase-05b-manager-decision.md).
+
+## Tracing and the optional Langfuse copy (phases 6 and 6b)
+
+Every turn appends one JSON line to `data/traces/traces.jsonl` (in `.gitignore`); `agent/tracing.py` also reads it back, and `python scripts/show_traces.py` prints the last turns. That file is the main record.
+
+**Langfuse is off by default.** `[tracing].langfuse_enabled` in `config/agent.toml` is `false`, and having Langfuse keys in `.env` does not turn it on. **Turning it on sends the turn to Langfuse's servers: the customer's message, the reply, tool inputs and outputs, check results and the retrieved passages' names** (set `capture_text = false` to send "[not captured]" and the lengths instead). Before sending, customer ids, phone numbers and e-mail addresses are masked, and the customer id becomes a keyed hash (`LANGFUSE_HASH_KEY`) used as the user id. Never put real customers' data through it without a data-processing agreement with Langfuse.
+
+To use it: `pip install -r requirements-tracing.txt`, put `LANGFUSE_PUBLIC_KEY`, `LANGFUSE_SECRET_KEY`, `LANGFUSE_BASE_URL` and `LANGFUSE_HASH_KEY` in `.env` (names only in `.env.example`), and set `TRACING_LANGFUSE_ENABLED=true` in `.env` or the shell. The shell wins over `.env`. Only `agent/langfuse_export.py` imports the package; sending and flushing run on a background thread and an error there never changes a reply. `python scripts/16_live_langfuse_paths.py` runs three real turns against the real server on a copy of the database.
 
 ## Day counting
 

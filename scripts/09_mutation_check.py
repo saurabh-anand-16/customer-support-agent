@@ -1,5 +1,5 @@
 """
-09_mutation_check.py - break each safety rule on purpose and check that a test notices (phases 4c, 5a, 4d, 5b and 6).
+09_mutation_check.py - break each safety rule on purpose and check that a test notices (phases 4c, 5a, 4d, 5b, 6 and 6b).
 
     python scripts/09_mutation_check.py              # all mutations
     python scripts/09_mutation_check.py M07 M11      # only these
@@ -23,13 +23,14 @@ import tempfile
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-COPY = ["agent", "config", "tests", "scripts", "returns_agent.db", "pytest.ini", "schema.sql", "data/clean", ".gitignore", ".env.example"]
+COPY = ["agent", "config", "tests", "scripts", "returns_agent.db", "pytest.ini", "schema.sql", "data/clean", ".gitignore", ".env.example",
+        "requirements.txt", "requirements-agent.txt", "requirements-rag.txt", "requirements-tracing.txt"]
 TESTS = ["tests/test_confirm_step.py", "tests/test_answer_check.py", "tests/test_agent_safety.py", "tests/test_confirm_config.py",
          "tests/test_tool_adapter.py", "tests/test_agent_branches.py", "tests/test_agent_flow.py", "tests/test_branch_cancel.py",
          "tests/test_branch_return.py", "tests/test_branch_policy.py", "tests/test_branch_order_status.py", "tests/test_session.py",
          "tests/test_review_queue.py", "tests/test_escalation.py", "tests/test_review_safety.py", "tests/test_branch_human_help.py",
          "tests/test_refund_method.py", "tests/test_build_script.py", "tests/test_router.py", "tests/test_review_decision.py",
-         "tests/test_tracing.py"]
+         "tests/test_tracing.py", "tests/test_langfuse_export.py"]
 
 # (id, the rule that is broken, file, text to replace, replacement)
 MUTATIONS = [
@@ -286,6 +287,67 @@ MUTATIONS = [
     ("M121", "tracing never changes the result of a turn", "agent/tracing.py",
      "            append_line(self.path, record, self.settings.max_lines)\n", '            append_line(self.path, record, self.settings.max_lines)\n            result["reply"] = result["reply"] + " "\n'),
     ("M122", "tracing off writes nothing", "agent/tracing.py", "        if not self.settings.enabled:\n            return\n", ""),
+    # Phase 6b: the Langfuse copy.
+    ("M123", "the Langfuse user id is a hash, not the customer id", "agent/langfuse_export.py",
+     '    return hmac.new(key.encode("utf-8"), str(customer_id).encode("utf-8"), hashlib.sha256).hexdigest()[:32]', "    return str(customer_id)"),
+    ("M124", "the hash is keyed (the secret from .env is used)", "agent/langfuse_export.py",
+     '    return hmac.new(key.encode("utf-8"), str(customer_id).encode("utf-8"), hashlib.sha256).hexdigest()[:32]',
+     '    return hashlib.sha256(str(customer_id).encode("utf-8")).hexdigest()[:32]'),
+    ("M125", "the mask removes customer ids", "agent/langfuse_export.py",
+     "    return CUSTOMER_ID.sub(MASKED_ID, PHONE.sub(MASKED_PHONE, EMAIL.sub(MASKED_EMAIL, text)))",
+     "    return PHONE.sub(MASKED_PHONE, EMAIL.sub(MASKED_EMAIL, text))"),
+    ("M126", "the mask removes phone numbers", "agent/langfuse_export.py",
+     "    return CUSTOMER_ID.sub(MASKED_ID, PHONE.sub(MASKED_PHONE, EMAIL.sub(MASKED_EMAIL, text)))",
+     "    return CUSTOMER_ID.sub(MASKED_ID, EMAIL.sub(MASKED_EMAIL, text))"),
+    ("M127", "the mask removes e-mail addresses", "agent/langfuse_export.py",
+     "    return CUSTOMER_ID.sub(MASKED_ID, PHONE.sub(MASKED_PHONE, EMAIL.sub(MASKED_EMAIL, text)))",
+     "    return CUSTOMER_ID.sub(MASKED_ID, PHONE.sub(MASKED_PHONE, text))"),
+    ("M128", "the mask function is given to the Langfuse client", "agent/langfuse_export.py",
+     "                                    mask=mask, **self._client_args)", "                                    **self._client_args)"),
+    ("M129", "a short timeout is given to the Langfuse client", "agent/langfuse_export.py",
+     "base_url=self._secret(BASE_URL_NAME), timeout=self.settings.langfuse_timeout,", "base_url=self._secret(BASE_URL_NAME),"),
+    ("M130", "Langfuse is off by default in the shipped config", "config/agent.toml",
+     "langfuse_enabled = false                  # turning this on", "langfuse_enabled = true                   # turning this on"),
+    ("M131", "with the switch off no exporter is made", "agent/langfuse_export.py",
+     "    return LangfuseExporter(settings, env_file, environ, client_args) if settings.langfuse_enabled else None",
+     "    return LangfuseExporter(settings, env_file, environ, client_args)"),
+    ("M132", "only agent/langfuse_export.py imports the package (another module does)", "agent/tracing.py",
+     "import json\nimport logging\n", "import json\nimport langfuse\nimport logging\n"),
+    ("M133", "the package is imported only when a turn is sent (a top-level import)", "agent/langfuse_export.py",
+     'from .rag.embedders.base import read_secret\n\nlog = ', 'from .rag.embedders.base import read_secret\nimport langfuse\n\nlog = '),
+    ("M134", "capture_text applies to the Langfuse copy too", "agent/tracing.py",
+     "                self.exporter.submit(record)               # queued for a background thread; never raises",
+     "                self.exporter.submit(build_record(__import__('dataclasses').replace(self.settings, capture_text=True), result=result, session_id=session_id, "
+     "customer_id=customer_id, message=message, duration_ms=duration_ms, model_names=self.model_names))"),
+    ("M135", "the search tool passes the index fingerprint to the evidence", "agent/tool_adapter.py",
+     '"index_fingerprint": found.get("index_fingerprint"), "results": results}', '"results": results}'),
+    ("M136", ".env is read for the tracing switches", "agent/llm.py",
+     'env_file=_env_file_for(built["model"]))', "env_file=None)"),
+    ("M137", "the process environment beats .env for the tracing switches", "agent/llm.py",
+     'raw = ((environ.get(name) if environ is not None else None) or read_secret(name, env_file) or "").strip().lower()',
+     'raw = ((read_secret(name, env_file) if env_file else None) or (environ.get(name) if environ is not None else None) or read_secret(name, env_file) or "").strip().lower()'),
+    ("M138", "the process environment beats .env for the Langfuse keys", "agent/langfuse_export.py",
+     "        if self._environ is not None and self._environ.get(name):\n            return self._environ[name]\n        return read_secret(name, self.env_file)",
+     "        from_file = read_secret(name, self.env_file) if self.env_file else None\n        return from_file or (self._environ or {}).get(name) or read_secret(name, self.env_file)"),
+    ("M139", "the keys are never copied into the process environment", "agent/langfuse_export.py",
+     "            self._hash_key = self._secret(hash_name)\n",
+     "            self._hash_key = self._secret(hash_name)\n            __import__('os').environ[SECRET_KEY_NAME] = self._secret(SECRET_KEY_NAME)\n"),
+    ("M140", "sending (and flushing) is done in the background, not in the reply path", "agent/langfuse_export.py",
+     "            self._pool.submit(self._export, record)\n", "            self._export(record)\n"),
+    ("M141", "no hash secret means nothing is sent", "agent/langfuse_export.py",
+     "for n in (PUBLIC_KEY_NAME, SECRET_KEY_NAME, BASE_URL_NAME, hash_name) if not self._secret(n)]",
+     "for n in (PUBLIC_KEY_NAME, SECRET_KEY_NAME, BASE_URL_NAME) if not self._secret(n)]"),
+    ("M142", "the agent gives the exporter the env file of the model section", "agent/agent.py",
+     "llm_settings._env_file_for(self.cfg.model)))", "None))"),
+    ("M143", "the raw customer id is never sent as the user id", "agent/langfuse_export.py",
+     '            user = hash_customer(record.get("customer_id") or "", self._hash_key)', '            user = record.get("customer_id") or ""'),
+    ("M144", "a policy search is a retriever observation", "agent/langfuse_export.py",
+     '"write": "tool", "retrieval": "retriever",', '"write": "tool", "retrieval": "span",'),
+    ("M145", "a missing package is skipped with its own line", "agent/langfuse_export.py",
+     "            except ImportError:\n", "            except ZeroDivisionError:\n"),
+    ("M146", "a failed check is an event with a warning level", "agent/langfuse_export.py",
+     '                                      level="WARNING" if step.get("status") == "failed" else None)',
+     "                                      level=None)"),
 ]
 
 

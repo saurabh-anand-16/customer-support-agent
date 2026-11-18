@@ -89,3 +89,12 @@ def _no_tracing_env(monkeypatch):
     """The three tracing overrides in the developer's own shell must not change any test."""
     for name in ("TRACING_ENABLED", "TRACING_LANGFUSE_ENABLED", "TRACING_CAPTURE_TEXT"):
         monkeypatch.delenv(name, raising=False)
+
+
+@pytest.fixture(autouse=True)
+def _no_real_env_file_for_tracing(monkeypatch):
+    """
+    The developer's own .env may switch Langfuse on (TRACING_LANGFUSE_ENABLED) and holds real keys. A test must never read it,
+    so by default the tracing overrides come from the process environment only. A test of the .env order puts the function back.
+    """
+    monkeypatch.setattr("agent.llm._env_file_for", lambda model: None)

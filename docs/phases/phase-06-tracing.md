@@ -1,6 +1,6 @@
 # Phase 6: tracing
 
-**Status:** steps 1 and 2 done ([build report](../builds/phase-06-build.md)). Step 3 (Langfuse) moved to phase 6b, branch `phase-6b-langfuse-export`. **Branch:** `phase-6-tracing`. **Follows:** 5b (merged). **Next:** phase 6b, then phase 7 (the app).
+**Status:** steps 1 and 2 done ([build report](../builds/phase-06-build.md)); step 3 (Langfuse) done in phase 6b, in review ([build report](../builds/phase-06b-build.md)). **Branches:** `phase-6-tracing` (steps 1 and 2), `phase-6b-langfuse-export` (step 3). **Follows:** 5b (merged). **Next:** phase 7 (the app).
 
 Read `docs/notes/langfuse-notes.md` before you start. It holds the SDK version, variable names, tested behaviour, privacy findings and free-plan limits.
 
@@ -12,7 +12,7 @@ The agent already builds a `trace` for every turn (path, router answer, model ca
 
 1. **Local trace file.** One JSON line per turn. This is the main record and the only one the Developer page needs.
 2. **Reader functions** for the Developer page: list turns, read one turn.
-3. **Optional Langfuse export,** behind a switch, off by default. *(Moved to phase 6b.)*
+3. **Optional Langfuse export,** behind a switch, off by default. *(Built in phase 6b.)*
 
 ## Step 1: the local file
 
@@ -111,3 +111,26 @@ Steps 1 and 2 followed the plan above, with the differences below. The full acco
 - `python -m pytest -q`: 1339 passed, 34 deselected (1296 before, 43 new in `tests/test_tracing.py`).
 - Mutations M106 to M122 (17, new rules only): all killed. There is no mutation for the hash or the mask, because step 3 is not built.
 - Real-model run on a copy of the database: the confirm turn wrote one return (73 to 74), the policy and person turns wrote none, one review item was created, and the real database hash did not change. The trace lines held the customer id once, in its own field, and no key or `staff_approved`.
+
+## What was really built (step 3, phase 6b)
+
+The full account is in the [6b build report](../builds/phase-06b-build.md). Step 3 followed the plan above, with the differences below.
+
+- **The export.** `agent/langfuse_export.py` is the only module that imports `langfuse`, and it does so on the first sent turn. One turn is one trace: a root observation `turn` (agent) with the message and reply, a child per step (router and model calls = generation, tools and the writer = tool, policy search = retriever, review item = tool), and one event `check:<name>` per guardrail check. `session_id` is the app's session; `user_id` is `HMAC-SHA256(key, customer_id)` cut to 32 hex characters, with the key from the variable named in `[tracing].hash_key_env_name` (`LANGFUSE_HASH_KEY`). Without that key, or without any of the three Langfuse variables, or without the package, nothing is sent and one log line names what is missing.
+- **Privacy.** A `mask` function replaces customer ids (`C` plus 4 or more digits), phone numbers and e-mail addresses in every input, output and metadata value. It is passed to the client, and also applied to tags. The export reads the same cleaned record as the local file, so `capture_text = false` and the hidden keys apply to Langfuse as well. The README says that turning it on sends message text to Langfuse's servers.
+- **Never breaks, never waits.** `Tracer.record_turn` hands the record to the exporter, which queues it for one background thread; that thread builds the observations and flushes. Errors are caught and logged once per kind. A test holds the send open and shows the reply is already back.
+- **`.env` order.** The three `TRACING_*` switches, the Langfuse keys and the hash secret are read from the process environment first, then `.env` (`read_secret`, the way the OpenAI key is read). The Langfuse values go to the client constructor and are never put in `os.environ`. This replaces the earlier "process environment only" rule for the `TRACING_*` switches. Every test replaces `agent.llm._env_file_for`, so the developer's own `.env` (which here switches Langfuse on) never reaches a test.
+- **Fingerprint.** `tool_adapter.search_policy` returns `index_fingerprint`, so it reaches the evidence and the trace record (it was always null before). Side effect: the return-or-replace branch prints the raw tool result, so the model's prompt there now holds that 16-character string; the answer check walks it too, and a test shows 500 fingerprint-shaped values add no number or date.
+- **Dependencies.** `requirements-tracing.txt` pins `langfuse==5.2.0` (the newest). It adds four packages (`backoff`, `opentelemetry-exporter-http-transport`, `opentelemetry-exporter-otlp-proto-http`, `wrapt`) and changes none; `pip check` is clean.
+- **Deviations from the plan.**
+  - Observation start and end times are not the real ones, because the export runs after the turn; the real latency is in each observation's metadata.
+  - Reading a trace back in SDK 5 uses `api.observations.get_many(trace_id=...)`; there is no `trace.get`.
+  - The mask patterns are constants in the module, not in config.
+  - Files outside the list: `scripts/16_live_langfuse_paths.py`, `tests/conftest.py`, `tests/test_tracing.py` (the `.env.example` test), `scripts/09_mutation_check.py` (M123 to M146 and the requirements files in the copy).
+- **Not done:** tokens and cost per model call; `release`; a live check with a customer id, phone or e-mail planted in a real message (unit tests plant them, the real run held none); the Developer page's link to a trace (phase 9).
+
+### Results (6b)
+
+- `python -m pytest -q`: 1379 passed, 34 deselected (1339 before, 40 new in `tests/test_langfuse_export.py`).
+- Mutations M123 to M146 (24, new rules only): all killed. M137 survived once and was killed after a test was added.
+- Real server (Langfuse Cloud): `auth_check()` true; three real-model turns (four traces) sent on a copy of the database; flush 0.22 s; two traces read back with the right observation types, `userId` equal to the keyed hash and not the customer id, and no customer id, phone or e-mail in any input, output or metadata. With a wrong secret key (process environment only) `auth_check()` was false, the turn returned in 0.03 s with its normal reply, and the SDK logged a 401.

@@ -1,0 +1,4 @@
+# Optional: the Langfuse copy of the trace (phase 6b). Install with: pip install -r requirements-tracing.txt
+# The core requirements are not changed. Only agent/langfuse_export.py imports this package, and only when [tracing].langfuse_enabled is true.
+# SDK 5.x needs Langfuse Cloud or a self-hosted server 4.59.0 or newer (see docs/notes/langfuse-notes.md).
+langfuse==5.2.0

@@ -33,6 +33,8 @@ from pathlib import Path
 from .checks import check
 from .confirm import ConfirmStep, public_pending
 from .escalation import Escalator, queue_for_tools
+from .langfuse_export import make_exporter
+from . import llm as llm_settings
 from .llm import ROOT, AgentConfig, ChatModel, OpenAIChat, load_agent_config
 from .replies import Replies
 from .review_notice import outcome_notices
@@ -60,8 +62,10 @@ class Agent:
         except ImportError as err:
             raise ImportError("The 'langgraph' package is not installed: pip install -r requirements-agent.txt") from err
         self.cfg = config or load_agent_config()
+        # Phase 6b: the Langfuse copy exists only when [tracing].langfuse_enabled is true; the package is imported on the first sent turn.
         self.tracer = tracer or Tracer(self.cfg.tracing, self.cfg.root, {"router": self.cfg.model.name, "branch": self.cfg.branches.name,
-                                                                         "confirm": self.cfg.confirm.name})
+                                                                         "confirm": self.cfg.confirm.name},
+                                       exporter=make_exporter(self.cfg.tracing, llm_settings._env_file_for(self.cfg.model)))
         self.chat = chat or OpenAIChat(self.cfg.root)
         self.sessions = sessions or SessionStore()
         self.router = Router(self.cfg, self.chat)

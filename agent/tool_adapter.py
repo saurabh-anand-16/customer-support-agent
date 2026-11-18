@@ -187,7 +187,7 @@ class ToolAdapter:
             results = [{"source_file": r["source_file"], "heading_path": r["heading_path"], "text": r["text"],
                         "copied_on": r.get("copied_on"), "citation": a.policy.citation(r)}
                        for r in found.get("results", []) if r.get("in_scope", True)]
-            out = {"ok": True, "query": query, "results": results}
+            out = {"ok": True, "query": query, "index_fingerprint": found.get("index_fingerprint"), "results": results}
             if not results:
                 out["note"] = found.get("note", "No policy passage answers this.")
             return out

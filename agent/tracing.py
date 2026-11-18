@@ -215,8 +215,10 @@ def _trim(path: Path, max_lines: int) -> None:
 
 
 class Tracer:
-    def __init__(self, settings, root: Path, model_names: dict | None = None):
+    def __init__(self, settings, root: Path, model_names: dict | None = None, exporter=None):
+        """`exporter` (phase 6b, agent/langfuse_export.py) gets a copy of each record; it is None unless Langfuse is switched on."""
         self.settings, self.root, self.model_names = settings, Path(root), dict(model_names or {})
+        self.exporter = exporter
         self._logged: set = set()
 
     @property
@@ -231,12 +233,15 @@ class Tracer:
 
     def record_turn(self, *, result: dict, session_id: str, customer_id: str, message: str, duration_ms: float) -> None:
         """Write the record of one turn. Never raises and never changes `result`."""
-        if not self.settings.enabled:
+        if not self.settings.enabled and self.exporter is None:
             return
         try:
             record = build_record(self.settings, result=result, session_id=session_id, customer_id=customer_id, message=message,
                                   duration_ms=duration_ms, model_names=self.model_names)
-            append_line(self.path, record, self.settings.max_lines)
+            if self.settings.enabled:
+                append_line(self.path, record, self.settings.max_lines)
+            if self.exporter is not None:
+                self.exporter.submit(record)               # queued for a background thread; never raises
         except BaseException as err:                       # tracing must never break a chat (KeyboardInterrupt excepted below)
             if isinstance(err, (KeyboardInterrupt, SystemExit)):
                 raise

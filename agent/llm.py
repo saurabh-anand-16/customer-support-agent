@@ -174,12 +174,21 @@ TRACING_ENV = {"TRACING_ENABLED": "enabled", "TRACING_LANGFUSE_ENABLED": "langfu
 _TRUE, _FALSE = {"1", "true", "yes", "on"}, {"0", "false", "no", "off"}
 
 
-def apply_tracing_env(settings: TracingSettings, environ=None) -> TracingSettings:
-    """`settings` with the three environment overrides applied. A variable that is unset or empty changes nothing."""
-    environ = os.environ if environ is None else environ
+def _env_file_for(model: ModelSettings):
+    """The env file that holds the secrets and the tracing overrides: the one named in [model].env_file, under the project root.
+    (Tests replace this function so that the developer's own .env never changes a test.)"""
+    return ROOT / model.env_file
+
+
+def apply_tracing_env(settings: TracingSettings, environ=None, env_file=None) -> TracingSettings:
+    """
+    `settings` with the three overrides applied. Order, the same as for the API key: the process environment first, then the
+    env file (`read_secret`, which copies nothing into os.environ). A variable that is unset or empty in both changes nothing.
+    `environ` replaces the process environment (tests); the env file is still read as the fallback.
+    """
     changes = {}
     for name, field_name in TRACING_ENV.items():
-        raw = (environ.get(name) or "").strip().lower()
+        raw = ((environ.get(name) if environ is not None else None) or read_secret(name, env_file) or "").strip().lower()
         if not raw:
             continue
         if raw in _TRUE:
@@ -187,7 +196,7 @@ def apply_tracing_env(settings: TracingSettings, environ=None) -> TracingSetting
         elif raw in _FALSE:
             changes[field_name] = False
         else:
-            raise AgentConfigError(f"The environment variable {name} must be true or false, got {raw!r}")
+            raise AgentConfigError(f"The variable {name} (environment or env file) must be true or false, got {raw!r}")
     return dataclasses.replace(settings, **changes) if changes else settings
 
 
@@ -327,7 +336,7 @@ def load_agent_config(path: str | Path | None = None) -> AgentConfig:
     if not isinstance(replies, dict):
         raise AgentConfigError(f"{where}: [replies] is missing or is not a table")
 
-    built["tracing"] = apply_tracing_env(built["tracing"])        # the three environment overrides, if set
+    built["tracing"] = apply_tracing_env(built["tracing"], env_file=_env_file_for(built["model"]))   # the three overrides: environment, then env file
     cfg = AgentConfig(root=ROOT, replies=dict(replies), **built)
     _check(cfg, where)
     return cfg
