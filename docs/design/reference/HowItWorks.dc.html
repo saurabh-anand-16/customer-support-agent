@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>How it works</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#0B6657}a:hover{color:#074A3F}
+</style>
+</helmet>
+<div style="font-family: Inter, system-ui, sans-serif; color: #16181D; background: #F7F7F4; display: flex; flex-wrap: wrap; align-items: stretch; min-height: 1760px">
+
+<div style="flex: 0 0 288px; box-sizing: border-box; background: #EFEEE9; border-right: 1px solid #DDDCD5; padding: 28px 24px; display: flex; flex-direction: column; gap: 28px">
+<div style="display: flex; flex-direction: column; gap: 4px">
+<div style="font-size: 18px; font-weight: 700">customer-support-agent</div>
+<div style="font-size: 13px; color: #5B6068; line-height: 1.4">Returns and refunds assistant. A demo with synthetic data.</div>
+</div>
+<div style="display: flex; flex-direction: column; gap: 4px">
+<div style="font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #5B6068; margin-bottom: 6px">Pages</div>
+<a href="Main.dc.html" style="min-height: 44px; display: flex; align-items: center; padding: 0 12px; color: #3F434A; font-size: 15px; text-decoration: none">Home</a>
+<a href="Chat-Return.dc.html" style="min-height: 44px; display: flex; align-items: center; padding: 0 12px; color: #3F434A; font-size: 15px; text-decoration: none">Customer chat</a>
+<a href="Manager.dc.html" style="min-height: 44px; display: flex; align-items: center; padding: 0 12px; color: #3F434A; font-size: 15px; text-decoration: none">Manager queue</a>
+<a href="Developer.dc.html" style="min-height: 44px; display: flex; align-items: center; padding: 0 12px; color: #3F434A; font-size: 15px; text-decoration: none">Developer trace</a>
+<a href="HowItWorks.dc.html" style="min-height: 44px; display: flex; align-items: center; padding: 0 12px; border-radius: 8px; background: #FFFFFF; border: 1px solid #DDDCD5; color: #16181D; font-size: 15px; font-weight: 600; text-decoration: none">How it works</a>
+<a href="Limits.dc.html" style="min-height: 44px; display: flex; align-items: center; padding: 0 12px; color: #3F434A; font-size: 15px; text-decoration: none">Limits and assumptions</a>
+</div>
+<div style="font-size: 12px; color: #5B6068; line-height: 1.5; margin-top: auto">Today is fixed at 17 Nov 2026.<br />Not affiliated with Amazon.</div>
+</div>
+
+<div style="flex: 999 1 560px; min-width: 0; box-sizing: border-box; padding: 48px 56px 64px; display: flex; flex-direction: column; gap: 32px">
+
+<div style="display: flex; flex-direction: column; gap: 12px; max-width: 760px">
+<h1 style="margin: 0; font-size: 32px; line-height: 1.2; font-weight: 700">How it works</h1>
+<p style="margin: 0; font-size: 16px; line-height: 1.6; color: #3F434A">The model reads and writes words. Code decides eligibility, money and every change to an order.</p>
+</div>
+
+<!-- Architecture of the whole project -->
+<div style="display: flex; flex-direction: column; gap: 12px; max-width: 900px">
+<h2 style="margin: 0; font-size: 20px; font-weight: 600">The whole project at a glance</h2>
+<div style="background: #FFFFFF; border: 1px solid #DDDCD5; border-radius: 12px; padding: 16px; overflow-x: auto">
+<svg viewBox="0 0 900 610" width="100%" style="max-width: 900px; display: block" role="img" aria-label="Architecture: the Streamlit app calls the agent. The agent is a row of Session, Router, six lanes, Confirm step and Answer check. The lanes call four groups: orders with the database, policy search with the policy pages, the review queue with the manager decision, and the records, a trace file and optional Langfuse. OpenAI models serve the agent and policy search. An offline evaluation suite scores the agent." font-family="Inter, system-ui, sans-serif"><defs><marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="#5B6068"/></marker><marker id="ag" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="#0E7C6B"/></marker></defs><text x="20" y="24" font-size="12" font-weight="600" letter-spacing="0.8" fill="#5B6068">STREAMLIT APP</text><rect x="20" y="34" width="200" height="58" rx="8" fill="#FFFFFF" stroke="#B9B8AF"/><text x="32" y="56" font-size="14" font-weight="600" fill="#16181D">Home</text><text x="32" y="74" font-size="12" fill="#3F434A">Sign in as a demo customer</text><rect x="240" y="34" width="200" height="58" rx="8" fill="#FFFFFF" stroke="#B9B8AF"/><text x="252" y="56" font-size="14" font-weight="600" fill="#16181D">Customer chat</text><text x="252" y="74" font-size="12" fill="#3F434A">Chat and confirm card</text><rect x="460" y="34" width="200" height="58" rx="8" fill="#FFFFFF" stroke="#B9B8AF"/><text x="472" y="56" font-size="14" font-weight="600" fill="#16181D">Manager queue</text><text x="472" y="74" font-size="12" fill="#3F434A">Approve or decline</text><rect x="680" y="34" width="200" height="58" rx="8" fill="#FFFFFF" stroke="#B9B8AF"/><text x="692" y="56" font-size="14" font-weight="600" fill="#16181D">Developer trace</text><text x="692" y="74" font-size="12" fill="#3F434A">What the agent did</text><line x1="450" y1="94" x2="450" y2="126" stroke="#5B6068" stroke-width="1.5" marker-end="url(#ah)"/><text x="462" y="114" font-size="12" fill="#5B6068">calls the agent</text><rect x="20" y="130" width="860" height="130" rx="12" fill="#E3F1EE"/><text x="36" y="152" font-size="12" font-weight="600" letter-spacing="0.8" fill="#074A3F">AGENT (LANGGRAPH)</text><rect x="40" y="165" width="135" height="70" rx="8" fill="#FFFFFF" stroke="#B9B8AF"/><text x="52" y="187" font-size="14" font-weight="600" fill="#16181D">Session</text><text x="52" y="205" font-size="12" fill="#3F434A">Customer fixed</text><text x="52" y="220" font-size="12" fill="#3F434A">by the app</text><rect x="211" y="165" width="135" height="70" rx="8" fill="#FFFFFF" stroke="#B9B8AF"/><text x="223" y="187" font-size="14" font-weight="600" fill="#16181D">Router</text><text x="223" y="205" font-size="12" fill="#3F434A">One model call,</text><text x="223" y="220" font-size="12" fill="#3F434A">seven labels</text><rect x="382" y="165" width="135" height="70" rx="8" fill="#FFFFFF" stroke="#B9B8AF"/><text x="394" y="187" font-size="14" font-weight="600" fill="#16181D">Six lanes</text><text x="394" y="205" font-size="12" fill="#3F434A">Read-only tools,</text><text x="394" y="220" font-size="12" fill="#3F434A">policy search</text><rect x="553" y="165" width="135" height="70" rx="8" fill="#FFFFFF" stroke="#B9B8AF"/><text x="565" y="187" font-size="14" font-weight="600" fill="#16181D">Confirm step</text><text x="565" y="205" font-size="12" fill="#3F434A">Code writes only</text><text x="565" y="220" font-size="12" fill="#3F434A">after your yes</text><rect x="724" y="165" width="135" height="70" rx="8" fill="#FFFFFF" stroke="#B9B8AF"/><text x="736" y="187" font-size="14" font-weight="600" fill="#16181D">Answer check</text><text x="736" y="205" font-size="12" fill="#3F434A">Numbers must</text><text x="736" y="220" font-size="12" fill="#3F434A">match the tools</text><line x1="177" y1="200" x2="210" y2="200" stroke="#5B6068" stroke-width="1.5" marker-end="url(#ah)"/><line x1="348" y1="200" x2="381" y2="200" stroke="#5B6068" stroke-width="1.5" marker-end="url(#ah)"/><line x1="519" y1="200" x2="552" y2="200" stroke="#5B6068" stroke-width="1.5" marker-end="url(#ah)"/><line x1="690" y1="200" x2="723" y2="200" stroke="#5B6068" stroke-width="1.5" marker-end="url(#ah)"/><path d="M449 236 V279 M120 279 H780 M120 279 V297 M340 279 V297 M560 279 V297 M780 279 V297" fill="none" stroke="#5B6068" stroke-width="1.5"/><line x1="120" y1="279" x2="120" y2="297" stroke="#5B6068" stroke-width="1.5" marker-end="url(#ah)"/><line x1="340" y1="279" x2="340" y2="297" stroke="#5B6068" stroke-width="1.5" marker-end="url(#ah)"/><line x1="560" y1="279" x2="560" y2="297" stroke="#5B6068" stroke-width="1.5" marker-end="url(#ah)"/><line x1="780" y1="279" x2="780" y2="297" stroke="#5B6068" stroke-width="1.5" marker-end="url(#ah)"/><text x="458" y="274" font-size="11" fill="#5B6068">the lanes use these</text><rect x="20" y="298" width="200" height="192" rx="10" fill="#FFFFFF" stroke="#DDDCD5"/><text x="32" y="318" font-size="12" font-weight="600" letter-spacing="0.8" fill="#5B6068">ORDERS</text><rect x="30" y="328" width="180" height="60" rx="8" fill="#FFFFFF" stroke="#B9B8AF"/><text x="42" y="350" font-size="14" font-weight="600" fill="#16181D">Tools and eligibility</text><text x="42" y="368" font-size="12" fill="#3F434A">Looks up orders,</text><text x="42" y="383" font-size="12" fill="#3F434A">checks the rules</text><line x1="120" y1="390" x2="120" y2="414" stroke="#5B6068" stroke-width="1.5" marker-end="url(#ah)"/><rect x="30" y="416" width="180" height="60" rx="8" fill="#FFFFFF" stroke="#B9B8AF"/><text x="42" y="438" font-size="14" font-weight="600" fill="#16181D">SQLite database</text><text x="42" y="456" font-size="12" fill="#3F434A">Orders, returns,</text><text x="42" y="471" font-size="12" fill="#3F434A">review items</text><rect x="240" y="298" width="200" height="192" rx="10" fill="#FFFFFF" stroke="#DDDCD5"/><text x="252" y="318" font-size="12" font-weight="600" letter-spacing="0.8" fill="#5B6068">POLICY</text><rect x="250" y="328" width="180" height="60" rx="8" fill="#FFFFFF" stroke="#B9B8AF"/><text x="262" y="350" font-size="14" font-weight="600" fill="#16181D">Policy search</text><text x="262" y="368" font-size="12" fill="#3F434A">Keyword + vector,</text><text x="262" y="383" font-size="12" fill="#3F434A">optional reranker</text><line x1="340" y1="390" x2="340" y2="414" stroke="#5B6068" stroke-width="1.5" marker-end="url(#ah)"/><rect x="250" y="416" width="180" height="60" rx="8" fill="#FFFFFF" stroke="#B9B8AF"/><text x="262" y="438" font-size="14" font-weight="600" fill="#16181D">Policy pages</text><text x="262" y="456" font-size="12" fill="#3F434A">Amazon.in pages,</text><text x="262" y="471" font-size="12" fill="#3F434A">split by heading</text><rect x="460" y="298" width="200" height="192" rx="10" fill="#FFFFFF" stroke="#DDDCD5"/><text x="472" y="318" font-size="12" font-weight="600" letter-spacing="0.8" fill="#5B6068">PEOPLE</text><rect x="470" y="328" width="180" height="60" rx="8" fill="#FBEFD9" stroke="#E0B96A"/><text x="482" y="350" font-size="14" font-weight="600" fill="#16181D">Review queue</text><text x="482" y="368" font-size="12" fill="#3F434A">Cases the agent</text><text x="482" y="383" font-size="12" fill="#3F434A">cannot decide</text><line x1="560" y1="390" x2="560" y2="414" stroke="#5B6068" stroke-width="1.5" marker-end="url(#ah)"/><rect x="470" y="416" width="180" height="60" rx="8" fill="#FFFFFF" stroke="#B9B8AF"/><text x="482" y="438" font-size="14" font-weight="600" fill="#16181D">Manager decision</text><text x="482" y="456" font-size="12" fill="#3F434A">Approve or decline,</text><text x="482" y="471" font-size="12" fill="#3F434A">customer is told</text><rect x="680" y="298" width="200" height="192" rx="10" fill="#FFFFFF" stroke="#DDDCD5" stroke-dasharray="5 4"/><text x="692" y="318" font-size="12" font-weight="600" letter-spacing="0.8" fill="#5B6068">RECORDS</text><rect x="690" y="328" width="180" height="60" rx="8" fill="#FFFFFF" stroke="#B9B8AF"/><text x="702" y="350" font-size="14" font-weight="600" fill="#16181D">Trace file</text><text x="702" y="368" font-size="12" fill="#3F434A">One line per turn,</text><text x="702" y="383" font-size="12" fill="#3F434A">on this machine</text><line x1="780" y1="390" x2="780" y2="414" stroke="#5B6068" stroke-width="1.5" marker-end="url(#ah)"/><rect x="690" y="416" width="180" height="60" rx="8" fill="#FFFFFF" stroke="#B9B8AF"/><text x="702" y="438" font-size="14" font-weight="600" fill="#16181D">Langfuse (optional)</text><text x="702" y="456" font-size="12" fill="#3F434A">Masked copy,</text><text x="702" y="471" font-size="12" fill="#3F434A">off by default</text><rect x="20" y="506" width="860" height="40" rx="8" fill="#F3F3EF" stroke="#DDDCD5"/><text x="34" y="531" font-size="13" fill="#16181D"><tspan font-weight="600">OpenAI models</tspan> serve the router, the lanes, policy search embeddings and the optional reranker.</text><rect x="20" y="558" width="860" height="40" rx="8" fill="#FFFFFF" stroke="#B9B8AF" stroke-dasharray="5 4"/><text x="34" y="583" font-size="13" fill="#16181D"><tspan font-weight="600">Evaluation suite</tspan> runs offline: retrieval questions, router messages and scenario tests score the agent.</text></svg>
+</div>
+<div style="font-size: 12px; color: #5B6068; line-height: 1.5">Arrows show who calls whom. Dashed boxes are optional or offline. The models only read and write words. Everything that changes data goes through code.</div>
+</div>
+
+<!-- Flow: numbered steps -->
+<ol style="margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 14px; max-width: 860px">
+
+<li style="display: flex; gap: 16px; background: #FFFFFF; border: 1px solid #DDDCD5; border-radius: 12px; padding: 18px 20px">
+<div style="flex: 0 0 32px; width: 32px; height: 32px; border-radius: 16px; background: #0E7C6B; color: #FFFFFF; font-size: 14px; font-weight: 700; display: flex; align-items: center; justify-content: center">1</div>
+<div style="display: flex; flex-direction: column; gap: 4px"><div style="font-size: 16px; font-weight: 600">The session fixes who you are</div><div style="font-size: 14px; line-height: 1.55; color: #3F434A">The customer is chosen on the Home page. Nothing typed in the chat can change it, and the model never sees the customer id.</div></div>
+</li>
+
+<li style="display: flex; gap: 16px; background: #FFFFFF; border: 1px solid #DDDCD5; border-radius: 12px; padding: 18px 20px">
+<div style="flex: 0 0 32px; width: 32px; height: 32px; border-radius: 16px; background: #0E7C6B; color: #FFFFFF; font-size: 14px; font-weight: 700; display: flex; align-items: center; justify-content: center">2</div>
+<div style="display: flex; flex-direction: column; gap: 4px"><div style="font-size: 16px; font-weight: 600">The router picks a lane</div><div style="font-size: 14px; line-height: 1.55; color: #3F434A">One model call labels the message: order status, policy question, return or replace, cancel, human help, out of scope, or unclear. Off-topic and tricky messages get a fixed reply and stop here.</div></div>
+</li>
+
+<li style="display: flex; gap: 16px; background: #FFFFFF; border: 1px solid #DDDCD5; border-radius: 12px; padding: 18px 20px">
+<div style="flex: 0 0 32px; width: 32px; height: 32px; border-radius: 16px; background: #0E7C6B; color: #FFFFFF; font-size: 14px; font-weight: 700; display: flex; align-items: center; justify-content: center">3</div>
+<div style="display: flex; flex-direction: column; gap: 4px"><div style="font-size: 16px; font-weight: 600">The lane uses a few read-only tools</div><div style="font-size: 14px; line-height: 1.55; color: #3F434A">It can look up orders, check eligibility, and search the policy pages. The tools that change data are not available to the model.</div></div>
+</li>
+
+<li style="display: flex; gap: 16px; background: #FFFFFF; border: 1px solid #DDDCD5; border-radius: 12px; padding: 18px 20px">
+<div style="flex: 0 0 32px; width: 32px; height: 32px; border-radius: 16px; background: #0E7C6B; color: #FFFFFF; font-size: 14px; font-weight: 700; display: flex; align-items: center; justify-content: center">4</div>
+<div style="display: flex; flex-direction: column; gap: 4px"><div style="font-size: 16px; font-weight: 600">Policy answers cite their passages</div><div style="font-size: 14px; line-height: 1.55; color: #3F434A">The search returns passages from the policy pages. The citations shown under an answer are written by code from those passages, not by the model.</div></div>
+</li>
+
+<li style="display: flex; gap: 16px; background: #FFFFFF; border: 1px solid #0E7C6B; border-radius: 12px; padding: 18px 20px">
+<div style="flex: 0 0 32px; width: 32px; height: 32px; border-radius: 16px; background: #0E7C6B; color: #FFFFFF; font-size: 14px; font-weight: 700; display: flex; align-items: center; justify-content: center">5</div>
+<div style="display: flex; flex-direction: column; gap: 4px"><div style="font-size: 16px; font-weight: 600">You confirm, then code makes the change</div><div style="font-size: 14px; line-height: 1.55; color: #3F434A">A return or cancel is shown as a card. Only after you answer yes does code write it, using the customer from the session. A no, a change, or an unclear answer writes nothing.</div></div>
+</li>
+
+<li style="display: flex; gap: 16px; background: #FFFFFF; border: 1px solid #DDDCD5; border-radius: 12px; padding: 18px 20px">
+<div style="flex: 0 0 32px; width: 32px; height: 32px; border-radius: 16px; background: #0E7C6B; color: #FFFFFF; font-size: 14px; font-weight: 700; display: flex; align-items: center; justify-content: center">6</div>
+<div style="display: flex; flex-direction: column; gap: 4px"><div style="font-size: 16px; font-weight: 600">The answer check compares numbers with the tools</div><div style="font-size: 14px; line-height: 1.55; color: #3F434A">Every amount, number and date in a reply must appear in a tool result from that turn. If not, the agent retries once, then uses a plain template built from the tool data.</div></div>
+</li>
+
+<li style="display: flex; gap: 16px; background: #FBEFD9; border-radius: 12px; padding: 18px 20px">
+<div style="flex: 0 0 32px; width: 32px; height: 32px; border-radius: 16px; background: #8A4A06; color: #FFFFFF; font-size: 14px; font-weight: 700; display: flex; align-items: center; justify-content: center">7</div>
+<div style="display: flex; flex-direction: column; gap: 4px"><div style="font-size: 16px; font-weight: 600; color: #6E3A04">Exceptions go to a person</div><div style="font-size: 14px; line-height: 1.55; color: #3F434A">A high-value order, a restricted account, or a late request is queued with the conversation and the eligibility result. A manager approves or declines. The next time you write, the agent tells you the outcome.</div></div>
+</li>
+
+</ol>
+
+<div style="display: flex; flex-wrap: wrap; gap: 16px; max-width: 860px">
+<div style="flex: 1 1 380px; background: #E3F1EE; border-radius: 12px; padding: 20px 22px; display: flex; flex-direction: column; gap: 8px">
+<div style="font-size: 14px; font-weight: 600; color: #074A3F">Four rules that do not bend</div>
+<div style="font-size: 14px; line-height: 1.65">The model never sees the customer id.<br />Only code changes an order.<br />Numbers must come from a tool.<br />Exceptions go to a person.</div>
+</div>
+<div style="flex: 1 1 280px; background: #FFFFFF; border: 1px solid #DDDCD5; border-radius: 12px; padding: 20px 22px; display: flex; flex-direction: column; gap: 8px">
+<div style="font-size: 14px; font-weight: 600">See it on a real turn</div>
+<div style="font-size: 14px; line-height: 1.55; color: #3F434A">The Developer page shows the route, tools, passages and checks for every message.</div>
+<a href="Developer.dc.html" style="font-size: 14px; font-weight: 600; min-height: 24px">Open the trace view</a>
+</div>
+</div>
+
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":1760}}'>
+class Component extends DCLogic {
+renderVals() {
+return {};
+}
+}
+</script>
+</body>
+</html>

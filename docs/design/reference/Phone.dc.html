@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Phone width</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#0B6657}a:hover{color:#074A3F}
+summary{cursor:pointer}
+</style>
+</helmet>
+<div style="font-family: Inter, system-ui, sans-serif; color: #16181D; background: #F7F7F4; box-sizing: border-box; padding: 40px 48px; min-height: 1000px; display: flex; flex-direction: column; gap: 24px">
+<div style="display: flex; flex-direction: column; gap: 6px; max-width: 760px">
+<h1 style="margin: 0; font-size: 28px; font-weight: 700">At phone width</h1>
+<div style="font-size: 15px; line-height: 1.55; color: #3F434A">The sidebar folds into a menu button, cards stack in one column, and "Behind the scenes" becomes a collapsed section under the chat. Streamlit does this on its own; this shows what to expect.</div>
+</div>
+<div style="display: flex; flex-wrap: wrap; gap: 40px; align-items: flex-start">
+<div style="flex: 0 0 390px; display: flex; flex-direction: column; gap: 12px">
+<div style="font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #5B6068">Home</div>
+<div style="width: 390px; box-sizing: border-box; height: 640px; background: #F7F7F4; border: 8px solid #16181D; border-radius: 32px; overflow: hidden; display: flex; flex-direction: column">
+<div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 10px 14px; background: #EFEEE9; border-bottom: 1px solid #DDDCD5"><span style="min-width: 44px; min-height: 44px; display: flex; align-items: center; justify-content: center; font-size: 20px" aria-label="Menu">☰</span><span style="font-size: 15px; font-weight: 700">customer-support-agent</span><span style="width: 44px"></span></div>
+<div style="flex: 1 1 auto; overflow: hidden; padding: 16px; display: flex; flex-direction: column; gap: 14px"><div style="font-size: 12px; color: #5B6068">Sign in as a demo customer</div>
+<h1 style="margin: 0; font-size: 28px; line-height: 1.2; font-weight: 700">Hello, and welcome.</h1>
+<div style="font-size: 14px; color: #3F434A; line-height: 1.5">Choosing a customer is how you sign in here.</div>
+<div style="background: #FFFFFF; border: 2px solid #0E7C6B; border-radius: 12px; padding: 14px; display: flex; flex-direction: column; gap: 10px"><span style="align-self: flex-start; font-size: 12px; font-weight: 600; background: #E3F1EE; color: #074A3F; border-radius: 999px; padding: 3px 10px">Start here</span><div style="display: flex; justify-content: space-between; gap: 8px"><b style="font-size: 15px">Return on the last day</b><span style="font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 12px; background: #ECECE7; border-radius: 6px; padding: 2px 6px">C0076</span></div><div style="font-size: 13px; color: #3F434A; line-height: 1.5">A laptop table, day 10 of a 10-day window.</div><button style="min-height: 44px; border: 0; background: #0E7C6B; color: #FFFFFF; border-radius: 8px; font: inherit; font-size: 14px; font-weight: 600">Sign in and start</button></div>
+<div style="background: #FFFFFF; border: 1px solid #DDDCD5; border-radius: 12px; padding: 14px; display: flex; flex-direction: column; gap: 10px"><div style="display: flex; justify-content: space-between; gap: 8px"><b style="font-size: 15px">One day too late</b><span style="font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 12px; background: #ECECE7; border-radius: 6px; padding: 2px 6px">C0301</span></div><button style="min-height: 44px; border: 0; background: #0E7C6B; color: #FFFFFF; border-radius: 8px; font: inherit; font-size: 14px; font-weight: 600">Sign in and start</button></div></div>
+</div>
+</div>
+<div style="flex: 0 0 390px; display: flex; flex-direction: column; gap: 12px">
+<div style="font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #5B6068">Customer chat</div>
+<div style="width: 390px; box-sizing: border-box; height: 640px; background: #F7F7F4; border: 8px solid #16181D; border-radius: 32px; overflow: hidden; display: flex; flex-direction: column">
+<div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 10px 14px; background: #EFEEE9; border-bottom: 1px solid #DDDCD5"><span style="min-width: 44px; min-height: 44px; display: flex; align-items: center; justify-content: center; font-size: 20px" aria-label="Menu">☰</span><span style="font-size: 15px; font-weight: 700">customer-support-agent</span><span style="width: 44px"></span></div>
+<div style="flex: 1 1 auto; overflow: hidden; padding: 16px; display: flex; flex-direction: column; gap: 14px"><div style="display: flex; flex-direction: column; gap: 2px"><div style="font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #0B6657">Return on the last day</div><b style="font-size: 20px">Customer chat</b></div>
+<div style="display: flex; gap: 12px; align-items: flex-start"><div style="flex: 0 0 32px; width: 32px; height: 32px; border-radius: 16px; background: #E3E2DB; color: #3F434A; font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center">You</div><div style="font-size: 15px; line-height: 1.55; padding-top: 5px">I want to return the laptop table.</div></div>
+<div style="display: flex; gap: 12px; align-items: flex-start"><div style="flex: 0 0 32px; width: 32px; height: 32px; border-radius: 16px; background: #0E7C6B; color: #FFFFFF; font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center">AI</div><div style="flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 12px; font-size: 15px; line-height: 1.6; padding-top: 5px"><div style="font-size: 14px">Today is day 10 of 10, the last day to return it.</div><div style="background: #FFFFFF; border: 1px solid #0E7C6B; border-radius: 12px; padding: 12px; display: flex; flex-direction: column; gap: 10px"><div style="font-size: 12px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: #0B6657">Please confirm</div><div style="font-size: 13px">Return for ₹599 to your UPI-linked bank account.</div><button style="min-height: 44px; border: 0; background: #0E7C6B; color: #FFFFFF; border-radius: 8px; font: inherit; font-size: 14px; font-weight: 600">Yes, open the return</button><button style="min-height: 44px; border: 1px solid #B9B8AF; background: #FFFFFF; border-radius: 8px; font: inherit; font-size: 14px">No, not now</button></div></div></div>
+<div style="border: 1px solid #DDDCD5; background: #FFFFFF; border-radius: 10px; padding: 0 14px; min-height: 44px; display: flex; align-items: center; justify-content: space-between; font-size: 14px; font-weight: 500"><span>Behind the scenes</span><span style="color: #5B6068">Show</span></div></div>
+</div>
+</div>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":1000}}'>
+class Component extends DCLogic {
+renderVals() {
+return {};
+}
+}
+</script>
+</body>
+</html>

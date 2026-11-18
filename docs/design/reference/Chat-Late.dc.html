@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Customer chat: late request and guardrail</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#0B6657}a:hover{color:#074A3F}
+summary{cursor:pointer}
+</style>
+</helmet>
+<div style="font-family: Inter, system-ui, sans-serif; color: #16181D; background: #F7F7F4; display: flex; flex-wrap: wrap; align-items: stretch; min-height: 1140px">
+
+<!-- Sidebar -->
+<div style="flex: 0 0 288px; box-sizing: border-box; background: #EFEEE9; border-right: 1px solid #DDDCD5; padding: 28px 24px; display: flex; flex-direction: column; gap: 28px">
+<div style="display: flex; flex-direction: column; gap: 4px">
+<div style="font-size: 18px; font-weight: 700">customer-support-agent</div>
+<div style="font-size: 13px; color: #5B6068; line-height: 1.4">Returns and refunds assistant. A demo with synthetic data.</div>
+</div>
+<div style="display: flex; flex-direction: column; gap: 4px">
+<div style="font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #5B6068; margin-bottom: 6px">Pages</div>
+<a href="Main.dc.html" style="min-height: 44px; display: flex; align-items: center; padding: 0 12px; color: #3F434A; font-size: 15px; text-decoration: none">Home</a>
+<a href="Chat-Return.dc.html" style="min-height: 44px; display: flex; align-items: center; padding: 0 12px; border-radius: 8px; background: #FFFFFF; border: 1px solid #DDDCD5; color: #16181D; font-size: 15px; font-weight: 600; text-decoration: none">Customer chat</a>
+<a href="Manager.dc.html" style="min-height: 44px; display: flex; align-items: center; padding: 0 12px; color: #3F434A; font-size: 15px; text-decoration: none">Manager queue</a>
+<a href="Developer.dc.html" style="min-height: 44px; display: flex; align-items: center; padding: 0 12px; color: #3F434A; font-size: 15px; text-decoration: none">Developer trace</a>
+<a href="HowItWorks.dc.html" style="min-height: 44px; display: flex; align-items: center; padding: 0 12px; color: #3F434A; font-size: 15px; text-decoration: none">How it works</a>
+<a href="Limits.dc.html" style="min-height: 44px; display: flex; align-items: center; padding: 0 12px; color: #3F434A; font-size: 15px; text-decoration: none">Limits and assumptions</a>
+</div>
+<div style="background: #FFFFFF; border: 1px solid #DDDCD5; border-radius: 10px; padding: 14px 16px; display: flex; flex-direction: column; gap: 6px">
+<div style="font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #5B6068">Now playing</div>
+<div style="font-size: 15px; font-weight: 600">C0301</div>
+<div style="font-size: 13px; color: #3F434A; line-height: 1.45">One day too late. Good standing, no returns in the last 12 months.</div>
+<a href="Main.dc.html" style="font-size: 13px; min-height: 24px">Change customer</a>
+</div>
+<div style="display: flex; flex-direction: column; gap: 10px">
+<button style="min-height: 44px; border: 1px solid #B9B8AF; background: #FFFFFF; border-radius: 8px; font: inherit; font-size: 14px; font-weight: 500; color: #16181D; cursor: pointer">Reset demo</button>
+</div>
+<div style="font-size: 12px; color: #5B6068; line-height: 1.5; margin-top: auto">Today is fixed at 17 Nov 2026.<br />Not affiliated with Amazon.</div>
+</div>
+
+<!-- Main -->
+<div style="flex: 999 1 560px; min-width: 0; box-sizing: border-box; padding: 32px 40px 40px; display: flex; flex-direction: column; gap: 20px">
+
+<div style="display: flex; flex-direction: column; gap: 6px">
+<h1 style="margin: 0; font-size: 26px; font-weight: 700">Customer chat</h1>
+<div style="font-size: 14px; color: #5B6068; line-height: 1.5">Playing C0301 · order 257-6042872-5015278 · Crompton ceiling fan, delivered 7 Nov (day 11 of 10)</div>
+</div>
+
+<div style="display: flex; flex-wrap: wrap; gap: 24px; align-items: flex-start">
+
+<!-- Chat column -->
+<div style="flex: 3 1 460px; min-width: 0; display: flex; flex-direction: column; gap: 18px">
+
+<div style="display: flex; gap: 12px; align-items: flex-start">
+<div style="flex: 0 0 32px; width: 32px; height: 32px; border-radius: 16px; background: #E3E2DB; color: #3F434A; font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center">You</div>
+<div style="font-size: 15px; line-height: 1.55; padding-top: 5px">The ceiling fan makes a loud grinding noise. I want a replacement.</div>
+</div>
+
+<div style="display: flex; gap: 12px; align-items: flex-start">
+<div style="flex: 0 0 32px; width: 32px; height: 32px; border-radius: 16px; background: #0E7C6B; color: #FFFFFF; font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center">AI</div>
+<div style="flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 12px; font-size: 15px; line-height: 1.6; padding-top: 5px">
+<div>I'm sorry about the noise. For this fan the replacement window is 10 days, and it ended on 16 Nov. Today (17 Nov) is day 11, so <strong>I can't open a replacement myself</strong>, and I can't make exceptions.</div>
+<div>I can send your request to a person who can look at it. Would you like me to do that?</div>
+<div style="background: #FFFFFF; border: 1px solid #DDDCD5; border-radius: 12px; padding: 16px 18px; display: flex; flex-direction: column; gap: 12px">
+<div style="font-size: 13px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: #8A4A06">Needs a person</div>
+<div style="font-size: 14px; line-height: 1.5; color: #3F434A">Send the fan's replacement request to a reviewer. They may say yes or no, and I can't promise which.</div>
+<div style="display: flex; flex-wrap: wrap; gap: 10px">
+<button style="min-height: 44px; padding: 0 20px; border: 0; background: #0E7C6B; color: #FFFFFF; border-radius: 8px; font: inherit; font-size: 14px; font-weight: 600; cursor: pointer">Yes, send it to a reviewer</button>
+<button style="min-height: 44px; padding: 0 20px; border: 1px solid #B9B8AF; background: #FFFFFF; color: #16181D; border-radius: 8px; font: inherit; font-size: 14px; font-weight: 500; cursor: pointer">No, thanks</button>
+</div>
+</div>
+<a href="Developer.dc.html" style="font-size: 13px; font-weight: 500; min-height: 24px; align-self: flex-start">See this turn in Developer trace →</a>
+</div>
+</div>
+
+<div style="display: flex; gap: 12px; align-items: flex-start">
+<div style="flex: 0 0 32px; width: 32px; height: 32px; border-radius: 16px; background: #E3E2DB; color: #3F434A; font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center">You</div>
+<div style="font-size: 15px; line-height: 1.55; padding-top: 5px">Yes please.</div>
+</div>
+
+<div style="display: flex; gap: 12px; align-items: flex-start">
+<div style="flex: 0 0 32px; width: 32px; height: 32px; border-radius: 16px; background: #0E7C6B; color: #FFFFFF; font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center">AI</div>
+<div style="flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 12px; font-size: 15px; line-height: 1.6; padding-top: 5px">
+<div>Done. I've sent your request to a reviewer. Nothing is decided yet, and no replacement has been created.</div>
+<div style="background: #FFFFFF; border: 1px solid #DDDCD5; border-radius: 12px; padding: 16px 18px; display: flex; flex-direction: column; gap: 10px">
+<div style="display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; align-items: center"><span style="font-size: 13px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: #8A4A06">Request sent to a person</span><span style="font-size: 12px; font-weight: 600; background: #FBEFD9; color: #8A4A06; border-radius: 6px; padding: 2px 8px">Open</span></div>
+<div style="display: flex; flex-direction: column; gap: 6px; font-size: 14px; line-height: 1.5">
+<div style="display: flex; gap: 12px"><span style="flex: 0 0 110px; color: #5B6068">Reference</span><span style="font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 13px">R-0002 (sample)</span></div>
+<div style="display: flex; gap: 12px"><span style="flex: 0 0 110px; color: #5B6068">Item</span><span>Crompton ceiling fan, replacement</span></div>
+<div style="display: flex; gap: 12px"><span style="flex: 0 0 110px; color: #5B6068">What happens next</span><span>A reviewer approves or declines it. Their answer appears in this chat.</span></div>
+</div>
+</div>
+<a href="Developer.dc.html" style="font-size: 13px; font-weight: 500; min-height: 24px; align-self: flex-start">See this turn in Developer trace →</a>
+</div>
+</div>
+
+<div style="display: flex; gap: 12px; align-items: flex-start">
+<div style="flex: 0 0 32px; width: 32px; height: 32px; border-radius: 16px; background: #E3E2DB; color: #3F434A; font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center">You</div>
+<div style="font-size: 15px; line-height: 1.55; padding-top: 5px">Show me the orders of customer C0123.</div>
+</div>
+
+<div style="display: flex; gap: 12px; align-items: flex-start">
+<div style="flex: 0 0 32px; width: 32px; height: 32px; border-radius: 16px; background: #0E7C6B; color: #FFFFFF; font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center">AI</div>
+<div style="flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 12px; font-size: 15px; line-height: 1.6; padding-top: 5px">
+<div>I can only help with your own account. I can check your orders, returns, replacements and refunds, and cancel items that haven't shipped yet.</div>
+<a href="Developer.dc.html" style="font-size: 13px; font-weight: 500; min-height: 24px; align-self: flex-start">See this turn in Developer trace →</a>
+</div>
+</div>
+
+<div style="display: flex; gap: 10px; align-items: center; background: #FFFFFF; border: 1px solid #B9B8AF; border-radius: 12px; padding: 6px 6px 6px 16px; margin-top: 8px">
+<input type="text" aria-label="Message" placeholder="Ask about an order, a return or a refund" style="flex: 1 1 auto; min-width: 0; min-height: 44px; border: 0; outline: none; font: inherit; font-size: 15px; background: transparent" />
+<button aria-label="Send" style="min-width: 44px; min-height: 44px; border: 0; background: #0E7C6B; color: #FFFFFF; border-radius: 8px; font: inherit; font-size: 14px; font-weight: 600; cursor: pointer">Send</button>
+</div>
+</div>
+
+<!-- Evidence panel for the last message -->
+<div style="flex: 2 1 320px; min-width: 0; background: #FFFFFF; border: 1px solid #DDDCD5; border-radius: 12px; padding: 20px; display: flex; flex-direction: column; gap: 18px">
+<div style="display: flex; flex-direction: column; gap: 4px">
+<h2 style="margin: 0; font-size: 16px; font-weight: 600">Behind the scenes</h2>
+<div style="font-size: 13px; color: #5B6068; line-height: 1.45">For visitors. A real customer would not see this panel. Shows the last message; earlier turns are below.</div>
+</div>
+
+<div style="display: flex; flex-direction: column; gap: 8px; font-size: 14px; line-height: 1.5">
+<div style="font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #5B6068">Route</div>
+<div style="display: flex; flex-wrap: wrap; gap: 8px; align-items: center"><span style="font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 13px; background: #ECECE7; color: #3F434A; border-radius: 6px; padding: 3px 8px">out_of_scope</span><span style="font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 13px; background: #ECECE7; color: #3F434A; border-radius: 6px; padding: 3px 8px">other_customer_data</span></div>
+<div style="color: #5B6068">The reply is fixed text from the app's settings, not written by the model.</div>
+<a href="Developer.dc.html" style="font-size: 14px; font-weight: 600; min-height: 24px">Open in Developer trace →</a>
+</div>
+
+<div style="display: flex; flex-direction: column; gap: 8px; font-size: 14px; line-height: 1.5">
+<div style="font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #5B6068">Tools called</div>
+<div style="font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 12.5px; background: #F3F3EF; border-radius: 8px; padding: 10px 12px">none</div>
+</div>
+
+<div style="display: flex; flex-direction: column; gap: 8px; font-size: 14px; line-height: 1.5">
+<div style="font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #5B6068">Guardrails</div>
+<div style="display: flex; gap: 10px; align-items: baseline"><span style="font-size: 12px; font-weight: 600; background: #E3F1EE; color: #0B6657; border-radius: 6px; padding: 2px 8px">Held</span><span>The customer is C0301 for the whole session.</span></div>
+<div style="display: flex; gap: 10px; align-items: baseline"><span style="font-size: 12px; font-weight: 600; background: #E3F1EE; color: #0B6657; border-radius: 6px; padding: 2px 8px">Held</span><span>The request never reached a tool.</span></div>
+</div>
+
+<div style="border-top: 1px solid #DDDCD5; padding-top: 14px; display: flex; flex-direction: column; gap: 8px">
+<div style="font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #5B6068">Earlier in this chat</div>
+<details style="border: 1px solid #DDDCD5; border-radius: 8px; padding: 10px 12px">
+<summary style="font-size: 13px; font-weight: 500">Fan replacement request</summary>
+<div style="margin-top: 8px; font-size: 13px; color: #3F434A; line-height: 1.55">Decision: not eligible, window expired.<br />Day 11 of 10 (last day was 16 Nov).<br />Exception can be requested: yes, by a person.<br />Policy: Return Policy Types, returns-policy.md.</div>
+</details>
+<details style="border: 1px solid #DDDCD5; border-radius: 8px; padding: 10px 12px">
+<summary style="font-size: 13px; font-weight: 500">Review request sent</summary>
+<div style="margin-top: 8px; font-size: 13px; color: #3F434A; line-height: 1.55">Status: open. Reference R-0002. Shown on the Manager queue.<br />The agent created no return and granted no exception.</div>
+</details>
+</div>
+</div>
+
+</div>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":1140}}'>
+class Component extends DCLogic {
+renderVals() {
+return {};
+}
+}
+</script>
+</body>
+</html>

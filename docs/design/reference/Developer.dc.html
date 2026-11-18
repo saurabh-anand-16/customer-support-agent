@@ -1,0 +1,249 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Developer trace view</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#0B6657}a:hover{color:#074A3F}
+table{border-collapse:collapse;width:100%}
+th{font-size:12px;font-weight:600;color:#5B6068;text-align:left;padding:8px 10px;border-bottom:1px solid #DDDCD5;background:#F7F7F4}
+td{font-size:13px;padding:9px 10px;border-bottom:1px solid #ECECE7;vertical-align:top;line-height:1.45}
+</style>
+</helmet>
+<div style="font-family: Inter, system-ui, sans-serif; color: #16181D; background: #F7F7F4; display: flex; flex-wrap: wrap; align-items: stretch; min-height: 1640px">
+
+<!-- Sidebar -->
+<div style="flex: 0 0 288px; box-sizing: border-box; background: #EFEEE9; border-right: 1px solid #DDDCD5; padding: 28px 24px; display: flex; flex-direction: column; gap: 28px">
+<div style="display: flex; flex-direction: column; gap: 4px">
+<div style="font-size: 18px; font-weight: 700">customer-support-agent</div>
+<div style="font-size: 13px; color: #5B6068; line-height: 1.4">Returns and refunds assistant. A demo with synthetic data.</div>
+</div>
+<div style="display: flex; flex-direction: column; gap: 4px">
+<div style="font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #5B6068; margin-bottom: 6px">Pages</div>
+<a href="Main.dc.html" style="min-height: 44px; display: flex; align-items: center; padding: 0 12px; color: #3F434A; font-size: 15px; text-decoration: none">Home</a>
+<a href="Chat-Return.dc.html" style="min-height: 44px; display: flex; align-items: center; padding: 0 12px; color: #3F434A; font-size: 15px; text-decoration: none">Customer chat</a>
+<a href="Manager.dc.html" style="min-height: 44px; display: flex; align-items: center; padding: 0 12px; color: #3F434A; font-size: 15px; text-decoration: none">Manager queue</a>
+<a href="Developer.dc.html" style="min-height: 44px; display: flex; align-items: center; padding: 0 12px; border-radius: 8px; background: #FFFFFF; border: 1px solid #DDDCD5; color: #16181D; font-size: 15px; font-weight: 600; text-decoration: none">Developer trace</a>
+<a href="HowItWorks.dc.html" style="min-height: 44px; display: flex; align-items: center; padding: 0 12px; color: #3F434A; font-size: 15px; text-decoration: none">How it works</a>
+<a href="Limits.dc.html" style="min-height: 44px; display: flex; align-items: center; padding: 0 12px; color: #3F434A; font-size: 15px; text-decoration: none">Limits and assumptions</a>
+</div>
+<div style="background: #FFFFFF; border: 1px solid #DDDCD5; border-radius: 10px; padding: 14px 16px; display: flex; flex-direction: column; gap: 6px">
+<div style="font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #5B6068">Now playing</div>
+<div style="font-size: 15px; font-weight: 600">Developer</div>
+<div style="font-size: 13px; color: #3F434A; line-height: 1.45">Read-only view of how every message was handled.</div>
+</div>
+<div style="display: flex; flex-direction: column; gap: 10px">
+<button style="min-height: 44px; border: 1px solid #B9B8AF; background: #FFFFFF; border-radius: 8px; font: inherit; font-size: 14px; font-weight: 500; color: #16181D; cursor: pointer">Reset demo</button>
+</div>
+<div style="font-size: 12px; color: #5B6068; line-height: 1.5; margin-top: auto">Today is fixed at 17 Nov 2026.<br />Not affiliated with Amazon.</div>
+</div>
+
+<!-- Main -->
+<div style="flex: 999 1 560px; min-width: 0; box-sizing: border-box; padding: 32px 40px 40px; display: flex; flex-direction: column; gap: 20px">
+
+<div style="display: flex; flex-direction: column; gap: 6px">
+<h1 style="margin: 0; font-size: 26px; font-weight: 700">Developer trace</h1>
+<div style="font-size: 14px; color: #5B6068; line-height: 1.5; max-width: 760px">Every step of every message: the routing decision, model calls, tool calls, the policy passages retrieved, and the safety checks. The numbers below are sample values; the real page fills them in from each run.</div>
+</div>
+
+<!-- st.tabs -->
+<div style="display: flex; flex-wrap: wrap; gap: 4px; border-bottom: 1px solid #DDDCD5">
+<div style="padding: 10px 16px; font-size: 14px; font-weight: 600; color: #0B6657; border-bottom: 2px solid #0E7C6B; margin-bottom: -1px">Traces</div>
+<div style="padding: 10px 16px; font-size: 14px; color: #5B6068">Evaluation</div>
+<div style="padding: 10px 16px; font-size: 14px; color: #5B6068">Tests</div>
+<div style="padding: 10px 16px; font-size: 14px; color: #5B6068">Policy explorer</div>
+<div style="padding: 10px 16px; font-size: 14px; color: #5B6068">Assumptions</div>
+</div>
+
+<div style="display: flex; flex-wrap: wrap; gap: 24px; align-items: flex-start">
+
+<!-- Turn list: each turn shows the customer and the agent -->
+<div style="flex: 1 1 280px; max-width: 100%; min-width: 0; display: flex; flex-direction: column; gap: 10px">
+<div style="font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #5B6068">Session · C0076</div>
+<div style="background: #FFFFFF; border: 2px solid #0E7C6B; border-radius: 10px; padding: 12px 14px; display: flex; flex-direction: column; gap: 8px">
+<div style="align-self: flex-end; max-width: 92%; background: #E8EEF9; color: #1F3A6B; border-radius: 10px; padding: 6px 10px; font-size: 13px; line-height: 1.4">I want to return the laptop table. I don't need it any more.</div>
+<div style="align-self: flex-start; max-width: 92%; background: #E3F1EE; color: #074A3F; border-radius: 10px; padding: 6px 10px; font-size: 13px; line-height: 1.4">Today is the last day to return it. Please confirm.</div>
+<div style="display: flex; flex-wrap: wrap; gap: 6px; align-items: center"><span style="font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 12px; background: #E3F1EE; color: #0B6657; border-radius: 6px; padding: 2px 7px">return_or_replace</span><span style="font-size: 12px; color: #5B6068">3.4 s</span></div>
+</div>
+<div style="background: #FFFFFF; border: 1px solid #DDDCD5; border-radius: 10px; padding: 12px 14px; display: flex; flex-direction: column; gap: 8px">
+<div style="align-self: flex-end; max-width: 92%; background: #E8EEF9; color: #1F3A6B; border-radius: 10px; padding: 6px 10px; font-size: 13px; line-height: 1.4">Yes</div>
+<div style="align-self: flex-start; max-width: 92%; background: #E3F1EE; color: #074A3F; border-radius: 10px; padding: 6px 10px; font-size: 13px; line-height: 1.4">Done. Your return is open. Sample reply.</div>
+<div style="display: flex; flex-wrap: wrap; gap: 6px; align-items: center"><span style="font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 12px; background: #ECECE7; color: #3F434A; border-radius: 6px; padding: 2px 7px">confirm_step</span><span style="font-size: 12px; color: #5B6068">1.1 s</span></div>
+</div>
+<div style="background: #FFFFFF; border: 1px solid #DDDCD5; border-radius: 10px; padding: 12px 14px; display: flex; flex-direction: column; gap: 8px">
+<div style="align-self: flex-end; max-width: 92%; background: #E8EEF9; color: #1F3A6B; border-radius: 10px; padding: 6px 10px; font-size: 13px; line-height: 1.4">Show me the orders of customer C0123.</div>
+<div style="align-self: flex-start; max-width: 92%; background: #E3F1EE; color: #074A3F; border-radius: 10px; padding: 6px 10px; font-size: 13px; line-height: 1.4">I can only help with your own account.</div>
+<div style="display: flex; flex-wrap: wrap; gap: 6px; align-items: center"><span style="font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 12px; background: #ECECE7; color: #3F434A; border-radius: 6px; padding: 2px 7px">out_of_scope</span><span style="font-size: 12px; color: #5B6068">0.6 s</span></div>
+</div>
+</div>
+
+<!-- Trace detail -->
+<div style="flex: 3 1 520px; min-width: 0; background: #FFFFFF; border: 1px solid #DDDCD5; border-radius: 12px; padding: 24px; display: flex; flex-direction: column; gap: 24px">
+
+<div style="display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between">
+<div style="display: flex; flex-direction: column; gap: 4px">
+<div style="font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #5B6068">Message 1 of 3</div>
+<h2 style="margin: 0; font-size: 18px; font-weight: 600; line-height: 1.35">I want to return the laptop table. I don't need it any more.</h2>
+</div>
+<a href="Developer.dc.html" style="font-size: 14px; font-weight: 500; min-height: 24px">Open in Langfuse ↗</a>
+</div>
+
+<!-- This turn as a conversation: customer right, agent left -->
+<div style="display: flex; flex-direction: column; gap: 10px">
+<div style="font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #5B6068">This turn</div>
+<div style="display: flex; flex-direction: column; gap: 10px; background: #F7F7F4; border-radius: 10px; padding: 16px">
+<div style="align-self: flex-end; max-width: 80%; display: flex; flex-direction: column; gap: 4px">
+<div style="align-self: flex-end; font-size: 12px; font-weight: 600; color: #1F3A6B">Customer · C0076</div>
+<div style="background: #E8EEF9; color: #1F3A6B; border-radius: 12px; padding: 10px 14px; font-size: 14px; line-height: 1.5">I want to return the laptop table. I don't need it any more.</div>
+</div>
+<div style="align-self: flex-start; max-width: 80%; display: flex; flex-direction: column; gap: 4px">
+<div style="font-size: 12px; font-weight: 600; color: #074A3F">Agent</div>
+<div style="background: #E3F1EE; color: #074A3F; border-radius: 12px; padding: 10px 14px; font-size: 14px; line-height: 1.5">I found it: the OFIXO laptop table, ₹599, delivered 8 Nov. Today (17 Nov) is day 10 of 10, so today is the last day to return it. Please confirm to open the return.</div>
+</div>
+</div>
+</div>
+
+<!-- Path: every route the router could take, the taken one highlighted -->
+<div style="display: flex; flex-direction: column; gap: 10px">
+<div style="font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #5B6068">Path through the agent</div>
+<div style="border: 1px solid #DDDCD5; border-radius: 10px; padding: 14px; overflow-x: auto; background: #FFFFFF"><svg viewBox="0 0 760 368" width="100%" style="max-width: 760px; display: block" role="img" aria-label="Path of this message: Session, then Router, which chose Return or replace out of seven lanes (order status, policy question, return or replace, cancel an item, human help, out of scope, clarify), then Answer check and Reply. A confirm step is shown as the route taken when a confirmation is pending, skipping the router." font-family="Inter, system-ui, sans-serif"><defs><marker id="dh" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="#8A8F98"/></marker><marker id="dg" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="#0E7C6B"/></marker></defs><line x1="220" y1="160" x2="298" y2="25" stroke="#B9B8AF" stroke-width="1.2" stroke-dasharray="4 4"/><line x1="470" y1="25" x2="545" y2="160" stroke="#B9B8AF" stroke-width="1.2" stroke-dasharray="4 4"/><line x1="220" y1="160" x2="298" y2="69" stroke="#B9B8AF" stroke-width="1.2" stroke-dasharray="4 4"/><line x1="470" y1="69" x2="545" y2="160" stroke="#B9B8AF" stroke-width="1.2" stroke-dasharray="4 4"/><line x1="220" y1="160" x2="298" y2="113" stroke="#0E7C6B" stroke-width="3"/><line x1="470" y1="113" x2="545" y2="160" stroke="#0E7C6B" stroke-width="3"/><line x1="220" y1="160" x2="298" y2="157" stroke="#B9B8AF" stroke-width="1.2" stroke-dasharray="4 4"/><line x1="470" y1="157" x2="545" y2="160" stroke="#B9B8AF" stroke-width="1.2" stroke-dasharray="4 4"/><line x1="220" y1="160" x2="298" y2="201" stroke="#B9B8AF" stroke-width="1.2" stroke-dasharray="4 4"/><line x1="470" y1="201" x2="545" y2="160" stroke="#B9B8AF" stroke-width="1.2" stroke-dasharray="4 4"/><line x1="220" y1="160" x2="298" y2="245" stroke="#B9B8AF" stroke-width="1.2" stroke-dasharray="4 4"/><line x1="470" y1="245" x2="545" y2="160" stroke="#B9B8AF" stroke-width="1.2" stroke-dasharray="4 4"/><line x1="220" y1="160" x2="298" y2="289" stroke="#B9B8AF" stroke-width="1.2" stroke-dasharray="4 4"/><line x1="470" y1="289" x2="545" y2="160" stroke="#B9B8AF" stroke-width="1.2" stroke-dasharray="4 4"/><rect x="300" y="8" width="170" height="34" rx="8" fill="#FFFFFF" stroke="#B9B8AF" stroke-dasharray="4 3"/><text x="385" y="30" font-size="13" fill="#5B6068" text-anchor="middle">Order status</text><rect x="300" y="52" width="170" height="34" rx="8" fill="#FFFFFF" stroke="#B9B8AF" stroke-dasharray="4 3"/><text x="385" y="74" font-size="13" fill="#5B6068" text-anchor="middle">Policy question</text><rect x="300" y="96" width="170" height="34" rx="8" fill="#0E7C6B" stroke="#0E7C6B"/><text x="385" y="118" font-size="13" font-weight="600" fill="#FFFFFF" text-anchor="middle">Return or replace · taken</text><rect x="300" y="140" width="170" height="34" rx="8" fill="#FFFFFF" stroke="#B9B8AF" stroke-dasharray="4 3"/><text x="385" y="162" font-size="13" fill="#5B6068" text-anchor="middle">Cancel an item</text><rect x="300" y="184" width="170" height="34" rx="8" fill="#FFFFFF" stroke="#B9B8AF" stroke-dasharray="4 3"/><text x="385" y="206" font-size="13" fill="#5B6068" text-anchor="middle">Human help</text><rect x="300" y="228" width="170" height="34" rx="8" fill="#FFFFFF" stroke="#B9B8AF" stroke-dasharray="4 3"/><text x="385" y="250" font-size="13" fill="#5B6068" text-anchor="middle">Out of scope</text><rect x="300" y="272" width="170" height="34" rx="8" fill="#FFFFFF" stroke="#B9B8AF" stroke-dasharray="4 3"/><text x="385" y="294" font-size="13" fill="#5B6068" text-anchor="middle">Clarify</text><rect x="0" y="140" width="90" height="40" rx="8" fill="#ECECE7" stroke="#B9B8AF"/><text x="45.0" y="165.0" font-size="13" font-weight="500" fill="#16181D" text-anchor="middle">Session</text><rect x="130" y="140" width="90" height="40" rx="8" fill="#0E7C6B" stroke="#0E7C6B"/><text x="175.0" y="165.0" font-size="13" font-weight="600" fill="#FFFFFF" text-anchor="middle">Router</text><line x1="92" y1="160" x2="128" y2="160" stroke="#0E7C6B" stroke-width="3" marker-end="url(#dg)"/><rect x="545" y="140" width="105" height="40" rx="8" fill="#0E7C6B" stroke="#0E7C6B"/><text x="597.5" y="165.0" font-size="13" font-weight="600" fill="#FFFFFF" text-anchor="middle">Answer check</text><rect x="675" y="140" width="85" height="40" rx="8" fill="#0E7C6B" stroke="#0E7C6B"/><text x="717.5" y="165.0" font-size="13" font-weight="600" fill="#FFFFFF" text-anchor="middle">Reply</text><line x1="652" y1="160" x2="673" y2="160" stroke="#0E7C6B" stroke-width="3" marker-end="url(#dg)"/><path d="M45 182 V338 H298" fill="none" stroke="#8A8F98" stroke-width="1.5" stroke-dasharray="4 4" marker-end="url(#dh)"/><rect x="300" y="321" width="170" height="34" rx="8" fill="#FFFFFF" stroke="#B9B8AF" stroke-dasharray="4 3"/><text x="385" y="343" font-size="13" fill="#5B6068" text-anchor="middle">Confirm step (pending)</text><path d="M472 338 H717 V182" fill="none" stroke="#8A8F98" stroke-width="1.5" stroke-dasharray="4 4" marker-end="url(#dh)"/><text x="55" y="326" font-size="11" fill="#5B6068">a confirmation is pending: skip the router</text></svg></div>
+<div style="font-size: 12px; color: #5B6068; line-height: 1.5">The green line is the path this message took. Dashed grey lines were possible but not taken.</div>
+</div>
+
+<!-- Router -->
+<div style="display: flex; flex-direction: column; gap: 10px">
+<div style="font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #5B6068">Router decision</div>
+<div style="font-size: 13px; color: #3F434A; line-height: 1.5">Input: this message, the last 2 exchanges, no pending action. The router picks one label and never answers.</div>
+<div style="font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 12.5px; background: #F3F3EF; border-radius: 8px; padding: 12px 14px; line-height: 1.7; overflow-x: auto">{"route": "return_or_replace", "kind": null, "question": null,<br />&nbsp;"reason": "customer wants to return an item they own"}</div>
+</div>
+
+<!-- Model calls -->
+<div style="display: flex; flex-direction: column; gap: 10px">
+<div style="font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #5B6068">Model calls</div>
+<div style="font-size: 12px; color: #5B6068; line-height: 1.5">The model name, token counts and cost are read from each model response. All numbers here are samples.</div>
+<div style="overflow-x: auto; border: 1px solid #DDDCD5; border-radius: 8px">
+<table>
+<thead><tr><th>Step</th><th>Model used</th><th>Tokens in</th><th>Tokens out</th><th>Time</th><th>Cost</th></tr></thead>
+<tbody>
+<tr><td>Router</td><td>router model</td><td>410</td><td>36</td><td>0.6 s</td><td>sample</td></tr>
+<tr><td>Return branch</td><td>branch model</td><td>1,120</td><td>190</td><td>2.1 s</td><td>sample</td></tr>
+<tr><td>Answer check</td><td>no model call</td><td>0</td><td>0</td><td>3 ms</td><td>none</td></tr>
+</tbody>
+</table>
+</div>
+</div>
+
+<!-- Tool calls -->
+<div style="display: flex; flex-direction: column; gap: 10px">
+<div style="font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #5B6068">Tool calls</div>
+<div style="overflow-x: auto; border: 1px solid #DDDCD5; border-radius: 8px">
+<table>
+<thead><tr><th>Tool</th><th>Inputs the model chose</th><th>Result</th><th>Time</th></tr></thead>
+<tbody>
+<tr><td style="font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 12px">get_order</td><td>order 617-1111527-1440353</td><td>1 item, delivered 8 Nov</td><td>4 ms</td></tr>
+<tr><td style="font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 12px">check_eligibility</td><td>item OI000011, reason changed_mind</td><td>eligible, day 10 of 10</td><td>3 ms</td></tr>
+</tbody>
+</table>
+</div>
+<div style="font-size: 12px; color: #5B6068; line-height: 1.5">The customer id (C0076) is added by the app from the session and is not in the model's inputs.</div>
+</div>
+
+<!-- Retrieval -->
+<div style="display: flex; flex-direction: column; gap: 10px">
+<div style="font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #5B6068">Policy passages retrieved</div>
+<div style="font-size: 13px; color: #3F434A; line-height: 1.5">Profile: hybrid (keyword + vector, rank fusion) · index dbb4ddefeec87906 · no reranker</div>
+<div style="overflow-x: auto; border: 1px solid #DDDCD5; border-radius: 8px">
+<table>
+<thead><tr><th>#</th><th>Page › section</th><th>Score</th><th>Found by</th><th>In scope</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>returns-policy.md › Return Policy Types with Descriptions</td><td>sample</td><td>keyword #2, vector #1</td><td>yes</td></tr>
+<tr><td>2</td><td>refund-policy.md › Refund Timelines</td><td>sample</td><td>keyword #4, vector #3</td><td>yes</td></tr>
+<tr><td>3</td><td>returns-and-replacements-faq.md › 1. What can I return?</td><td>sample</td><td>keyword #1</td><td>yes</td></tr>
+</tbody>
+</table>
+</div>
+</div>
+
+<!-- Versions and settings -->
+<div style="display: flex; flex-direction: column; gap: 10px">
+<div style="font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #5B6068">Versions and settings</div>
+<div style="font-size: 13px; color: #3F434A; line-height: 1.5">What was running when this message was handled, so a result can be reproduced later.</div>
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 8px 24px; font-size: 14px; line-height: 1.5">
+<div style="display: flex; justify-content: space-between; gap: 12px"><span style="color: #5B6068">Code version</span><span style="font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 12.5px">git commit (sample)</span></div>
+<div style="display: flex; justify-content: space-between; gap: 12px"><span style="color: #5B6068">Settings version</span><span style="font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 12.5px">config hash (sample)</span></div>
+<div style="display: flex; justify-content: space-between; gap: 12px"><span style="color: #5B6068">Prompt version</span><span style="font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 12.5px">prompt hash (sample)</span></div>
+<div style="display: flex; justify-content: space-between; gap: 12px"><span style="color: #5B6068">Policy index</span><span style="font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 12.5px">dbb4ddefeec87906</span></div>
+<div style="display: flex; justify-content: space-between; gap: 12px"><span style="color: #5B6068">Retries</span><span>0</span></div>
+<div style="display: flex; justify-content: space-between; gap: 12px"><span style="color: #5B6068">Errors</span><span>none</span></div>
+</div>
+</div>
+
+<!-- Guardrails -->
+<div style="display: flex; flex-direction: column; gap: 10px">
+<div style="font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #5B6068">Safety checks</div>
+<div style="display: flex; flex-direction: column; gap: 8px; font-size: 14px; line-height: 1.5">
+<div style="display: flex; gap: 10px; align-items: baseline"><span style="flex: 0 0 auto; font-size: 12px; font-weight: 600; background: #E3F1EE; color: #0B6657; border-radius: 6px; padding: 2px 8px">Pass</span><span>The customer id came from the session, not from the model.</span></div>
+<div style="display: flex; gap: 10px; align-items: baseline"><span style="flex: 0 0 auto; font-size: 12px; font-weight: 600; background: #E3F1EE; color: #0B6657; border-radius: 6px; padding: 2px 8px">Pass</span><span>The model did not set "confirmed". The action waits for the customer's yes.</span></div>
+<div style="display: flex; gap: 10px; align-items: baseline"><span style="flex: 0 0 auto; font-size: 12px; font-weight: 600; background: #E3F1EE; color: #0B6657; border-radius: 6px; padding: 2px 8px">Pass</span><span>No tool schema shown to the model contained the approval setting.</span></div>
+<div style="display: flex; gap: 10px; align-items: baseline"><span style="flex: 0 0 auto; font-size: 12px; font-weight: 600; background: #E3F1EE; color: #0B6657; border-radius: 6px; padding: 2px 8px">Pass</span><span>Every number in the reply appears in a tool result (₹599, day 10, 17 Nov).</span></div>
+<div style="display: flex; gap: 10px; align-items: baseline"><span style="flex: 0 0 auto; font-size: 12px; font-weight: 600; background: #E3F1EE; color: #0B6657; border-radius: 6px; padding: 2px 8px">Pass</span><span>Only tools allowed for this branch were called.</span></div>
+</div>
+</div>
+
+</div>
+</div>
+
+<div style="display: flex; flex-direction: column; gap: 14px; margin-top: 8px">
+<div style="display: flex; flex-direction: column; gap: 4px"><h2 style="margin: 0; font-size: 20px; font-weight: 600">Other states of this page</h2><div style="font-size: 14px; color: #5B6068; line-height: 1.5">What the page shows with no data, with message text turned off, and with Langfuse off.</div></div>
+<div style="display: flex; flex-wrap: wrap; gap: 20px; align-items: stretch">
+
+<div style="background: #FFFFFF; border: 1px solid #DDDCD5; border-radius: 12px; padding: 20px; display: flex; flex-direction: column; gap: 12px; flex: 1 1 340px; min-width: 0">
+<div style="font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #5B6068">No messages yet</div>
+<div style="border: 1px dashed #B9B8AF; border-radius: 10px; padding: 28px 20px; display: flex; flex-direction: column; gap: 8px; align-items: flex-start">
+<div style="font-size: 16px; font-weight: 600">No traces recorded</div>
+<div style="font-size: 14px; color: #3F434A; line-height: 1.55">Every message in a customer chat is saved here with its route, model calls, tool calls and checks. Start a chat from Home, then come back.</div>
+<a href="Main.dc.html" style="font-size: 14px; font-weight: 600; min-height: 24px">Go to Home</a>
+</div>
+</div>
+
+<div style="background: #FFFFFF; border: 1px solid #DDDCD5; border-radius: 12px; padding: 20px; display: flex; flex-direction: column; gap: 12px; flex: 1 1 340px; min-width: 0">
+<div style="font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #5B6068">Message text turned off</div>
+<div style="display: flex; flex-direction: column; gap: 10px; background: #F7F7F4; border-radius: 10px; padding: 14px">
+<div style="align-self: flex-end; max-width: 85%; background: #E8EEF9; color: #1F3A6B; border-radius: 12px; padding: 10px 14px; font-size: 14px; line-height: 1.5"><span style="font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 13px">[not captured]</span> · 58 characters</div>
+<div style="align-self: flex-start; max-width: 85%; background: #E3F1EE; color: #074A3F; border-radius: 12px; padding: 10px 14px; font-size: 14px; line-height: 1.5"><span style="font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 13px">[not captured]</span> · 214 characters</div>
+</div>
+<div style="font-size: 13px; color: #3F434A; line-height: 1.5">The setting that stores no message text is on. The route, tool calls, checks and timings are still recorded. Use this for any public copy of the demo.</div>
+</div>
+
+<div style="background: #FFFFFF; border: 1px solid #DDDCD5; border-radius: 12px; padding: 20px; display: flex; flex-direction: column; gap: 12px; flex: 1 1 340px; min-width: 0">
+<div style="font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #5B6068">Langfuse switched off</div>
+<div style="display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between">
+<div style="font-size: 15px; font-weight: 600">Message 1 of 3</div>
+<span style="font-size: 13px; color: #5B6068; border: 1px solid #DDDCD5; border-radius: 6px; padding: 3px 10px">Langfuse is off</span>
+</div>
+<div style="font-size: 13px; color: #3F434A; line-height: 1.5">Everything on this page comes from the local trace file, so nothing is lost. When Langfuse is on, an "Open in Langfuse" link appears here. Turning it on sends message text to Langfuse's servers.</div>
+</div>
+
+</div>
+</div>
+
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":1640}}'>
+class Component extends DCLogic {
+renderVals() {
+return {};
+}
+}
+</script>
+</body>
+</html>

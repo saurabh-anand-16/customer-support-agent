@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Chat states</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#0B6657}a:hover{color:#074A3F}
+summary{cursor:pointer}
+</style>
+</helmet>
+<div style="font-family: Inter, system-ui, sans-serif; color: #16181D; background: #F7F7F4; box-sizing: border-box; padding: 40px 48px; min-height: 900px; display: flex; flex-direction: column; gap: 24px">
+<div style="display: flex; flex-direction: column; gap: 6px; max-width: 760px">
+<h1 style="margin: 0; font-size: 28px; font-weight: 700">Customer chat: other states</h1>
+<div style="font-size: 15px; line-height: 1.55; color: #3F434A">The same chat as screen 2, while it waits, after the customer confirms, and when something fails.</div>
+</div>
+<div style="display: flex; flex-wrap: wrap; gap: 20px; align-items: stretch">
+
+<div style="flex: 1 1 360px; min-width: 0; background: #FFFFFF; border: 1px solid #DDDCD5; border-radius: 12px; padding: 24px; display: flex; flex-direction: column; gap: 16px">
+<div style="font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #5B6068">While the agent works</div>
+<div style="display: flex; gap: 12px; align-items: flex-start"><div style="flex: 0 0 32px; width: 32px; height: 32px; border-radius: 16px; background: #E3E2DB; color: #3F434A; font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center">You</div><div style="font-size: 15px; line-height: 1.55; padding-top: 5px">What is the refund policy for a laptop table?</div></div>
+<div style="display: flex; gap: 12px; align-items: flex-start"><div style="flex: 0 0 32px; width: 32px; height: 32px; border-radius: 16px; background: #0E7C6B; color: #FFFFFF; font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center">AI</div><div style="flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 12px; font-size: 15px; line-height: 1.6; padding-top: 5px"><div style="display: flex; flex-direction: column; gap: 10px; background: #F7F7F4; border: 1px solid #DDDCD5; border-radius: 10px; padding: 14px 16px"><div style="display: flex; gap: 10px; align-items: center; font-size: 14px; color: #16181D"><span style="flex: 0 0 22px; height: 22px; border-radius: 11px; background: #E3F1EE; color: #0B6657; font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center">✓</span>Understood your question</div><div style="display: flex; gap: 10px; align-items: center; font-size: 14px; color: #16181D"><span style="flex: 0 0 22px; height: 22px; border-radius: 11px; background: #E3F1EE; color: #0B6657; font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center">✓</span>Looked up your account</div><div style="display: flex; gap: 10px; align-items: center; font-size: 14px; color: #16181D"><span style="flex: 0 0 22px; height: 22px; border-radius: 11px; background: #FBEFD9; color: #8A4A06; font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center">…</span>Reading the refund policy</div><div style="display: flex; gap: 10px; align-items: center; font-size: 14px; color: #7A7F87"><span style="flex: 0 0 22px; height: 22px; border-radius: 11px; background: #ECECE7; color: #7A7F87; font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center"></span>Writing the reply</div></div></div></div>
+<div style="display: flex; gap: 10px; align-items: center; background: #F3F3EF; border: 1px solid #DDDCD5; border-radius: 12px; padding: 6px 6px 6px 16px"><span style="flex: 1 1 auto; min-height: 44px; display: flex; align-items: center; font-size: 15px; color: #7A7F87">Waiting for the reply...</span><span style="min-width: 44px; min-height: 44px; background: #E3E2DB; color: #7A7F87; border-radius: 8px; font-size: 14px; font-weight: 600; display: flex; align-items: center; justify-content: center; padding: 0 14px">Send</span></div>
+<div style="font-size: 13px; color: #5B6068; line-height: 1.5">Policy answers can take about 10 seconds, so the steps tick off as they finish. The input and suggested messages are off until the reply arrives. In Streamlit this is a status box.</div>
+</div>
+
+<div style="flex: 1 1 360px; min-width: 0; background: #FFFFFF; border: 1px solid #DDDCD5; border-radius: 12px; padding: 24px; display: flex; flex-direction: column; gap: 16px">
+<div style="font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #5B6068">After the customer confirms</div>
+<div style="background: #F3F3EF; border: 1px solid #DDDCD5; border-radius: 12px; padding: 16px 18px; display: flex; flex-direction: column; gap: 10px; opacity: 0.9">
+<div style="display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; align-items: center"><span style="font-size: 13px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: #5B6068">Please confirm</span><span style="font-size: 12px; font-weight: 600; background: #E3F1EE; color: #0B6657; border-radius: 6px; padding: 2px 8px">Confirmed</span></div>
+<div style="font-size: 14px; line-height: 1.5; color: #3F434A">Return the OFIXO laptop table (OI000011) for a refund of ₹599.</div>
+<div style="display: flex; flex-wrap: wrap; gap: 10px"><span style="min-height: 44px; padding: 0 20px; background: #E3E2DB; color: #7A7F87; border-radius: 8px; font-size: 14px; font-weight: 600; display: flex; align-items: center">Yes, open the return</span><span style="min-height: 44px; padding: 0 20px; background: #FFFFFF; border: 1px solid #DDDCD5; color: #7A7F87; border-radius: 8px; font-size: 14px; display: flex; align-items: center">No, not now</span></div>
+</div>
+<div style="display: flex; gap: 12px; align-items: flex-start"><div style="flex: 0 0 32px; width: 32px; height: 32px; border-radius: 16px; background: #E3E2DB; color: #3F434A; font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center">You</div><div style="font-size: 15px; line-height: 1.55; padding-top: 5px">Yes, open the return</div></div>
+<div style="display: flex; gap: 12px; align-items: flex-start"><div style="flex: 0 0 32px; width: 32px; height: 32px; border-radius: 16px; background: #0E7C6B; color: #FFFFFF; font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center">AI</div><div style="flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 12px; font-size: 15px; line-height: 1.6; padding-top: 5px"><div>Done. Your return for the OFIXO laptop table is open. The refund of <strong>₹599</strong> goes to your UPI-linked bank account within 5 business days after the return reaches Amazon.</div><div style="background: #FFFFFF; border: 1px solid #0E7C6B; border-radius: 12px; padding: 14px 16px; display: flex; flex-direction: column; gap: 6px; font-size: 14px; line-height: 1.5"><div style="display: flex; gap: 12px"><span style="flex: 0 0 90px; color: #5B6068">Status</span><span style="font-weight: 600; color: #0B6657">Return open</span></div><div style="display: flex; gap: 12px"><span style="flex: 0 0 90px; color: #5B6068">Reference</span><span style="font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 13px">RT-0074 (sample)</span></div></div><a href="Developer.dc.html" style="font-size: 13px; font-weight: 500; min-height: 24px; align-self: flex-start">See this turn in Developer trace →</a></div></div>
+<div style="font-size: 13px; color: #5B6068; line-height: 1.5">The Yes button sends an ordinary message, so it is recorded like any typed reply. The card cannot be pressed twice.</div>
+</div>
+
+<div style="flex: 1 1 360px; min-width: 0; background: #FFFFFF; border: 1px solid #DDDCD5; border-radius: 12px; padding: 24px; display: flex; flex-direction: column; gap: 16px">
+<div style="font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #5B6068">When something fails</div>
+<div style="display: flex; gap: 12px; align-items: flex-start"><div style="flex: 0 0 32px; width: 32px; height: 32px; border-radius: 16px; background: #E3E2DB; color: #3F434A; font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center">You</div><div style="font-size: 15px; line-height: 1.55; padding-top: 5px">Return the laptop table.</div></div>
+<div style="display: flex; gap: 12px; align-items: flex-start"><div style="flex: 0 0 32px; width: 32px; height: 32px; border-radius: 16px; background: #0E7C6B; color: #FFFFFF; font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center">AI</div><div style="flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 12px; font-size: 15px; line-height: 1.6; padding-top: 5px"><div style="background: #FDECEA; color: #7A1C12; border-radius: 12px; padding: 14px 16px; font-size: 14px; line-height: 1.55"><strong>I could not finish that.</strong> Nothing has been changed. Please try again in a moment.</div><div style="display: flex; flex-wrap: wrap; gap: 10px"><button style="min-height: 44px; padding: 0 20px; border: 0; background: #0E7C6B; color: #FFFFFF; border-radius: 8px; font: inherit; font-size: 14px; font-weight: 600; cursor: pointer">Try again</button></div><a href="Developer.dc.html" style="font-size: 13px; font-weight: 500; min-height: 24px; align-self: flex-start">See this turn in Developer trace →</a></div></div>
+<div style="font-size: 13px; color: #5B6068; line-height: 1.5">Shown when the model or a tool errors. The reply never guesses, and no return is opened. The error is recorded in the trace, where the Developer trace page lists it under Errors.</div>
+</div>
+
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":900}}'>
+class Component extends DCLogic {
+renderVals() {
+return {};
+}
+}
+</script>
+</body>
+</html>

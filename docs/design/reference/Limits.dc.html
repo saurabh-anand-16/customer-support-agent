@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Limits and assumptions</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#0B6657}a:hover{color:#074A3F}
+</style>
+</helmet>
+<div style="font-family: Inter, system-ui, sans-serif; color: #16181D; background: #F7F7F4; display: flex; flex-wrap: wrap; align-items: stretch; min-height: 1240px">
+
+<div style="flex: 0 0 288px; box-sizing: border-box; background: #EFEEE9; border-right: 1px solid #DDDCD5; padding: 28px 24px; display: flex; flex-direction: column; gap: 28px">
+<div style="display: flex; flex-direction: column; gap: 4px">
+<div style="font-size: 18px; font-weight: 700">customer-support-agent</div>
+<div style="font-size: 13px; color: #5B6068; line-height: 1.4">Returns and refunds assistant. A demo with synthetic data.</div>
+</div>
+<div style="display: flex; flex-direction: column; gap: 4px">
+<div style="font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #5B6068; margin-bottom: 6px">Pages</div>
+<a href="Main.dc.html" style="min-height: 44px; display: flex; align-items: center; padding: 0 12px; color: #3F434A; font-size: 15px; text-decoration: none">Home</a>
+<a href="Chat-Return.dc.html" style="min-height: 44px; display: flex; align-items: center; padding: 0 12px; color: #3F434A; font-size: 15px; text-decoration: none">Customer chat</a>
+<a href="Manager.dc.html" style="min-height: 44px; display: flex; align-items: center; padding: 0 12px; color: #3F434A; font-size: 15px; text-decoration: none">Manager queue</a>
+<a href="Developer.dc.html" style="min-height: 44px; display: flex; align-items: center; padding: 0 12px; color: #3F434A; font-size: 15px; text-decoration: none">Developer trace</a>
+<a href="HowItWorks.dc.html" style="min-height: 44px; display: flex; align-items: center; padding: 0 12px; color: #3F434A; font-size: 15px; text-decoration: none">How it works</a>
+<a href="Limits.dc.html" style="min-height: 44px; display: flex; align-items: center; padding: 0 12px; border-radius: 8px; background: #FFFFFF; border: 1px solid #DDDCD5; color: #16181D; font-size: 15px; font-weight: 600; text-decoration: none">Limits and assumptions</a>
+</div>
+<div style="font-size: 12px; color: #5B6068; line-height: 1.5; margin-top: auto">Today is fixed at 17 Nov 2026.<br />Not affiliated with Amazon.</div>
+</div>
+
+<div style="flex: 999 1 560px; min-width: 0; box-sizing: border-box; padding: 48px 56px 64px; display: flex; flex-direction: column; gap: 28px">
+
+<div style="display: flex; flex-direction: column; gap: 12px; max-width: 760px">
+<h1 style="margin: 0; font-size: 32px; line-height: 1.2; font-weight: 700">Limits and assumptions</h1>
+<p style="margin: 0; font-size: 16px; line-height: 1.6; color: #3F434A">This is a demonstration built on public policy pages and made-up data. It is not Amazon's system and it does not speak for Amazon.</p>
+</div>
+
+<div style="display: flex; flex-wrap: wrap; gap: 20px; align-items: flex-start; max-width: 1000px">
+
+<div style="flex: 1 1 400px; background: #FFFFFF; border: 1px solid #DDDCD5; border-radius: 12px; padding: 22px 24px; display: flex; flex-direction: column; gap: 12px">
+<h2 style="margin: 0; font-size: 18px; font-weight: 600">Our decisions, not Amazon's</h2>
+<ul style="margin: 0; padding-left: 18px; font-size: 14px; line-height: 1.65; color: #3F434A">
+<li>Which product categories map to which return policy.</li>
+<li>Staff approval above ₹10,000, and for customers with more than 5 returns in 12 months.</li>
+<li>When an item can still be cancelled.</li>
+<li>Scope: returns, replacements, refunds and cancellations of orders fulfilled by Amazon. Seller-fulfilled orders and gift-card steps are left out.</li>
+<li>Today's date is fixed at 17 Nov 2026 so results stay the same.</li>
+</ul>
+</div>
+
+<div style="flex: 1 1 400px; background: #FFFFFF; border: 1px solid #DDDCD5; border-radius: 12px; padding: 22px 24px; display: flex; flex-direction: column; gap: 12px">
+<h2 style="margin: 0; font-size: 18px; font-weight: 600">Known gaps</h2>
+<ul style="margin: 0; padding-left: 18px; font-size: 14px; line-height: 1.65; color: #3F434A">
+<li>The router can misroute a message. On a first look it labelled 69 of 75 test messages as expected, against labels that are not yet reviewed.</li>
+<li>The policy search thresholds are placeholders until the retrieval tuning is done.</li>
+<li>For a bank-transfer refund the agent cannot check that a bank account is on file. It tells the customer to add one first.</li>
+<li>Cheque refunds are held back: the policy says they are for exceptional cases.</li>
+<li>The answer check is strict. A count the agent works out itself, such as "you have five orders", can be rejected and replaced with a plainer reply.</li>
+<li>The manager page has no login. It is a demo.</li>
+<li>If tracing to an outside service is switched on, message text can leave this app. It is off by default.</li>
+</ul>
+</div>
+
+</div>
+
+<div style="background: #FBEFD9; color: #6E3A04; border-radius: 12px; padding: 16px 20px; font-size: 14px; line-height: 1.6; max-width: 1000px"><strong>How to read this page:</strong> an item here is something we chose or something we know is not finished, not a hidden fault. The evaluation results will be added to the Developer page when the test suite is complete.</div>
+
+<div style="display: flex; flex-wrap: wrap; gap: 20px; align-items: center; max-width: 1000px">
+<a href="HowItWorks.dc.html" style="font-size: 15px; font-weight: 600; min-height: 24px">How one message is handled</a>
+<a href="Main.dc.html" style="font-size: 15px; font-weight: 600; min-height: 24px">Back to Home</a>
+</div>
+
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":1240}}'>
+class Component extends DCLogic {
+renderVals() {
+return {};
+}
+}
+</script>
+</body>
+</html>

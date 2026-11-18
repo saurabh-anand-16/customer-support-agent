@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Home: start from a scenario</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#0B6657}a:hover{color:#074A3F}
+</style>
+</helmet>
+<div style="font-family: Inter, system-ui, sans-serif; color: #16181D; background: #F7F7F4; display: flex; flex-wrap: wrap; align-items: stretch; min-height: 1500px">
+
+<!-- Sidebar: st.sidebar -->
+<div style="flex: 0 0 288px; box-sizing: border-box; background: #EFEEE9; border-right: 1px solid #DDDCD5; padding: 28px 24px; display: flex; flex-direction: column; gap: 28px">
+<div style="display: flex; flex-direction: column; gap: 4px">
+<div style="font-size: 18px; font-weight: 700">customer-support-agent</div>
+<div style="font-size: 13px; color: #5B6068; line-height: 1.4">Returns and refunds assistant. A demo with synthetic data.</div>
+</div>
+<div style="display: flex; flex-direction: column; gap: 4px">
+<div style="font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #5B6068; margin-bottom: 6px">Pages</div>
+<a href="Main.dc.html" style="min-height: 44px; display: flex; align-items: center; padding: 0 12px; border-radius: 8px; background: #FFFFFF; border: 1px solid #DDDCD5; color: #16181D; font-size: 15px; font-weight: 600; text-decoration: none">Home</a>
+<a href="Chat-Return.dc.html" style="min-height: 44px; display: flex; align-items: center; padding: 0 12px; color: #3F434A; font-size: 15px; text-decoration: none">Customer chat</a>
+<a href="Manager.dc.html" style="min-height: 44px; display: flex; align-items: center; padding: 0 12px; color: #3F434A; font-size: 15px; text-decoration: none">Manager queue</a>
+<a href="Developer.dc.html" style="min-height: 44px; display: flex; align-items: center; padding: 0 12px; color: #3F434A; font-size: 15px; text-decoration: none">Developer trace</a>
+<a href="HowItWorks.dc.html" style="min-height: 44px; display: flex; align-items: center; padding: 0 12px; color: #3F434A; font-size: 15px; text-decoration: none">How it works</a>
+<a href="Limits.dc.html" style="min-height: 44px; display: flex; align-items: center; padding: 0 12px; color: #3F434A; font-size: 15px; text-decoration: none">Limits and assumptions</a>
+</div>
+<div style="display: flex; flex-direction: column; gap: 10px">
+<button style="min-height: 44px; border: 1px solid #B9B8AF; background: #FFFFFF; border-radius: 8px; font: inherit; font-size: 14px; font-weight: 500; color: #16181D; cursor: pointer">Reset demo</button>
+<div style="font-size: 12px; color: #5B6068; line-height: 1.45">Puts every order, return and review back as it was at the start.</div>
+</div>
+<div style="font-size: 12px; color: #5B6068; line-height: 1.5; margin-top: auto">Today is fixed at 17 Nov 2026 so results never change.<br />Not affiliated with Amazon.</div>
+</div>
+
+<!-- Main -->
+<div style="flex: 999 1 560px; min-width: 0; box-sizing: border-box; padding: 48px 56px 64px; display: flex; flex-direction: column; gap: 36px">
+
+<div style="display: flex; flex-direction: column; gap: 14px; max-width: 780px">
+<div style="font-size: 13px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #0B6657">Demo · synthetic data</div>
+<h1 style="margin: 0; font-size: 40px; line-height: 1.15; font-weight: 700">Hello, and welcome.</h1>
+<p style="margin: 0; font-size: 18px; line-height: 1.55; color: #3F434A">Let's sort out your return. This assistant handles returns, replacements, refunds and cancellations for Amazon.in orders, using the public policy pages and made-up orders, and it shows its work as it goes. Nothing changes until you say yes, and anything unusual goes to a person.</p>
+</div>
+
+<!-- Scenario cards: st.columns(3) of bordered containers -->
+<div style="background: #E3F1EE; border-radius: 12px; padding: 16px 20px; max-width: 780px; font-size: 14px; line-height: 1.6; color: #16181D"><strong>Choosing a customer is how you sign in here.</strong> A real store would ask for your login. This demo lets you pick a made-up customer instead, so you can try different situations. Everything the agent does is then done for that customer only.</div>
+
+<div style="display: flex; flex-direction: column; gap: 16px">
+<div style="display: flex; flex-direction: column; gap: 4px">
+<h2 style="margin: 0; font-size: 20px; font-weight: 600">Sign in as a demo customer</h2>
+<div style="font-size: 14px; color: #5B6068; line-height: 1.5">Pick a scenario. Each one signs you in as a customer with a story to try.</div>
+</div>
+<div style="display: flex; flex-wrap: wrap; gap: 20px">
+
+<div style="flex: 1 1 280px; background: #FFFFFF; border: 2px solid #0E7C6B; border-radius: 12px; padding: 19px; display: flex; flex-direction: column; gap: 12px">
+<span style="align-self: flex-start; font-size: 12px; font-weight: 600; background: #E3F1EE; color: #074A3F; border-radius: 999px; padding: 3px 10px">Start here</span>
+<div style="display: flex; justify-content: space-between; align-items: center; gap: 8px"><h3 style="margin: 0; font-size: 16px; font-weight: 600">Return on the last day</h3><span style="font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 12px; background: #ECECE7; color: #3F434A; border-radius: 6px; padding: 3px 8px">C0076</span></div>
+<p style="margin: 0; font-size: 14px; line-height: 1.55; color: #3F434A; flex: 1 1 auto">A laptop table, day 10 of a 10-day window. You will see the confirm card and the refund details.</p>
+<button style="min-height: 44px; border: 0; background: #0E7C6B; color: #FFFFFF; border-radius: 8px; font: inherit; font-size: 14px; font-weight: 600; cursor: pointer">Sign in and start</button>
+</div>
+
+<div style="flex: 1 1 280px; background: #FFFFFF; border: 1px solid #DDDCD5; border-radius: 12px; padding: 20px; display: flex; flex-direction: column; gap: 12px">
+<div style="display: flex; justify-content: space-between; align-items: center; gap: 8px"><h3 style="margin: 0; font-size: 16px; font-weight: 600">One day too late</h3><span style="font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 12px; background: #ECECE7; color: #3F434A; border-radius: 6px; padding: 3px 8px">C0301</span></div>
+<p style="margin: 0; font-size: 14px; line-height: 1.55; color: #3F434A; flex: 1 1 auto">A fan, one day past its window. The agent explains why it cannot approve and offers a person.</p>
+<button style="min-height: 44px; border: 0; background: #0E7C6B; color: #FFFFFF; border-radius: 8px; font: inherit; font-size: 14px; font-weight: 600; cursor: pointer">Sign in and start</button>
+</div>
+
+<div style="flex: 1 1 280px; background: #FFFFFF; border: 1px solid #DDDCD5; border-radius: 12px; padding: 20px; display: flex; flex-direction: column; gap: 12px">
+<div style="display: flex; justify-content: space-between; align-items: center; gap: 8px"><h3 style="margin: 0; font-size: 16px; font-weight: 600">Needs a manager</h3><span style="font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 12px; background: #ECECE7; color: #3F434A; border-radius: 6px; padding: 3px 8px">C0399</span></div>
+<p style="margin: 0; font-size: 14px; line-height: 1.55; color: #3F434A; flex: 1 1 auto">A ₹12,999 phone replacement, above the ₹10,000 limit. It goes to the review queue. Then switch to the Manager page to decide.</p>
+<button style="min-height: 44px; border: 0; background: #0E7C6B; color: #FFFFFF; border-radius: 8px; font: inherit; font-size: 14px; font-weight: 600; cursor: pointer">Sign in and start</button>
+</div>
+
+<div style="flex: 1 1 280px; background: #FFFFFF; border: 1px solid #DDDCD5; border-radius: 12px; padding: 20px; display: flex; flex-direction: column; gap: 12px">
+<div style="display: flex; justify-content: space-between; align-items: center; gap: 8px"><h3 style="margin: 0; font-size: 16px; font-weight: 600">Cancel before it ships</h3><span style="font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 12px; background: #ECECE7; color: #3F434A; border-radius: 6px; padding: 3px 8px">C0087</span></div>
+<p style="margin: 0; font-size: 14px; line-height: 1.55; color: #3F434A; flex: 1 1 auto">A chopper that is still processing, so a cancel can be proposed. Try cancelling something already shipped to see the difference.</p>
+<button style="min-height: 44px; border: 0; background: #0E7C6B; color: #FFFFFF; border-radius: 8px; font: inherit; font-size: 14px; font-weight: 600; cursor: pointer">Sign in and start</button>
+</div>
+
+<div style="flex: 1 1 280px; background: #FFFFFF; border: 1px solid #DDDCD5; border-radius: 12px; padding: 20px; display: flex; flex-direction: column; gap: 12px">
+<div style="display: flex; justify-content: space-between; align-items: center; gap: 8px"><h3 style="margin: 0; font-size: 16px; font-weight: 600">Ask a policy question</h3><span style="font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 12px; background: #ECECE7; color: #3F434A; border-radius: 6px; padding: 3px 8px">C0117</span></div>
+<p style="margin: 0; font-size: 14px; line-height: 1.55; color: #3F434A; flex: 1 1 auto">Ask how long a refund takes or what is not returnable. Each answer lists the policy page it used.</p>
+<button style="min-height: 44px; border: 0; background: #0E7C6B; color: #FFFFFF; border-radius: 8px; font: inherit; font-size: 14px; font-weight: 600; cursor: pointer">Sign in and start</button>
+</div>
+
+<div style="flex: 1 1 280px; background: #FFFFFF; border: 1px solid #DDDCD5; border-radius: 12px; padding: 20px; display: flex; flex-direction: column; gap: 12px">
+<div style="display: flex; justify-content: space-between; align-items: center; gap: 8px"><h3 style="margin: 0; font-size: 16px; font-weight: 600">Try to trick it</h3><span style="font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 12px; background: #ECECE7; color: #3F434A; border-radius: 6px; padding: 3px 8px">C0358</span></div>
+<p style="margin: 0; font-size: 14px; line-height: 1.55; color: #3F434A; flex: 1 1 auto">Ask for another customer's orders, or tell it to ignore its rules. A non-returnable paint kit is a good test of its limits.</p>
+<button style="min-height: 44px; border: 0; background: #0E7C6B; color: #FFFFFF; border-radius: 8px; font: inherit; font-size: 14px; font-weight: 600; cursor: pointer">Sign in and start</button>
+</div>
+
+</div>
+</div>
+
+<!-- Sign in as any customer: st.selectbox (searchable) -->
+<div style="background: #FFFFFF; border: 1px solid #DDDCD5; border-radius: 12px; padding: 20px 24px; display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-end">
+<div style="flex: 1 1 100%; display: flex; flex-direction: column; gap: 4px">
+<h2 style="margin: 0; font-size: 16px; font-weight: 600">Or sign in as any customer</h2>
+<div style="font-size: 13px; color: #5B6068; line-height: 1.45">Choose from the list, or type to search by customer id. Useful for trying your own situation.</div>
+</div>
+<label style="flex: 1 1 320px; display: flex; flex-direction: column; gap: 6px; font-size: 13px; font-weight: 500; color: #3F434A">Customer
+<select style="min-height: 44px; font: inherit; font-size: 14px; border: 1px solid #B9B8AF; border-radius: 8px; padding: 0 10px; background: #FFFFFF"><option>Choose a customer</option><option>C0011 · restricted account</option><option>C0076 · last eligible day</option><option>C0087 · order still processing</option></select></label>
+<button style="min-height: 44px; padding: 0 20px; border: 1px solid #0E7C6B; background: #FFFFFF; color: #0B6657; border-radius: 8px; font: inherit; font-size: 14px; font-weight: 600; cursor: pointer">Sign in</button>
+</div>
+
+<!-- What it shows + links -->
+<div style="display: flex; flex-wrap: wrap; gap: 20px; align-items: stretch">
+<div style="flex: 2 1 420px; background: #E3F1EE; border-radius: 12px; padding: 22px 24px; display: flex; flex-direction: column; gap: 10px">
+<h2 style="margin: 0; font-size: 16px; font-weight: 600; color: #074A3F">What you can check as you go</h2>
+<ul style="margin: 0; padding-left: 18px; font-size: 14px; line-height: 1.65; color: #16181D">
+<li>Each answer names the policy page it came from.</li>
+<li>Eligibility and money are worked out by code, not by the model.</li>
+<li>You answer yes or no before anything is changed.</li>
+<li>Exceptions go to a person. The agent never grants them.</li>
+</ul>
+</div>
+<div style="flex: 1 1 260px; background: #FFFFFF; border: 1px solid #DDDCD5; border-radius: 12px; padding: 22px 24px; display: flex; flex-direction: column; gap: 12px; justify-content: center">
+<a href="HowItWorks.dc.html" style="font-size: 15px; font-weight: 600; min-height: 24px">How it works</a>
+<a href="Limits.dc.html" style="font-size: 15px; font-weight: 600; min-height: 24px">Limits and assumptions</a>
+<div style="font-size: 12px; color: #5B6068; line-height: 1.45">Read these if you want to know what is ours and not Amazon's.</div>
+</div>
+</div>
+
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":1500}}'>
+class Component extends DCLogic {
+renderVals() {
+return {};
+}
+}
+</script>
+</body>
+</html>
