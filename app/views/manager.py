@@ -83,7 +83,7 @@ def draw_outcome() -> None:
     written = (f"a {'replacement' if out['resolution'] == 'replacement' else 'return'} ({out['return_id']})" if out.get("return_id") else "nothing")
     notice = manager_flow.notice_text(backend, out["id"])
     parts = [f'<div class="outcome-title">{esc(out["message"])}</div>', f'<div>What was written: {esc(written)}.</div>',
-             "<div>The customer will see the outcome in their next chat message.</div>"]
+             "<div>The customer will see the outcome in their chat, on its own within a few seconds, or with their next message.</div>"]
     if notice:
         parts.append(f'<div class="muted">The notice they will get:</div><div class="notice-text">{esc(notice)}</div>')
     st.html(f'<div class="outcome-box">{"".join(parts)}</div>')
@@ -136,8 +136,9 @@ def draw_decision_form(case: dict, state_info: dict, late: bool, person: bool) -
     if late:
         st.html('<div class="amber-box"><b>Approve is off.</b> Staff approval does not cover the return window, so a late request cannot be approved here. '
                 "You can decline it and add a note.</div>")
-    note = st.text_area("Note (kept on the record, not shown to the customer)", key=f"mgr_note_{cid}", height=90, disabled=locked,
-                        help="A note is needed to decide.")
+    note = st.text_area(mp.note_label(case), key=f"mgr_note_{cid}", height=90, disabled=locked,
+                        help=("Only Send reply and close shows this to the customer. Close without a reply keeps it on the record." if person
+                              else "A note is needed to decide."))
     with st.container(key=f"mgr_buttons_{cid}", horizontal=True):          # side by side, each as wide as its words (two equal columns cut the label)
         approve = st.button("Approve" if late else mp.approve_label(case), key=f"mgr_approve_{cid}", type="primary", disabled=locked or late)
         decline = st.button(mp.decline_label(case), key=f"mgr_decline_{cid}", disabled=locked)
@@ -146,15 +147,21 @@ def draw_decision_form(case: dict, state_info: dict, late: bool, person: bool) -
         st.html(f'<div class="amber-box">{esc(refusal["message"])}</div>')
     st.caption("Nothing is written until you press a button. The agent cannot approve anything: only this page can.")
     if approve:
+        if person and not note.strip():                     # a reply is required for Send reply and close; the page says so before anything is called
+            st.session_state["mgr_refusal"] = {"id": cid, "message": "Write the reply first. A reply is needed for Send reply and close. Nothing was changed."}
+            st.rerun()
         press(case, "approve", note)
     elif decline:
-        press(case, "decline", note)
+        # decide() needs a note for every decision. "Close without a reply" keeps whatever was typed on the record, or a fixed line from config when nothing was typed.
+        press(case, "decline", note if (not person or note.strip()) else settings.close_without_reply_note)
 
 
 def draw_decision_record(case: dict) -> None:
     who = case.get("decided_by") or ""
     told = f"Customer notified {mp.clock(case['customer_notified_at'])}" if case.get("customer_notified_at") else "Customer not notified yet"
-    note = f'<div class="muted">Note (kept on the record, not shown to the customer):</div><div class="notice-text">{esc(case["decision_note"])}</div>' if case.get("decision_note") else ""
+    sent = case["kind"] == mp.PERSON_CASE and case["status"] == "approved"            # a person case answered with a reply: the customer sees it
+    label = "Reply sent to the customer:" if sent else f"{mp.NOTE_PRIVATE_LABEL}:"
+    note = f'<div class="muted">{esc(label)}</div><div class="notice-text">{esc(case["decision_note"])}</div>' if case.get("decision_note") else ""
     st.html(f'<div class="record-box"><div><b>{esc(case["status"].capitalize())}</b> by {esc(who)} · {esc(told)}</div>{note}</div>')
 
 
@@ -177,6 +184,13 @@ def draw_tab(tab: str, cases: list, states: dict) -> None:
         draw_detail(chosen_case, states[selected], tab)
 
 
+@st.fragment(run_every=settings.poll_seconds)       # no JavaScript: Streamlit reruns just this function. A new or decided case changes the count, and the page is drawn again
+def watch_the_queue() -> None:
+    if state.open_count_changed():
+        st.rerun()
+
+
+watch_the_queue()
 st.markdown("# Manager queue")
 st.caption("Requests the agent was not allowed to decide: exceptions, high-value returns and restricted accounts. Each one shows the evidence the agent had.")
 st.html('<div class="amber-box"><b>No real login.</b> Anyone who opens this page can decide. A real system would ask a manager to sign in.</div>')

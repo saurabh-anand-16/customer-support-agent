@@ -161,3 +161,42 @@
 [class*="st-key-mgr_decline_"] button:disabled { color: #7A7F87; border-color: #D9D8D2; }
 /* Streamlit's own class: the two decision buttons are tall enough to tap. */
 [class*="st-key-mgr_approve_"] button, [class*="st-key-mgr_decline_"] button { min-height: 44px; }
+
+/* ---- Chat sides and the red dot (phase 8b) -------------------------------------------------------------------- */
+.who { font-size: 0.72rem; font-weight: 650; letter-spacing: 0.04em; text-transform: uppercase; margin-bottom: 0.15rem; opacity: 0.8; }
+.nav-dot {
+  display: inline-flex; align-items: center; justify-content: center; min-width: 1.4rem; height: 1.4rem; padding: 0 0.35rem; box-sizing: border-box;
+  border-radius: 999px; background: #C62828; color: #FFFFFF; font-size: 0.78rem; font-weight: 700; line-height: 1;   /* white on #C62828 is 5.6:1 */
+}
+/* Streamlit's own markup: the round avatar icons of a chat row are hidden. The labels "You" and "Agent" and the sides say who speaks. */
+[data-testid="stChatMessageAvatarUser"], [data-testid="stChatMessageAvatarAssistant"] { display: none; }
+/* Streamlit's own markup: a chat row has no tinted background of its own (Streamlit tints the customer's row grey across the whole width; the bubble carries the colour). */
+[data-testid="stChatMessage"] { background: transparent; }
+/* Streamlit's own markup: a chat row that holds a customer message (found by its user avatar) puts its content at the right end of the row. */
+[data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarUser"]) { justify-content: flex-end; }
+/* Streamlit's own markup: the content box of a customer message shrinks to its text instead of filling the row. */
+[data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarUser"]) [data-testid="stChatMessageContent"] { flex: 0 1 auto; max-width: 85%; margin: 0 0 0 auto; }
+/* Streamlit's own markup: the content box of an agent message leaves some room on the right, so the two sides look different on a wide screen. */
+[data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarAssistant"]) [data-testid="stChatMessageContent"] { max-width: 92%; margin: 0 auto 0 0; }
+/* Streamlit's own class: the customer's bubble (blue). Cards stay outside it, under the agent's bubble. */
+[class*="st-key-bubble-user"] { background: #E8EEF9; border-radius: 16px 16px 4px 16px; padding: 0.55rem 0.9rem; width: fit-content; max-width: 100%; margin-left: auto; }
+/* Streamlit's own class: the agent's bubble (green). */
+[class*="st-key-bubble-agent"] { background: #E3F1EE; border-radius: 16px 16px 16px 4px; padding: 0.55rem 0.9rem; width: fit-content; max-width: 100%; }
+/* Streamlit's own markup: the text inside the customer's bubble takes the bubble's text colour (Streamlit sets its own on paragraphs). */
+[class*="st-key-bubble-user"], [class*="st-key-bubble-user"] p, [class*="st-key-bubble-user"] li { color: #1F3A6B; }
+/* Streamlit's own markup: the text inside the agent's bubble takes the bubble's text colour. */
+[class*="st-key-bubble-agent"], [class*="st-key-bubble-agent"] p, [class*="st-key-bubble-agent"] li { color: #074A3F; }
+/* Streamlit's own markup: inside a bubble the gap between the label and the text is small, and the text box has no negative bottom margin (Streamlit gives
+   it -1rem to cancel the gap of a normal column, which here cut the bottom of the bubble). */
+[class*="st-key-bubble-"] { gap: 0.2rem; }
+/* Streamlit's own markup: the text box inside a bubble (see above). */
+[class*="st-key-bubble-"] [data-testid="stMarkdownContainer"] { margin-bottom: 0; }
+/* Streamlit's own markup: the last paragraph inside a bubble. */
+[class*="st-key-bubble-"] [data-testid="stMarkdownContainer"] p:last-child { margin-bottom: 0; }
+/* Streamlit's own class: the sources under a reply keep a readable colour inside the green bubble. */
+[class*="st-key-bubble-agent"] .source-line { color: #2F6B60; }
+@media (max-width: 640px) {
+  /* Streamlit's own markup: on a phone the content boxes of both sides may use the whole row. */
+  [data-testid="stChatMessage"] [data-testid="stChatMessageContent"] { max-width: 100% !important; }
+}
+.plain-text { white-space: pre-wrap; overflow-wrap: anywhere; }

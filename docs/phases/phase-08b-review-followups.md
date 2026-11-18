@@ -1,6 +1,6 @@
 # Phase 8b: review follow-ups (app first, then agent)
 
-**Status:** to build, after phase 8 is merged. **Branch:** `phase-8b-review-followups`. **Follows:** phase 8. **Next:** phase 6c (richer trace), then phase 9 (Developer trace).
+**Status:** built, in review (see [the build report](../builds/phase-08b-build.md)). Items 5 (price questions: the router) and 6 (policy thresholds: no clean separation) were investigated and left unchanged, as this document says. **Branch:** `phase-8b-review-followups`. **Follows:** phase 8. **Next:** phase 6c (richer trace), then phase 9 (Developer trace).
 
 One branch, one build report, two parts in this order. Part 1 changes only the app. Part 2 changes the agent a little, because the problems found in real use live there.
 
@@ -74,3 +74,7 @@ On the demo copy, through the app's own code paths and the real model. (1) C0117
 ## Not in 8b
 
 A router change (unless I approve it after your report), a manager login, the richer trace (6c), the Developer trace page (9), new answer-check rules.
+
+## What was built (added at the end of the phase)
+
+Part 1 and items 1 to 4 of Part 2 are built as described, with these differences, all in the build report: the red dot is drawn by plain code, not by a sidebar fragment (a real browser showed that broke the page), and the chat and Manager pages watch the count from their own fragment; `app/notice_flow.py` is new; `agent/actions.py`, `agent/escalation.py`, `agent/branches/base.py` and `agent/agent.py` changed a little (the `person_request` pending action, the read of the customer's own cases, and a `notice` field in `respond`'s result). Item 4 needed a code lookup in the order status branch, because a prompt alone was not reliable. Item 5: the router sends the price questions out of scope; nothing was changed. Item 6: there is no retrieval evaluation set in the repo; on 22 answerable and 10 out-of-scope questions neither BM25 (default profile) nor the vector scores separate them, so nothing was changed. Three mutations (M158 to M160) are killed. Tests: see the build report for the count.

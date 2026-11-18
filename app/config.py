@@ -12,7 +12,7 @@ ROOT = Path(__file__).resolve().parent.parent
 CONFIG_FILE = ROOT / "config" / "agent.toml"
 PERSONAS_FILE = Path(__file__).resolve().parent / "personas.toml"
 
-_KEYS = ("source_db_path", "demo_db_path", "corner_tag", "fixed_date_line", "waiting_line", "error_reply", "missing_key_help", "manager_label", "claim_stale_minutes")
+_KEYS = ("source_db_path", "demo_db_path", "corner_tag", "fixed_date_line", "waiting_line", "error_reply", "missing_key_help", "manager_label", "claim_stale_minutes", "poll_seconds", "close_without_reply_note")
 
 
 class AppConfigError(ValueError):
@@ -31,6 +31,8 @@ class AppSettings:
     root: Path = ROOT
     manager_label: str = "Manager (demo)"     # phase 8: decided_by of the Manager page
     claim_stale_minutes: int = 10             # phase 8: a claim older than this looks stuck
+    poll_seconds: int = 3                     # phase 8b: how often the chat and the sidebar look for news (a Streamlit fragment, no JavaScript)
+    close_without_reply_note: str = "Closed without a reply."   # phase 8b: the private note "Close without a reply" records (decide() needs a note)
 
 
 def load_app_settings(path: Path | None = None) -> AppSettings:
@@ -43,16 +45,17 @@ def load_app_settings(path: Path | None = None) -> AppSettings:
         if key not in _KEYS:
             raise AppConfigError(f"{path.name}: unknown key '{key}' in [app]. Allowed: {', '.join(_KEYS)}")
     for key in _KEYS:
-        if key == "claim_stale_minutes":
+        if key in ("claim_stale_minutes", "poll_seconds"):
             if not isinstance(raw.get(key), int) or isinstance(raw.get(key), bool) or raw[key] < 1:
-                raise AppConfigError(f"{path.name}: [app].{key} must be a whole number of minutes, 1 or more")
+                raise AppConfigError(f"{path.name}: [app].{key} must be a whole number, 1 or more")
         elif not isinstance(raw.get(key), str) or not raw[key].strip():
             raise AppConfigError(f"{path.name}: [app].{key} must be non-empty text")
     root = path.resolve().parent.parent
     return AppSettings(source_db=root / raw["source_db_path"], demo_db=root / raw["demo_db_path"], corner_tag=raw["corner_tag"],
                        fixed_date_line=raw["fixed_date_line"], waiting_line=raw["waiting_line"], error_reply=raw["error_reply"],
                        missing_key_help=raw["missing_key_help"], root=root,
-                       manager_label=raw["manager_label"].strip(), claim_stale_minutes=raw["claim_stale_minutes"])
+                       manager_label=raw["manager_label"].strip(), claim_stale_minutes=raw["claim_stale_minutes"],
+                       poll_seconds=raw["poll_seconds"], close_without_reply_note=raw["close_without_reply_note"].strip())
 
 
 @dataclass(frozen=True)

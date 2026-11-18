@@ -88,6 +88,17 @@ def review_row(db: Path, reference: str, customer_id: str) -> dict | None:
     return dict(zip(("id", "status", "kind", "order_item_id"), row)) if row else None
 
 
+def open_case_count(db: Path) -> int:
+    """How many review cases are open (status open, claimed ones included). Read-only; a database without the table gives 0."""
+    con = _read_only(db)
+    try:
+        return int(con.execute("SELECT COUNT(*) FROM review_items WHERE status = 'open'").fetchone()[0])
+    except sqlite3.Error:
+        return 0
+    finally:
+        con.close()
+
+
 def item_product_name(db: Path, customer_id: str, item_id: str) -> str | None:
     """The product name of one of this customer's items. Only these columns are read. Read-only."""
     con = _read_only(db)

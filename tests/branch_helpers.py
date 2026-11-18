@@ -14,6 +14,7 @@ FIXED_BRANCHES = {
     "name": "branch-test-model", "temperature": 0.3, "max_output_tokens": 222, "tool_round_limit": 3, "history_turns": 2,
     "max_message_chars": 300, "max_question_chars": 60, "rewrite_follow_ups": True, "rewrite_max_chars": 80,
     "policy_top_k": 3, "max_passage_chars": 200,
+    "returns_lookup_orders": 0, "returns_lookup_words": ["refund", "return"],       # off in the fixed config; the tests of the lookup switch it on
     "prompts": {
         "common": "COMMON PROMPT. TOOLS:\n{tools}\nPROTOCOL: {{\"action\": \"final\"}}",
         "order_status": "TASK order_status",
@@ -141,11 +142,16 @@ FIXED_REVIEW = {
     },
     "reasons_by_requested_method": {"paper_cheque": "REASON cheque-exceptional"},
     "show_note_to_customer": False, "note_max_chars": 60, "default_decided_by": "test-script",
+    "recent_decision_days": 7,
+    "note_to_customer": {"customer_asked_for_person": True, "late_request": False, "approval_required": False},
+    "existing_case": {"open": "EXISTING-OPEN {reference}", "closed": "EXISTING-CLOSED {reference}", "approved": "EXISTING-APPROVED {reference}",
+                      "declined": "EXISTING-DECLINED {reference}", "ask_new": "ASK-NEW-REQUEST?"},
     "notices": {
         "approved": "NOTICE-APPROVED {reference} {product_name} {item_id} return={return_id}{refund_line}",
         "refund_line": " REFUND {amount} -> {method}",
         "declined": "NOTICE-DECLINED {reference} {product_name} {item_id}",
         "closed": "NOTICE-CLOSED {reference}",
+        "person_reply": "PERSON-REPLY {reference} [{note}]",
         "note_line": " NOTE[{note}]",
     },
     "decision_replies": {

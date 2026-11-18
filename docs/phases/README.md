@@ -31,6 +31,7 @@ Rules for these files:
 | 6b | Optional Langfuse export (step 3 of phase 6): keyed hash, mask, background send, `.env` order, search fingerprint | Done, in review ([build report](../builds/phase-06b-build.md)); real-server run done | | [phase-06-tracing.md](phase-06-tracing.md) |
 | 7 | Streamlit shell, Home, persona picker, customer chat | Done, in review ([build report](../builds/phase-07-build.md)); real-model run done | 2 | [phase-07-streamlit-app.md](phase-07-streamlit-app.md) |
 | 8 | Manager page: Open, Approved and Declined tabs, approve and decline through `decide()` | Done, in review ([build report](../builds/phase-08-build.md)); real-model run done | 1 | [phase-08-manager-page.md](phase-08-manager-page.md) |
+| 8b | Review follow-ups: chat sides, red dot, notices that arrive by themselves, the manager's reply, no second case, returns lookup | Done, in review ([build report](../builds/phase-08b-build.md)); real-model and real-browser run done; price questions and policy thresholds reported, not changed | | [phase-08b-review-followups.md](phase-08b-review-followups.md) |
 | 9 | Developer page (traces) | Not started | 2 | |
 | 10 | Evaluation suite | Not started | 3 | |
 | 11 | Evaluation results page | Not started | 1 | |

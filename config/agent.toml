@@ -75,6 +75,8 @@ Out of scope: gifts, orders from marketplace (third-party) sellers, A-to-z Guara
 name = "gpt-4o-mini"
 temperature = 0.0
 max_output_tokens = 700
+returns_lookup_orders = 10      # phase 8b: for a refund or return question, the newest this many orders are searched for returns by code before the model answers (0 = off)
+returns_lookup_words = ["refund", "return", "replacement", "exchange", "picked up", "pickup", "pick-up"]   # phase 8b: a conversation that has one of these words gets that search
 tool_round_limit = 4             # the most tool calls one branch may make for one message; a further call is refused and the message ends with the tool_limit reply
 history_turns = 3                # past exchanges a branch is shown
 max_message_chars = 2000
@@ -98,7 +100,8 @@ Rules:
 
 order_status = """Task: answer the customer's question about their orders, items, delivery or an existing return or refund.
 To finish: {{"action": "final", "reply": "<a short plain answer for the customer, using only tool data>"}}.
-Use list_orders to see recent orders and get_order for one order. Use get_return_status for the status of a return. Keep the answer short and mention order and item ids so the customer can refer to them."""
+Use list_orders to see recent orders and get_order for one order. Use get_return_status for the status of a return. Keep the answer short and mention order and item ids so the customer can refer to them.
+The first message may end with "Returns already on file for this customer": that block was read from the return records by the system before you started, so use it and do not ask the customer for an order id, item id or return id. When it names a return, say exactly what the record says: whether it is a refund or a replacement (resolution_requested), its status, the refund method and amount if there are any, and the refund time if it is given. If the record is a replacement and has no refund amount, say that no refund is recorded for it. If the block says there are none, say you found no returns on the account."""
 
 policy_question = """Task: answer a question about how returns, replacements or refunds work, using only the numbered policy passages given to you and the tool results.
 To finish: {{"action": "final", "answer": "<a short plain answer>", "cited": [<numbers of the passages the answer uses>]}}.
@@ -293,7 +296,23 @@ error_reply = "Sorry, I could not pass this to a person just now, so no request 
 # Phase 5b: the manager's decision and the notice the customer gets in their next chat turn.
 show_note_to_customer = false    # the manager's note is never put in the notice unless this is true
 note_max_chars = 500             # a decision note longer than this is refused; a note that is shown is cut to this length
+recent_decision_days = 7         # phase 8b: a case decided this many days ago or less still counts as "your request" when the customer asks about it again
 default_decided_by = "script"    # the label a script uses when it gives no decided_by; the app will give the manager's name later
+
+[review.note_to_customer]
+# Phase 8b: whether the manager's note is shown to the customer, per kind of case. Only a "customer asked for a person" case shows it,
+# and only when the manager chose "Send reply and close". A request that is approved or declined keeps its note on the record.
+customer_asked_for_person = true
+late_request = false
+approval_required = false
+
+[review.existing_case]
+# Phase 8b: what the human help branch says when the customer already has an open case, or one decided within recent_decision_days, instead of opening another.
+open = "You already have a request with a person: {reference}. It is still open and a person has not replied yet."
+closed = "Your request {reference} was closed by a person without a written reply."
+approved = "Your request {reference} was approved by a person."
+declined = "Your request {reference} was looked at by a person and could not be approved. Nothing was changed on your order."
+ask_new = "Do you want me to send a new request to a person?"
 
 [review.reasons]
 # One plain sentence per kind, filled in by code from tool data. The model writes none of it.
@@ -311,6 +330,7 @@ approved = "Update on {reference}: a person approved your request for {product_n
 refund_line = " The refund of INR {amount} will go to {method}."
 declined = "Update on {reference}: a person looked at your request for {product_name} (item {item_id}) and could not approve it. Nothing was changed on your order."
 closed = "Update on {reference}: a person has looked at your request and closed it."
+person_reply = "A person replied to {reference}: {note}"
 note_line = " Their note: {note}"
 
 [review.decision_replies]
@@ -342,4 +362,6 @@ waiting_line = "Checking your order and the policy..."
 error_reply = "I could not finish that. Nothing has been changed. Please try again in a moment."
 manager_label = "Manager (demo)"                      # Phase 8: the name written as decided_by when the Manager page decides a case. Never typed on the page
 claim_stale_minutes = 10                            # Phase 8: a claimed case older than this shows "This claim looks stuck"
+poll_seconds = 3                                    # Phase 8b: the chat page and the sidebar look for news this often (a Streamlit fragment, no JavaScript)
+close_without_reply_note = "Closed without a reply." # Phase 8b: the private note the Manager page records for "Close without a reply" (decide() needs a note)
 missing_key_help = "The assistant needs an OpenAI API key. Create a file named .env in the project folder with a line OPENAI_API_KEY=your-key, then restart the app. The key is never shown here."

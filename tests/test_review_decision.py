@@ -373,11 +373,12 @@ def test_a_decline_is_told_with_the_item_name_and_no_numbers_or_note(tmp_path, t
     assert reply == f"NOTICE-DECLINED REV-0001 {name} {item['item_id']}\n\nREPLY[greeting]"
 
 
-def test_a_closed_request_for_a_person_is_told_as_closed(tmp_path, tools_rw):
+def test_a_request_for_a_person_closed_without_a_reply_is_told_as_closed(tmp_path, tools_rw):
+    """Phase 8b: 'Close without a reply' (a decline of a person case) gives the closed notice and keeps the note private."""
     agent, sid, spy, chat, _ = human(tmp_path, tools_rw)
     agent.respond(sid, "I want to speak to a person")
     chat.queues["router"].append(GREETING)
-    do(agent, spy, "approve", note="n")
+    do(agent, spy, "decline", note="PRIVATE-NOTE")
     assert agent.respond(sid, "hello")["reply"] == "NOTICE-CLOSED REV-0001\n\nREPLY[greeting]"
 
 

@@ -30,7 +30,8 @@ TESTS = ["tests/test_confirm_step.py", "tests/test_answer_check.py", "tests/test
          "tests/test_branch_return.py", "tests/test_branch_policy.py", "tests/test_branch_order_status.py", "tests/test_session.py",
          "tests/test_review_queue.py", "tests/test_escalation.py", "tests/test_review_safety.py", "tests/test_branch_human_help.py",
          "tests/test_refund_method.py", "tests/test_build_script.py", "tests/test_router.py", "tests/test_review_decision.py",
-         "tests/test_tracing.py", "tests/test_langfuse_export.py", "tests/test_app.py", "tests/app_helpers.py", "tests/test_manager_page.py"]
+         "tests/test_tracing.py", "tests/test_langfuse_export.py", "tests/test_app.py", "tests/app_helpers.py", "tests/test_manager_page.py",
+         "tests/test_followups_agent.py", "tests/test_followups_app.py", "tests/test_followups_notices.py"]
 
 # (id, the rule that is broken, file, text to replace, replacement)
 MUTATIONS = [
@@ -375,6 +376,13 @@ MUTATIONS = [
      "from .backend import MissingApiKey\n", "from .backend import MissingApiKey\nfrom agent.review_decision import decide  # noqa: F401\n"),
     ("M157", "the Manager page never changes the session's customer: choosing a case signs in that case's customer", "app/views/manager.py",
      'st.session_state[f"mgr_sel_{tab}"] = case_id', 'st.session_state[f"mgr_sel_{tab}"] = case_id\n    st.session_state["customer_id"] = "C0301"'),
+    # phase 8b: review follow-ups
+    ("M158", "the manager's note is shown to the customer only for a person case: every kind shows it", "agent/review_notice.py",
+     "(kind != PERSON_CASE and r.note_to_customer.get(kind, False))", "(kind != PERSON_CASE)"),
+    ("M159", "a notice is delivered at most once across polling and the next turn: the told mark is skipped", "agent/review_notice.py",
+     'elif queue.mark_notified(item["id"]):', "elif True:"),
+    ("M160", "no new case is created when a recently decided case exists: only open cases count", "agent/branches/human_help.py",
+     "cases = ctx.recent_cases()", 'cases = [c for c in ctx.recent_cases() if c["status"] == "open"]'),
 ]
 
 

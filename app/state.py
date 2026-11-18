@@ -34,6 +34,15 @@ def get_settings():
     return get_backend().settings
 
 
+def open_count_changed() -> bool:
+    """True when the number of open review cases is not the number the sidebar dot last drew. A page's polling fragment uses it to rerun the page. Read-only."""
+    from . import data
+    try:
+        return data.open_case_count(get_settings().demo_db) != st.session_state.get("dot_shown", 0)
+    except Exception:
+        return False
+
+
 def customer_id() -> str | None:
     return st.session_state.get("customer_id")
 

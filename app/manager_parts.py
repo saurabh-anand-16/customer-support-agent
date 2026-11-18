@@ -66,15 +66,25 @@ def resolution_word(case: dict) -> str:
     return ((case.get("eligibility") or {}).get("resolution") or "return").replace("_", " ")
 
 
+PERSON_CASE = "customer_asked_for_person"
+NOTE_PRIVATE_LABEL = "Note (kept on the record, not shown to the customer)"
+NOTE_REPLY_LABEL = "Reply to the customer (they will see this)"
+
+
+def note_label(case: dict) -> str:
+    """A request for a person is answered with a reply the customer sees. For every other kind the note stays on the record."""
+    return NOTE_REPLY_LABEL if case["kind"] == PERSON_CASE else NOTE_PRIVATE_LABEL
+
+
 def approve_label(case: dict) -> str:
-    """The Approve button says what it does. A request for a person has nothing to write, so it says 'Close this case'."""
-    if case["kind"] == "customer_asked_for_person":
-        return "Close this case"
+    """The Approve button says what it does. A request for a person has nothing to write: it sends the reply and closes the case."""
+    if case["kind"] == PERSON_CASE:
+        return "Send reply and close"
     return {"replacement": "Approve and create the replacement", "exchange": "Approve and create the exchange"}.get(resolution_word(case), "Approve and open the return")
 
 
 def decline_label(case: dict) -> str:
-    return "Close without action" if case["kind"] == "customer_asked_for_person" else "Decline"
+    return "Close without a reply" if case["kind"] == PERSON_CASE else "Decline"
 
 
 def kind_badge(case: dict, live_item: dict | None) -> str:

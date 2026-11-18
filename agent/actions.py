@@ -48,6 +48,8 @@ def _record(tool: str, args: dict, output: dict) -> dict:
 def run_pending(session, pending: dict, tools, cfg: AgentConfig, escalate_fn=None) -> ActionResult:
     """Do the pending action once. The caller has already cleared it from the session, so it cannot run twice."""
     kind, params = (pending or {}).get("type"), (pending or {}).get("parameters")
+    if kind == "person_request":                          # phase 8b: a new request for a person, after the customer said yes. No writer tool is involved.
+        return _new_person_request(session, params, cfg, escalate_fn)
     needed = _RETURN_KEYS if kind == "return" else _CANCEL_KEYS if kind == "cancel" else None
     if needed is None or not isinstance(params, dict) or any(not isinstance(params.get(k), str) or not params[k] for k in needed):
         return ActionResult(fill(cfg.confirm.replies["refused"], message="That request is no longer valid."), error_code="invalid_pending",
@@ -69,6 +71,17 @@ def run_pending(session, pending: dict, tools, cfg: AgentConfig, escalate_fn=Non
         result = _after_cancel(output, cfg)
     result.tool_calls.insert(0, _record("create_return" if kind == "return" else "cancel_order", args, output))
     return result
+
+
+def _new_person_request(session, params, cfg: AgentConfig, escalate_fn) -> ActionResult:
+    """The yes to "Do you want me to send a new request to a person?": one review item through the escalation seam (the customer is the session's)."""
+    details = {"message": str((params or {}).get("message", ""))[:200]}
+    if escalate_fn is None:
+        sent = {"queued": False, "reply": cfg.review.error_reply, "reason": "customer_asked_for_person", "details": details,
+                "note": "no review queue is wired; nothing was queued", "check": check("review_queue_write", False, "no review queue is wired; nothing was queued")}
+    else:
+        sent = escalate_fn(session, "customer_asked_for_person", details, cfg.review.reply_template)
+    return ActionResult(sent["reply"], escalation=sent, checks=[sent["check"]])
 
 
 def run_approved_return(tools, customer_id: str, item_id: str, reason: str, resolution: str, refund_method: str | None = None) -> dict:

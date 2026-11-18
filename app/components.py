@@ -17,6 +17,11 @@ def esc(value) -> str:
     return html.escape("" if value is None else str(value), quote=True)
 
 
+def plain_text_html(text: str) -> str:
+    """Text shown exactly as written, never read as markdown or HTML (a manager's reply is shown this way). Line breaks are kept."""
+    return f'<div class="plain-text">{esc(text)}</div>'
+
+
 def md_text(text: str) -> str:
     """Reply text for st.markdown: a dollar sign must not start a formula."""
     return str(text).replace("$", "\\$")
@@ -93,6 +98,8 @@ def action_text(card: dict) -> str | None:
     action, resolution = card.get("action"), card.get("resolution")
     if action == "cancel":
         return "Cancel the item before it ships"
+    if action == "person_request":
+        return "Send a new request to a person"
     if action == "return":
         return {"refund": "Return for a refund", "replacement": "Replacement", "exchange": "Exchange"}.get(resolution, f"Return ({pretty(resolution)})" if resolution else "Return")
     return None
@@ -120,9 +127,33 @@ def confirm_card_html(card: dict, state: str | None) -> str:
     return f'<div class="confirm-title"><span>{esc(title)}</span></div>' + _kv(rows)
 
 
-def receipt_html(review: dict, status: str | None, item_name: str | None) -> str:
-    """The card for a request sent to a person. Reference is from the result; status and item name are read from the database."""
-    rows = [("Reference", review.get("reference")), ("Status", pretty(status).capitalize() if status else None),
+def receipt_status_word(status: str | None, kind: str | None) -> str | None:
+    """
+    The word on the receipt card. A "customer asked for a person" case is only ever closed (nothing is approved or declined for it),
+    so its decided states read "Closed". The other kinds keep Approved and Declined.
+    """
+    if not status:
+        return None
+    if kind == "customer_asked_for_person" and status != "open":
+        return "Closed"
+    return pretty(status).capitalize()
+
+
+def who_label_html(who: str) -> str:
+    """The small label above a chat bubble: 'You' or 'Agent'."""
+    return f'<div class="who">{esc(who)}</div>'
+
+
+def nav_dot_html(count: int) -> str:
+    """The red dot on the Manager queue link. The number is in the dot and in its label, so colour is not the only sign. Nothing at zero."""
+    if not isinstance(count, int) or count <= 0:
+        return ""
+    return f'<span class="nav-dot" role="img" aria-label="{count} open case{"" if count == 1 else "s"}">{count}</span>'
+
+
+def receipt_html(review: dict, status: str | None, item_name: str | None, kind: str | None = None) -> str:
+    """The card for a request sent to a person. Reference is from the result; status, kind and item name are read from the database."""
+    rows = [("Reference", review.get("reference")), ("Status", receipt_status_word(status, kind)),
             ("Item", data.short_name(item_name, 70) if item_name else None)]
     return ('<div class="receipt-title">Request sent to a person</div>' + _kv(rows) +
             '<div class="receipt-next"><b>What happens next</b> A reviewer approves or declines it. Their answer appears in this chat.</div>')

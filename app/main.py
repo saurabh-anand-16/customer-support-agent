@@ -16,7 +16,7 @@ import streamlit as st  # noqa: E402
 
 st.set_page_config(layout="wide", initial_sidebar_state="auto")
 
-from app import components, state  # noqa: E402
+from app import components, data, state  # noqa: E402
 from app.config import AppConfigError  # noqa: E402
 from app.demo_db import DemoDbError  # noqa: E402
 
@@ -33,13 +33,36 @@ def load_stylesheet() -> None:
         st.markdown(f"<style>{css_file.read_text(encoding='utf-8')}</style>", unsafe_allow_html=True)
 
 
+def queue_dot(settings) -> None:
+    """
+    The red dot with the number of open cases, drawn next to the Manager queue link. It reads the demo database (read-only) on every full run and
+    remembers the number it drew (`state.dot_shown`). It is NOT a fragment: a polling fragment drawn here broke the page in a real browser ("Bad delta path
+    index" when the sidebar changed after sign-in). The Customer chat and Manager queue pages watch the number from their own fragment and rerun the
+    whole page when it changes (`state.open_count_changed`), so on those pages the dot follows the queue by itself. On other pages it changes on the next click.
+    Nothing is drawn at zero.
+    """
+    try:
+        count = data.open_case_count(settings.demo_db)
+    except Exception:
+        count = 0
+    st.session_state["dot_shown"] = count
+    html = components.nav_dot_html(count)
+    if html:
+        st.html(html)
+
+
 def sidebar(pages: dict, settings) -> None:
     with st.sidebar:
         st.html('<div class="app-name">customer-support-agent</div>')
         st.caption("Returns and refunds assistant.")
         st.markdown("**Pages**")
         for name, page in pages.items():
-            st.page_link(page, label=name)
+            if name == "Manager queue":
+                with st.container(key="nav-manager", horizontal=True, vertical_alignment="center"):
+                    st.page_link(page, label=name)
+                    queue_dot(settings)
+            else:
+                st.page_link(page, label=name)
         cid = state.customer_id()
         if cid:
             from app.config import load_personas

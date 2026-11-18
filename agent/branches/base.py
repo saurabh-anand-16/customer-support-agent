@@ -36,6 +36,11 @@ class BranchContext:
     message: str
     escalate: Callable | None = None          # the escalation seam (agent/escalation.py); None means no queue is wired
 
+    def recent_cases(self) -> list:
+        """This customer's open cases and the ones decided recently (phase 8b), from the escalation seam. Empty when no queue is wired."""
+        finder = getattr(self.escalate, "recent_cases", None)
+        return finder(self.session) if callable(finder) else []
+
     def ask_for_person(self, kind: str, details: dict) -> dict:
         """Hand a case to the review queue through the seam. With no seam wired the result is a failed write, never a success."""
         if self.escalate is None:

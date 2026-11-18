@@ -84,6 +84,8 @@ class BranchSettings:
     rewrite_max_chars: int
     policy_top_k: int
     max_passage_chars: int
+    returns_lookup_orders: int   # phase 8b: how many of the newest orders are searched for returns by code (0 = off)
+    returns_lookup_words: list   # phase 8b: a conversation with one of these words gets that search before the model answers
     prompts: dict
     reason_texts: dict
     resolution_texts: dict
@@ -142,6 +144,9 @@ class ReviewSettings:
     reasons: dict                # kind -> the one-sentence reason a queue item gets, filled in by code from tool data
     reasons_by_requested_method: dict   # refund method the customer asked for that is not offered (paper_cheque) -> its own reason sentence (5b)
     show_note_to_customer: bool  # false: the manager's note is never put in the outcome notice (5b)
+    recent_decision_days: int    # phase 8b: a case decided this recently still counts when the customer asks about it again
+    note_to_customer: dict       # phase 8b: kind -> whether a manager's reply is shown to the customer (only a person case: true)
+    existing_case: dict          # phase 8b: the fixed texts for "you already have a request" (open, closed, approved, declined, ask_new)
     note_max_chars: int          # a decision note longer than this is refused; a shown note is cut to it
     default_decided_by: str      # the label scripts use when they give no decided_by
     notices: dict                # the fixed texts of the outcome notice: approved, refund_line, declined, closed, note_line
@@ -255,7 +260,10 @@ REVIEW_NOTICE_FIELDS = {"approved": {"reference", "product_name", "item_id", "re
                         "refund_line": {"amount", "method"},
                         "declined": {"reference", "product_name", "item_id"},
                         "closed": {"reference"},
+                        "person_reply": {"reference", "note"},
                         "note_line": {"note"}}
+# Phase 8b: the texts for an existing case, and the fields each may use.
+REVIEW_EXISTING_CASE_FIELDS = {"open": {"reference"}, "closed": {"reference"}, "approved": {"reference"}, "declined": {"reference"}, "ask_new": set()}
 REVIEW_DECISION_REPLIES = ("approved", "declined", "closed", "bad_decision", "bad_note", "note_too_long", "not_found", "already_decided",
                            "decision_in_progress", "late_cannot_be_approved", "item_incomplete", "refund_method_missing",
                            "refund_method_not_offered", "write_refused", "write_failed", "record_failed")
@@ -271,7 +279,7 @@ _SPEC = {
     "branches": (BranchSettings, {"name": str, "temperature": float, "max_output_tokens": int, "tool_round_limit": int,
                                   "history_turns": int, "max_message_chars": int, "max_question_chars": int,
                                   "rewrite_follow_ups": bool, "rewrite_max_chars": int, "policy_top_k": int,
-                                  "max_passage_chars": int, "prompts": dict, "reason_texts": dict,
+                                  "max_passage_chars": int, "returns_lookup_orders": int, "returns_lookup_words": list, "prompts": dict, "reason_texts": dict,
                                   "resolution_texts": dict, "approval_texts": dict, "replies": dict}),
     "confirm": (ConfirmSettings, {"name": str, "temperature": float, "max_output_tokens": int, "max_message_chars": int,
                                   "pending_max_turns": int, "max_unclear_asks": int, "prompt": str, "replies": dict}),
@@ -280,6 +288,7 @@ _SPEC = {
     "review": (ReviewSettings, {"excerpt_messages": int, "excerpt_message_chars": int, "dedupe_open_items": bool,
                                 "reply_template": str, "error_reply": str, "reasons": dict,
                                 "reasons_by_requested_method": dict, "show_note_to_customer": bool, "note_max_chars": int,
+                                "recent_decision_days": int, "note_to_customer": dict, "existing_case": dict,
                                 "default_decided_by": str, "notices": dict, "decision_replies": dict}),
     "refund_method": (RefundMethodSettings, {"name": str, "temperature": float, "max_output_tokens": int, "max_message_chars": int,
                                              "not_offered": list, "escalation_kind": str, "prompt": str, "option_texts": dict,
@@ -505,6 +514,17 @@ def _check_review(r: ReviewSettings, where: str) -> None:
     if extra:
         raise AgentConfigError(f"{where}: [review.notices] has {sorted(extra)}, which are not one of {', '.join(REVIEW_NOTICE_FIELDS)}")
     _check_table(where, "review.decision_replies", r.decision_replies, REVIEW_DECISION_REPLIES, REVIEW_DECISION_REPLY_FIELDS)
+    if _fields_of(r.notices["person_reply"]) != {"reference", "note"}:
+        raise AgentConfigError(f"{where}: [review.notices].person_reply must use exactly {{reference}} and {{note}}")
+    if r.recent_decision_days < 0:
+        raise AgentConfigError(f"{where}: [review].recent_decision_days must be 0 or more")
+    if set(r.note_to_customer) != set(REVIEW_KINDS) or not all(isinstance(v, bool) for v in r.note_to_customer.values()):
+        raise AgentConfigError(f"{where}: [review.note_to_customer] needs true or false for each of {', '.join(REVIEW_KINDS)} and nothing else")
+    for key, allowed in REVIEW_EXISTING_CASE_FIELDS.items():
+        _check_table(where, "review.existing_case", {key: r.existing_case.get(key)}, (key,), allowed)
+    extra_texts = set(r.existing_case) - set(REVIEW_EXISTING_CASE_FIELDS)
+    if extra_texts:
+        raise AgentConfigError(f"{where}: [review.existing_case] has {sorted(extra_texts)}, which are not one of {', '.join(REVIEW_EXISTING_CASE_FIELDS)}")
 
 
 def _check_answer_check(a: AnswerCheckSettings, where: str) -> None:
@@ -533,6 +553,10 @@ def _check_branches(b: BranchSettings, where: str) -> None:
             raise AgentConfigError(f"{where}: [branches].{key} must be 1 or more")
     if b.history_turns < 0:
         raise AgentConfigError(f"{where}: [branches].history_turns must be 0 or more")
+    if b.returns_lookup_orders < 0 or b.returns_lookup_orders > 25:
+        raise AgentConfigError(f"{where}: [branches].returns_lookup_orders must be between 0 and 25")
+    if not all(isinstance(w, str) and w.strip() for w in b.returns_lookup_words):
+        raise AgentConfigError(f"{where}: [branches].returns_lookup_words must be a list of non-empty words")
     if not b.name.strip():
         raise AgentConfigError(f"{where}: [branches].name (the model) must not be empty")
     for table_name, table, needed in (("prompts", b.prompts, BRANCH_PROMPTS), ("replies", b.replies, BRANCH_REPLIES),

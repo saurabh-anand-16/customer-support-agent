@@ -17,10 +17,12 @@ approval_required), `details` is plain data from tools, and `reply_template` is 
 The customer id is read from the session and stored in the item. It is not put in the reply, the record or the check entry.
 This module does not call a writer tool and does not touch orders or return requests.
 """
+from datetime import datetime, timezone
+
 from .branches.base import fill
 from .checks import check
 from .llm import AgentConfig
-from .review_queue import ReviewQueue
+from .review_queue import OPEN, ReviewQueue
 
 CUSTOMER_KEYS = ("customer_id",)      # removed from anything stored as eligibility or put in the trace record
 
@@ -43,9 +45,33 @@ def _scrub(value):
 
 
 class Escalator:
-    def __init__(self, queue_source, cfg: AgentConfig):
-        """`queue_source` is a function that returns a ReviewQueue (called each time; it may cache). Tests give an in-memory one."""
+    def __init__(self, queue_source, cfg: AgentConfig, now=None):
+        """`queue_source` is a function that returns a ReviewQueue (called each time; it may cache). Tests give an in-memory one. `now` gives the time for "decided recently"."""
         self.queue_source, self.cfg = queue_source, cfg
+        self._now = now or (lambda: datetime.now(timezone.utc))
+
+    # -- what this customer already has (phase 8b) ------------------------------------------------------------
+    def recent_cases(self, session, limit: int = 3) -> list:
+        """
+        The session's customer's own cases that are open (claimed ones too) or were decided within [review].recent_decision_days, newest first,
+        at most `limit`: [{"id", "kind", "status", "decision_note", "order_item_id"}]. Only this customer's cases are returned, and only those
+        fields. A queue that cannot be read gives an empty list (the caller then goes on as before).
+        """
+        days = self.cfg.review.recent_decision_days
+        try:
+            items = self.queue_source().list_items()
+            now, kept = self._now(), []
+            for item in items:
+                if item["customer_id"] != session.customer_id:
+                    continue
+                if item["status"] != OPEN:
+                    decided = datetime.fromisoformat(item["decided_at"]) if item.get("decided_at") else None
+                    if decided is None or (now - (decided if decided.tzinfo else decided.replace(tzinfo=timezone.utc))).total_seconds() > days * 86400:
+                        continue
+                kept.append({k: item.get(k) for k in ("id", "kind", "status", "decision_note", "order_item_id")})
+            return list(reversed(kept))[:limit]
+        except Exception:
+            return []
 
     # -- the pieces, each from fixed text and data -----------------------------------------------------------
     def _reason_sentence(self, kind: str, details: dict) -> str:

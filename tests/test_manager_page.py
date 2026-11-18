@@ -175,7 +175,7 @@ def test_a_request_for_a_person_has_close_buttons(tmp_path):
     at, _, _, ids = open_page(tmp_path)
     at.button(key=f"mgr_pick_open_{ids['person']}").click().run()
     labels = [b.label for b in at.button]
-    assert "Close this case" in labels and "Close without action" in labels
+    assert "Send reply and close" in labels and "Close without a reply" in labels
     assert "Approve and create the replacement" not in labels
 
 
@@ -305,7 +305,7 @@ def test_a_real_approval_writes_the_replacement_and_moves_the_case_to_approved_w
     labels = [t.label for t in at.tabs]
     assert labels == ["Open (2)", "Approved (1)", "Declined (0)"]
     text = page_text(at)
-    assert "What was written: a replacement (R" in text and "The customer will see the outcome in their next chat message." in text
+    assert "What was written: a replacement (R" in text and "The customer will see the outcome in their chat" in text
     assert "Update on REV-" in text and "Your return number is R" in text           # the notice text
     assert "Customer not notified yet" in text
     notice = manager_flow.notice_text(backend, ids["approval"])

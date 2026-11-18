@@ -35,7 +35,8 @@ def off_topic(kind="general_question"):
 def test_respond_returns_the_reply_the_route_the_kind_and_a_trace(tmp_path):
     agent, _, sid = make_agent(tmp_path, off_topic("greeting"))
     result = agent.respond(sid, "hello")
-    assert set(result) == {"session_id", "reply", "route", "kind", "pending_action", "evidence", "trace"}
+    assert set(result) == {"session_id", "reply", "notice", "route", "kind", "pending_action", "evidence", "trace"}
+    assert result["notice"] is None                       # phase 8b: the notice text of a decided case, or None
     assert (result["session_id"], result["route"], result["kind"], result["reply"]) == (sid, "out_of_scope", "greeting", "REPLY[greeting]")
 
 

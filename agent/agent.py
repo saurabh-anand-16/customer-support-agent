@@ -21,7 +21,8 @@ A branch that reaches a decision stores a pending action in the session. The nex
 
 Phase 5b: when a manager has decided a case of this customer that they were not told about yet, `reply` starts with a fixed notice
 for each (agent/review_notice.py), once only, and `trace["checks"]` gets one "review_notice" entry per case. The notice is added
-after the turn, so a turn that fails tells nothing and loses nothing.
+after the turn, so a turn that fails tells nothing and loses nothing. Phase 8b: `result["notice"]` holds that notice text (or None), so a page can
+show it as plain text and the rest of `reply` as the answer; `reply` itself is unchanged and still begins with it.
 
 The customer id is set once, in start_session(), and is neither read from a message nor sent to the model.
 The model name and temperature come from config/agent.toml. LangGraph (requirements-agent.txt) is
@@ -122,7 +123,7 @@ class Agent:
             "confirm": state.get("confirm"),
             "checks": [*state.get("checks", []), *notice_checks],
         }
-        result = {"session_id": session.session_id, "reply": reply, "route": decision.route,
+        result = {"session_id": session.session_id, "reply": reply, "notice": notice or None, "route": decision.route,
                   "kind": decision.kind, "pending_action": public_pending(session.pending_action),
                   "evidence": state.get("evidence") or {"tool_calls": [], "policy_passages": []}, "trace": trace}
         # Phase 6: save the turn. The tracer reads `result` and never raises, so the reply is the same with tracing on, off or failing.
