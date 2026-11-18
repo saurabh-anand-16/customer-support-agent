@@ -9,6 +9,9 @@ whether a confirmation is pending, and its output is JSON:
    "kind": only for out_of_scope, one of [router.kinds],
    "question": only for clarify, one short question}
 
+A "kind" sent with any other route, or a "question" sent with any other route, is ignored and named in the
+trace as "ignored_field".
+
 If the output is not valid (not JSON, not an object, an unknown route or kind, a missing field), or the
 model call fails, the route becomes "clarify" with the generic question from config and the error is
 recorded in the decision, so the Developer page can show it. The customer id is never sent to the model.
@@ -37,12 +40,14 @@ class RouterDecision:
     called: bool = True               # False when the model was not asked (pending action, blank message)
     blank: bool = False
     input_summary: dict = field(default_factory=dict)
+    ignored_field: list = field(default_factory=list)   # "kind" or "question" the model sent on a route that does not use it
 
     def to_trace(self) -> dict:
         """What the Developer page shows about the router for this message."""
         return {"called": self.called, "input_summary": self.input_summary, "raw_output": self.raw_output,
                 "label": self.route, "kind": self.kind, "question": self.question, "reason": self.reason,
-                "latency_ms": round(self.latency_ms, 1), "error": self.error}
+                "latency_ms": round(self.latency_ms, 1), "error": self.error,
+                "ignored_field": list(self.ignored_field) or None}
 
 
 class Router:
@@ -91,7 +96,7 @@ class Router:
         if error:
             return self._invalid(error, raw, latency, summary)
         return RouterDecision(fields["route"], fields["kind"], fields["question"], fields["reason"], raw, None, latency,
-                              input_summary=summary)
+                              input_summary=summary, ignored_field=fields["ignored"])
 
     def _invalid(self, error: str, raw, latency_ms: float, summary: dict) -> RouterDecision:
         return RouterDecision("clarify", reason="the router output was not usable, so the generic question is asked",
@@ -120,4 +125,9 @@ class Router:
             q = data.get("question")
             if isinstance(q, str) and q.strip() and len(q.strip()) <= r.max_question_chars and q.strip().endswith("?"):
                 question = q.strip()           # otherwise the generic question is used
-        return {"route": route, "kind": kind, "question": question, "reason": data["reason"].strip()[:300]}, None
+        # "kind" only means something for out_of_scope and "question" only for clarify. On any other route they are
+        # ignored (not an error, not a clarify) and the trace says so.
+        ignored = [name for name, used_by in (("kind", "out_of_scope"), ("question", "clarify"))
+                   if route != used_by and data.get(name) not in (None, "")]
+        return {"route": route, "kind": kind, "question": question, "reason": data["reason"].strip()[:300],
+                "ignored": ignored}, None

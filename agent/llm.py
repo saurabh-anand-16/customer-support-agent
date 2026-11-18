@@ -13,10 +13,12 @@ Two jobs, kept together because they are the only things every other agent modul
    phase 3b (the variable named in [model].api_key_env, then the env file, by read_secret()). It is
    used only to build the client and is never printed, logged, traced or written to an error message.
 """
+import string
 import tomllib
 from dataclasses import dataclass
 from pathlib import Path
 
+from .eligibility import REASONS
 from .rag.embedders.base import MissingDependencyError, MissingKeyError, read_secret, scrub
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -67,6 +69,27 @@ class ScopeSettings:
 
 
 @dataclass(frozen=True)
+class BranchSettings:
+    """[branches]: the five branch flows (phase 4b). `name` is the branch model; nothing else names a model."""
+    name: str
+    temperature: float
+    max_output_tokens: int
+    tool_round_limit: int
+    history_turns: int
+    max_message_chars: int
+    max_question_chars: int
+    rewrite_follow_ups: bool
+    rewrite_max_chars: int
+    policy_top_k: int
+    max_passage_chars: int
+    prompts: dict
+    reason_texts: dict
+    resolution_texts: dict
+    approval_texts: dict
+    replies: dict
+
+
+@dataclass(frozen=True)
 class EvalSettings:
     test_fraction: float
 
@@ -78,6 +101,7 @@ class AgentConfig:
     session: SessionSettings
     router: RouterSettings
     scope: ScopeSettings
+    branches: BranchSettings
     replies: dict     # kind -> text, plus person_offer, not_built, blank_message
     eval: EvalSettings
 
@@ -86,6 +110,20 @@ class AgentConfig:
 REQUIRED_LABELS = ("out_of_scope", "clarify")
 EXTRA_REPLIES = ("person_offer", "not_built", "blank_message")
 
+# [branches]: the prompts and fixed reply texts the code needs, and the fields a reply text may contain.
+BRANCH_PROMPTS = ("common", "order_status", "policy_question", "rewrite", "return_or_replace", "cancel_item")
+BRANCH_REPLIES = ("no_policy_match", "sources_line", "tool_limit", "branch_error", "ask_generic", "item_not_found",
+                  "ask_resolution", "confirm_return", "approval_note", "confirm_cancel", "explain_window_expired",
+                  "explain_non_returnable", "explain_change_of_mind_not_allowed", "explain_not_yet_delivered",
+                  "explain_return_already_opened", "explain_item_cancelled", "explain_guidance_only", "explain_other",
+                  "cancel_shipped", "cancel_delivered", "cancel_cancelled", "cancel_other",
+                  "escalation_not_built_late", "escalation_not_built_human")
+BRANCH_RESOLUTIONS = ("refund", "replacement", "exchange", "brand_service")
+BRANCH_APPROVALS = ("account_restricted", "high_value", "repeat_returner")
+BRANCH_REPLY_FIELDS = {"product_name", "item_id", "order_id", "amount", "reason", "resolution", "options", "condition_note",
+                       "approval_note", "approval_reasons", "order_part", "delivered_at", "day_number", "window_days",
+                       "last_eligible_date", "days_late", "days_left", "return_id", "sources"}
+
 _SPEC = {
     "model": (ModelSettings, {"name": str, "temperature": float, "max_output_tokens": int, "timeout_seconds": int,
                               "api_key_env": str, "env_file": str}),
@@ -93,6 +131,11 @@ _SPEC = {
     "router": (RouterSettings, {"history_turns": int, "max_message_chars": int, "max_question_chars": int,
                                 "generic_clarify": str, "system_prompt": str, "labels": dict, "kinds": dict}),
     "scope": (ScopeSettings, {"statement": str}),
+    "branches": (BranchSettings, {"name": str, "temperature": float, "max_output_tokens": int, "tool_round_limit": int,
+                                  "history_turns": int, "max_message_chars": int, "max_question_chars": int,
+                                  "rewrite_follow_ups": bool, "rewrite_max_chars": int, "policy_top_k": int,
+                                  "max_passage_chars": int, "prompts": dict, "reason_texts": dict,
+                                  "resolution_texts": dict, "approval_texts": dict, "replies": dict}),
     "eval": (EvalSettings, {"test_fraction": float}),
 }
 
@@ -187,6 +230,44 @@ def _check(cfg: AgentConfig, where: str) -> None:
         raise AgentConfigError(f"{where}: [eval].test_fraction must be between 0 and 1")
     if not r.generic_clarify.strip().endswith("?"):
         raise AgentConfigError(f"{where}: [router].generic_clarify must be a question")
+    _check_branches(cfg.branches, where)
+
+
+def _check_branches(b: BranchSettings, where: str) -> None:
+    if not 0 <= b.temperature <= 2:
+        raise AgentConfigError(f"{where}: [branches].temperature must be between 0 and 2")
+    for key in ("max_output_tokens", "tool_round_limit", "max_message_chars", "max_question_chars", "rewrite_max_chars",
+                "policy_top_k", "max_passage_chars"):
+        if getattr(b, key) < 1:
+            raise AgentConfigError(f"{where}: [branches].{key} must be 1 or more")
+    if b.history_turns < 0:
+        raise AgentConfigError(f"{where}: [branches].history_turns must be 0 or more")
+    if not b.name.strip():
+        raise AgentConfigError(f"{where}: [branches].name (the model) must not be empty")
+    for table_name, table, needed in (("prompts", b.prompts, BRANCH_PROMPTS), ("replies", b.replies, BRANCH_REPLIES),
+                                      ("reason_texts", b.reason_texts, REASONS),
+                                      ("resolution_texts", b.resolution_texts, BRANCH_RESOLUTIONS),
+                                      ("approval_texts", b.approval_texts, BRANCH_APPROVALS)):
+        for key in needed:
+            if not isinstance(table.get(key), str) or not table[key].strip():
+                raise AgentConfigError(f"{where}: [branches.{table_name}] needs non-empty text for '{key}'")
+        for key in table:
+            if key not in needed:
+                raise AgentConfigError(f"{where}: [branches.{table_name}] has '{key}', which is not one of {', '.join(needed)}")
+    for key, text in b.replies.items():
+        fields = {name for _, name, _, _ in string.Formatter().parse(text) if name}
+        if fields - BRANCH_REPLY_FIELDS:
+            raise AgentConfigError(f"{where}: [branches.replies].{key} uses {sorted(fields - BRANCH_REPLY_FIELDS)}; "
+                                   f"allowed fields: {', '.join(sorted(BRANCH_REPLY_FIELDS))}")
+    for key, fields in (("common", {"tools"}), ("return_or_replace", {"reasons"})):
+        found = {name for _, name, _, _ in string.Formatter().parse(b.prompts[key]) if name}
+        if found != fields:
+            raise AgentConfigError(f"{where}: [branches.prompts].{key} must use exactly the fields {sorted(fields)}, got {sorted(found)}")
+    for key in BRANCH_PROMPTS:
+        try:
+            b.prompts[key].format(tools="", reasons="")
+        except (KeyError, IndexError, ValueError) as err:
+            raise AgentConfigError(f"{where}: [branches.prompts].{key} cannot be filled in ({err!r}); write literal braces as {{{{ and }}}}") from err
 
 
 # --- the chat model -------------------------------------------------------------------------------

@@ -20,6 +20,7 @@ Rules for these files:
 | 3c.1 | Scope rules for single sections | Done, in review ([build report](../builds/phase-03c1-build.md)) | 0.5 | [phase-03c1-section-scope.md](phase-03c1-section-scope.md) |
 | 3d | Retrieval eval set and tuning | Not started | 1 to 1.5 | [phase-03d-retrieval-evals-and-tuning.md](phase-03d-retrieval-evals-and-tuning.md) |
 | 4a | Session, router and out-of-scope reply | Done, in review ([build report](../builds/phase-04a-build.md)) | | [phase-04a-router-and-session.md](phase-04a-router-and-session.md) |
+| 4b | The five branch flows (tools, pending actions, evidence) | Done, in review ([build report](../builds/phase-04b-build.md)) | | [phase-04b-branch-flows.md](phase-04b-branch-flows.md) |
 | 4 | Agent: router, six branches, confirm step, answer check | Not started | 3 to 4 | |
 | 5 | Review gate, `request_review`, human help | Not started | 1.5 to 2 | |
 | 6 | Langfuse tracing | Not started | 1 | |

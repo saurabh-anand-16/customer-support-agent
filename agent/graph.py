@@ -1,12 +1,14 @@
 """
 graph.py - the LangGraph wiring for one message:
 
-    router  --(route)-->  one of:  a branch stub | confirm_step stub | out_of_scope | clarify   -->  finish
+    router  --(route)-->  one of:  a branch | confirm_step stub | out_of_scope | clarify   -->  finish
 
 The "router" node asks Router.decide(), which sends a message straight to the confirm step when the
-session holds a pending action (the model is not called). In this phase no tool is called anywhere:
-the five branches (order status, policy question, return or replace, cancel, human help) and the
-confirm step are stubs that say they are not built yet, and the trace marks them as stubs.
+session holds a pending action (the model is not called). Since phase 4b the five branches (order status,
+policy question, return or replace, cancel, human help) are real (agent/branches/); the confirm step is
+still a stub (phase 4c), and so is any label added in config that has no branch. A branch returns its
+reply, its evidence and, when it reached a decision that needs a yes or no, a pending action, which this
+graph stores in the session. Nothing is written to the database in this phase.
 
 Needs the `langgraph` package (requirements-agent.txt). It is imported only when an Agent is made.
 """
@@ -14,10 +16,14 @@ from typing import TypedDict
 
 from langgraph.graph import END, START, StateGraph
 
-from .llm import AgentConfig
+from .branches import BRANCHES, BranchContext, Run
+from .llm import AgentConfig, ChatModel
 from .replies import Replies
 from .router import CONFIRM_STEP, Router, RouterDecision
 from .session import Session
+from .tool_adapter import ToolAdapter
+
+NO_EVIDENCE = {"tool_calls": [], "policy_passages": []}
 
 
 class State(TypedDict, total=False):
@@ -28,10 +34,11 @@ class State(TypedDict, total=False):
     steps: list
     branch: dict            # which branch ran and whether it is a stub
     person_offered: bool
+    evidence: dict          # what the reply was based on: tool calls (input, output) and policy passages
 
 
-def build_graph(cfg: AgentConfig, router: Router, replies: Replies):
-    """Compile the graph for this config. The branch stubs are made from the labels in [router.labels]."""
+def build_graph(cfg: AgentConfig, router: Router, replies: Replies, chat: ChatModel, adapter: ToolAdapter):
+    """Compile the graph for this config. A label with a branch in agent/branches/ runs it; any other label is a stub."""
     friendly = set(cfg.session.friendly_kinds)
     already_offers = set(cfg.session.offer_in_reply)
     limit = cfg.session.off_topic_limit
@@ -51,6 +58,29 @@ def build_graph(cfg: AgentConfig, router: Router, replies: Replies):
         def node(state: State) -> dict:
             return {"reply": replies.not_built(label), "branch": {"name": name, "stub": True, "note": "not built yet"},
                     "steps": [*state["steps"], name]}
+        return node
+
+    def branch_node(label: str):
+        branch = BRANCHES[label]()
+        name = f"branch_{label}"
+
+        def node(state: State) -> dict:
+            session = state["session"]
+            ctx = BranchContext(cfg, chat, adapter, session, state["message"])
+            try:
+                result = branch.run(ctx)
+            except Exception as err:             # a branch that breaks must not end the conversation
+                info = {"name": name, "stub": False, "error": f"the branch failed: {type(err).__name__}", "model_calls": [],
+                        "tool_calls": 0, "refused_tools": [], "stopped_by_limit": False, "pending_action": None, "notes": {}}
+                return {"reply": cfg.branches.replies["branch_error"], "branch": info, "evidence": dict(NO_EVIDENCE),
+                        "steps": [*state["steps"], name]}
+            run: Run = result.run
+            if result.pending_action is not None:
+                session.pending_action = result.pending_action       # the next message goes to the confirm step
+            info = {"name": name, "stub": False, "error": run.error, "model_calls": run.model_calls,
+                    "tool_calls": len(run.tool_calls), "refused_tools": run.refused(), "stopped_by_limit": run.stopped_by_limit,
+                    "pending_action": result.pending_action, "notes": run.notes}
+            return {"reply": result.reply, "branch": info, "evidence": result.evidence(), "steps": [*state["steps"], name]}
         return node
 
     def out_of_scope_node(state: State) -> dict:
@@ -80,7 +110,7 @@ def build_graph(cfg: AgentConfig, router: Router, replies: Replies):
     graph.add_node("router", route_node)
     graph.add_node("confirm_step", stub("confirm_step", "confirm step"))
     for label in branch_labels:
-        graph.add_node(f"branch_{label}", stub(f"branch_{label}", label.replace("_", " ")))
+        graph.add_node(f"branch_{label}", branch_node(label) if label in BRANCHES else stub(f"branch_{label}", label.replace("_", " ")))
     graph.add_node("out_of_scope", out_of_scope_node)
     graph.add_node("clarify", clarify_node)
     graph.add_node("finish", finish_node)

@@ -24,7 +24,7 @@ python scripts/04_build_db.py
 python scripts/05_chunk_policy.py   # policy pages -> data/clean/policy_chunks.csv (phase 3a)
 pip install -r requirements-rag.txt # extra packages for policy search (phase 3b)
 python scripts/06_build_policy_index.py   # embed the chunks into the vector index (needs OPENAI_API_KEY in .env)
-pip install -r requirements-agent.txt     # langgraph, for the agent (phase 4a)
+pip install -r requirements-agent.txt     # langgraph, for the agent (phases 4a and 4b)
 python scripts/08_eval_router.py          # try the router on the labelled messages (needs OPENAI_API_KEY in .env)
 ```
 
@@ -52,7 +52,7 @@ On Windows use `py` instead of `python` if `python` is not found. Every script p
 | `data/rag/` | The vector index and embedding cache (generated; not committed) |
 | `config/rag.toml` | Every tunable value for policy search: chunking, metadata, embedding, retrieval, profiles |
 | `docs/phases/` | One document per build phase: what it is for, files touched, how it was checked |
-| `tests/` | 659 tests run by default (67 for the tools, 409 for policy search, 183 for the session and router), plus 5 `live` tests; run with `python -m pytest` (`-m live` for the live ones) |
+| `tests/` | 891 tests run by default (67 for the tools, 409 for policy search, 187 for the session and router, 228 for the branch flows), plus 5 `live` tests; run with `python -m pytest` (`-m live` for the live ones) |
 
 ## What each script does
 
@@ -138,6 +138,10 @@ The no-match thresholds in `config/rag.toml` are placeholders; phase 3d calibrat
 The reply for greetings, thanks, general questions, unsupported requests (gifts, marketplace sellers, A-to-z claims, international orders, address or payment changes, product advice), prompt injection and requests for another customer's data is fixed text from `config/agent.toml`; the model only picks the kind. After three off-topic messages in a row the reply offers a person. If the router's output is not valid, the agent asks a generic clarifying question and the error is recorded. `respond` returns the reply, the route, the kind and a trace (the router's input summary, raw output, label, kind, reason, latency and any error) for the Developer page.
 
 The model name, temperature, prompt wording, scope statement and every reply text are in `config/agent.toml`; the API key is read from `.env` in the same way as for the embeddings. `scripts/08_eval_router.py` scores the router on `data/evals/router_messages.csv` (the labels there are unreviewed drafts, so the numbers are a first look, not a result). The graph needs `langgraph` (`requirements-agent.txt`); tests that need it skip with a message when it is missing.
+
+## The agent: the five branches (phase 4b)
+
+Since phase 4b the router sends a message to a real branch: order status (`list_orders`, `get_order`, `get_return_status`), policy question (`search_policy`, `get_refund_timeline`), return or replace (`get_order`, `check_eligibility`, `search_policy`), cancel an item (`get_order`) or human help (no tools). The model reaches the tools only through `agent/tool_adapter.py`, which shows it schemas without `customer_id`, `confirmed` or `staff_approved`, fills the customer in from the session, drops any such argument the model sends, and refuses a tool outside the branch's list. `create_return` and `cancel_order` are in no list, so nothing is written yet: a branch that reaches a decision stores a pending action in the session and asks the customer a yes or no question, which code builds from tool data. A request past the window is never granted: the reply explains it with the tool's numbers and hands it to `agent/escalation.py`, which in this phase only says the review queue is not built yet. Policy answers cite only the passages that search returned, and a no-match gives a fixed reply with no model call. `respond` now also returns `evidence`: the tool calls (inputs and outputs) and the policy passages. The branch model, the round limit, the prompts and every fixed reply are in the `[branches]` section of `config/agent.toml`. The confirm step (the yes or no and the write) and the answer check are phase 4c.
 
 ## Day counting
 

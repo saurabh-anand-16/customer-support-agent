@@ -35,7 +35,7 @@ def off_topic(kind="general_question"):
 def test_respond_returns_the_reply_the_route_the_kind_and_a_trace(tmp_path):
     agent, _, sid = make_agent(tmp_path, off_topic("greeting"))
     result = agent.respond(sid, "hello")
-    assert set(result) == {"session_id", "reply", "route", "kind", "trace"}
+    assert set(result) == {"session_id", "reply", "route", "kind", "evidence", "trace"}
     assert (result["session_id"], result["route"], result["kind"], result["reply"]) == (sid, "out_of_scope", "greeting", "REPLY[greeting]")
 
 
@@ -45,7 +45,7 @@ def test_the_trace_holds_what_a_developer_page_needs(tmp_path):
     trace = agent.respond(sid, "Where is my order?")["trace"]
     assert set(trace) == {"session_id", "steps", "router", "branch", "off_topic", "pending_action_bypass"}
     router = trace["router"]
-    assert set(router) == {"called", "input_summary", "raw_output", "label", "kind", "question", "reason", "latency_ms", "error"}
+    assert set(router) == {"called", "input_summary", "raw_output", "label", "kind", "question", "reason", "latency_ms", "error", "ignored_field"}
     assert (router["raw_output"], router["label"], router["reason"], router["error"]) == (raw, "order_status", "asked about an order", None)
     assert router["input_summary"]["message"] == "Where is my order?" and router["input_summary"]["model"] == "test-model-name"
     assert isinstance(router["latency_ms"], float)
@@ -104,14 +104,15 @@ def test_an_unknown_session_id_is_an_error(tmp_path):
         agent.respond("never-issued", "hello")
 
 
-# === the branches are stubs ==========================================================================
-@pytest.mark.parametrize("label", BRANCHES)
-def test_each_other_branch_returns_the_not_built_reply_and_says_so_in_the_trace(tmp_path, label):
-    agent, chat, sid = make_agent(tmp_path, reply_json(label))
+# === a label without a branch is still a stub (the five real branches are tested in test_agent_branches.py) =====
+def test_a_label_with_no_branch_returns_the_not_built_reply_and_says_so_in_the_trace(tmp_path):
+    changes = {"router": {"labels": {"track_parcel": "a new branch added in the config"}}}
+    agent, chat, sid = make_agent(tmp_path, reply_json("track_parcel"), **changes)
     result = agent.respond(sid, "some message")
-    assert result["route"] == label and result["kind"] is None
-    assert result["reply"] == f"NOT-BUILT[{label.replace('_', ' ')}]"
-    assert result["trace"]["branch"] == {"name": f"branch_{label}", "stub": True, "note": "not built yet"}
+    assert result["route"] == "track_parcel" and result["kind"] is None
+    assert result["reply"] == "NOT-BUILT[track parcel]"
+    assert result["trace"]["branch"] == {"name": "branch_track_parcel", "stub": True, "note": "not built yet"}
+    assert result["evidence"] == {"tool_calls": [], "policy_passages": []}
     assert len(chat.calls) == 1                           # only the router called the model
 
 
@@ -257,12 +258,13 @@ def test_each_session_has_its_own_count(tmp_path):
 
 # === history ============================================================================================================
 def test_each_message_and_reply_is_remembered_and_shown_to_the_router_next_time(tmp_path):
-    agent, chat, sid = make_agent(tmp_path, [reply_json("order_status"), reply_json("return_or_replace")])
+    answer = json.dumps({"action": "final", "reply": "It left the warehouse today."})
+    agent, chat, sid = make_agent(tmp_path, [reply_json("order_status"), answer, reply_json("return_or_replace")])
     agent.respond(sid, "where is my order")
     agent.respond(sid, "ok, return it")
-    assert agent.sessions.get(sid).history[0] == {"user": "where is my order", "assistant": "NOT-BUILT[order status]", "route": "order_status"}
-    second_prompt = chat.calls[1]["messages"][0]["content"]
-    assert "where is my order" in second_prompt and "NOT-BUILT[order status]" in second_prompt
+    assert agent.sessions.get(sid).history[0] == {"user": "where is my order", "assistant": "It left the warehouse today.", "route": "order_status"}
+    third_prompt = chat.calls[2]["messages"][0]["content"]                       # call 0 router, 1 branch, 2 router again
+    assert "where is my order" in third_prompt and "It left the warehouse today." in third_prompt
 
 
 def test_the_stored_history_is_trimmed_to_the_configured_length(tmp_path):
@@ -272,12 +274,20 @@ def test_the_stored_history_is_trimmed_to_the_configured_length(tmp_path):
 
 
 # === no tools, no key leaks ==========================================================================================
-def test_no_tool_is_called_or_even_imported_by_the_front_half_of_the_agent():
+def test_the_router_replies_session_and_settings_modules_never_touch_a_tool_or_the_database():
     root = Path(__file__).resolve().parent.parent / "agent"
-    for name in ("agent.py", "graph.py", "router.py", "replies.py", "session.py", "llm.py"):
+    for name in ("router.py", "replies.py", "session.py", "llm.py"):
         source = (root / name).read_text(encoding="utf-8")
         for forbidden in ("ReturnsTools", "from .tools", "import tools", "search_policy", "PolicySearch", "sqlite3", "returns_agent.db"):
             assert forbidden not in source.replace("# ", ""), f"{name} mentions {forbidden}"
+
+
+def test_the_graph_and_the_agent_never_name_a_writer_or_open_the_database_themselves():
+    root = Path(__file__).resolve().parent.parent / "agent"
+    for name in ("agent.py", "graph.py"):
+        source = (root / name).read_text(encoding="utf-8")
+        for forbidden in ("create_return", "cancel_order", "sqlite3", "staff_approved"):
+            assert forbidden not in source, f"{name} mentions {forbidden}"
 
 
 def test_the_model_is_never_offered_tools(tmp_path):

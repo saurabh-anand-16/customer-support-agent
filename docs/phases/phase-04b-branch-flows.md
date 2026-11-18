@@ -1,6 +1,6 @@
 # Phase 4b: the five branch flows
 
-**Status:** Planned (after 4a)
+**Status:** Done, in review ([build report](../builds/phase-04b-build.md))
 
 ## Goal
 Fill in the branches the router sends messages to: order status, policy question, return or replace, cancel an item, and human help. Each branch can use only its own tools. Read-only branches finish here. Branches that would write (return, cancel) end by proposing an action; the customer's yes or no and the write itself are phase 4c.
@@ -50,6 +50,28 @@ All with a scripted fake model and a fake `search_policy`, so tuning retrieval l
 - The review queue does not exist until phase 5.
 
 ## Done when
-- [ ] Every branch runs end to end with the real model on a handful of messages, and the evidence is in the result.
-- [ ] No writer runs in this phase.
-- [ ] Docs updated with real results.
+- [x] Every branch runs end to end with the real model on a handful of messages, and the evidence is in the result. (Seven messages through `Agent.respond`, see the build report. Human help was covered by tests only, not run with the real model, because it makes no model call after the router.)
+- [x] No writer runs in this phase. (Tests, ten deliberate breakages of the code, and a check that the database file was byte-for-byte unchanged after the real run.)
+- [x] Docs updated with real results.
+
+## What was really built
+Step 0 came first (two router fixes), then the phase itself.
+
+- **Step 0.** The scope statement in `config/agent.toml` now names order viewing and listing, past or recent orders, what was ordered, item counts, delivery and return status, refund timing, refund methods and refund questions about EMI or payment methods, and says "I want my money back" alone is `clarify`. The router ignores a `kind` unless the route is `out_of_scope` and a `question` unless it is `clarify`, and the trace has a new `ignored_field` entry (a list of names, or `None`). The router already ignored them in 4a; the only new thing is the record. Router evaluation: 63 of 75 before, 69 of 75 after (a first look: the labels are unreviewed and the test rows were already seen).
+- **Branch settings** are a new `[branches]` section in `config/agent.toml`: the branch model name and temperature, the tool-round limit (3 rounds is the test value; the real value is 4), the rewrite switch, every prompt, and every fixed reply text. `agent/llm.py` loads and checks it (see the build report: it is not in the file list above).
+- **Tool calling** uses the same JSON-only protocol as the router (the model returns `{"action": "call_tool", ...}` or `{"action": "final", ...}`), not OpenAI's native function calling. This kept one chat wrapper and one fake for tests. The "schemas" shown to the model are written into the prompt as a tool list from the adapter's schema table.
+- **Decisions are made by code.** The model only picks the item, the reason (one of the five codes) and the resolution, or asks one short question. Eligibility comes from `check_eligibility` (code runs it if the model did not). Explanations, numbers and the confirmation question are fixed texts from config filled in from tool data. The order status answer and the policy answer are the model's own words; the policy answer's citations are written by code.
+- **Pending actions** are stored in the session (`type`, `parameters`, `summary`, `question`, and for returns whether staff approval is needed and why). The customer id is not in them. The next message goes to the confirm step, which is still the 4a stub.
+- **A branch that raises** gives the fixed error reply and leaves the session usable.
+
+## Results
+- `python -m pytest`: 891 passed, 5 deselected (659 before; 232 more).
+- With `langgraph`, `chromadb` and `openai` blocked: 804 passed, 18 skipped, 5 deselected.
+- `python -m pytest -m live`: 4 passed, 1 skipped.
+- Real-model run, one customer, seven requests: all seven routed correctly and ended as designed; no row in `returns` or `order_items` changed (73 returns and 152 cancelled items before and after; the database file's hash was the same).
+
+## Known gaps found by the real run
+- The return and cancel branches have no `list_orders`, as `CLAUDE.md` specifies, so the customer (or an earlier reply) has to give the order ID. Without it the model should ask, and the tests check that it may.
+- A credit-card follow-up answer said "5 Business Days", which is the right figure in the table, but the only passage it cited does not contain it. The model's first `get_refund_timeline` call used `credit card` instead of `credit_debit_card`, got an error that listed the valid names, and did not try again. Phase 4c's answer check is where this is caught.
+- The order status answer for a shipped item said "shipped and is being processed". The wording is the model's; numbers and wording are checked in 4c.
+- Product names are long, so confirmation questions are long.

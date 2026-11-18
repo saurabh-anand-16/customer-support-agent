@@ -20,6 +20,7 @@ from agent.rag.embedders.base import MissingKeyError
 from agent.router import CONFIRM_STEP, Router
 from agent.session import Session
 
+from .branch_helpers import FIXED_BRANCHES
 from .rag_helpers import to_toml
 
 LABELS = ["order_status", "policy_question", "return_or_replace", "cancel_item", "human_help", "out_of_scope", "clarify"]
@@ -40,6 +41,7 @@ FIXED_AGENT = {
         "kinds": {kind: f"is {kind}" for kind in KINDS},
     },
     "scope": {"statement": "SCOPE-STATEMENT: orders yes, gifts no"},
+    "branches": FIXED_BRANCHES,
     "replies": {**{kind: f"REPLY[{kind}]" for kind in KINDS}, "person_offer": "OFFER-A-PERSON",
                 "not_built": "NOT-BUILT[{branch}]", "blank_message": "BLANK-REPLY"},
     "eval": {"test_fraction": 0.4},
@@ -190,13 +192,37 @@ def test_extra_fields_in_the_output_are_ignored(tmp_path):
     assert decision.route == "order_status" and not hasattr(decision, "reply")
 
 
+@pytest.mark.parametrize("route, extra, ignored", [
+    ("order_status", {"kind": "greeting"}, ["kind"]),
+    ("policy_question", {"kind": "policy_question"}, ["kind"]),
+    ("return_or_replace", {"question": "Which item?"}, ["question"]),
+    ("clarify", {"kind": "greeting", "question": "Which order do you mean?"}, ["kind"]),
+    ("out_of_scope", {"kind": "greeting", "question": "Which order?"}, ["question"]),
+    ("cancel_item", {"kind": "other", "question": "Which?"}, ["kind", "question"]),
+])
+def test_a_kind_or_question_on_a_route_that_does_not_use_it_is_ignored_and_recorded(tmp_path, route, extra, ignored):
+    router, _, _ = make_router(tmp_path, reply_json(route, **extra))
+    decision = router.decide(new_session(), "some message")
+    assert decision.route == route and decision.error is None          # not an error and not a clarify fallback
+    assert decision.ignored_field == ignored and decision.to_trace()["ignored_field"] == ignored
+    if route != "out_of_scope":
+        assert decision.kind is None
+    if route != "clarify":
+        assert decision.question is None
+
+
+def test_nothing_is_recorded_as_ignored_when_every_field_is_used(tmp_path):
+    router, _, _ = make_router(tmp_path, reply_json("out_of_scope", kind="greeting", question=None))
+    assert router.decide(new_session(), "hi").to_trace()["ignored_field"] is None
+
+
 def test_the_decision_keeps_the_raw_output_the_latency_and_an_input_summary(tmp_path):
     raw = reply_json("order_status", "asked about an order")
     router, _, _ = make_router(tmp_path, raw)
     decision = router.decide(new_session(), "where is my order")
     trace = decision.to_trace()
     assert decision.raw_output == raw and decision.latency_ms >= 0
-    assert set(trace) == {"called", "input_summary", "raw_output", "label", "kind", "question", "reason", "latency_ms", "error"}
+    assert set(trace) == {"called", "input_summary", "raw_output", "label", "kind", "question", "reason", "latency_ms", "error", "ignored_field"}
     assert trace["input_summary"]["message"] == "where is my order" and trace["input_summary"]["model"] == "test-model-name"
     assert trace["called"] is True and trace["error"] is None
 
