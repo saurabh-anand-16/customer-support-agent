@@ -59,7 +59,8 @@ def test_a_citation_the_model_makes_up_never_reaches_the_reply(tmp_path):
     raw = final(answer="Refunds take 5 days (see made-up-policy.md).", cited=[1], citations=["made-up-policy.md"], sources="invented.md")
     result, _, _ = run_branch(tmp_path, raw)
     assert result.reply.count("SOURCES:") == 1 and "invented.md" not in result.reply
-    assert "made-up-policy.md" in result.reply.split("\n")[0]             # only the model's own sentence, and no source line for it
+    assert "made-up-policy.md" not in result.reply                          # the answer check caught the invented file name (phase 4c)
+    assert result.run.notes["answer_check"]["used"] == "fallback" and result.reply.startswith("POLICY:")
 
 
 @pytest.mark.parametrize("raw", [answer([]), answer([9]), answer([1], text=""), answer([1], text="   "), final(cited=[1]),

@@ -81,6 +81,11 @@ class ToolAdapter:
             self._policy = self._policy_factory()
         return self._policy
 
+    @property
+    def today(self):
+        """Today's date from the tools, or None when no tool has been opened yet (nothing was looked up)."""
+        return self._tools.today if self._tools is not None else None
+
     # -- what the model may see --------------------------------------------------------------------
     def names(self) -> list[str]:
         return list(self._defs)

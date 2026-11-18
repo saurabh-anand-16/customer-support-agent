@@ -10,7 +10,9 @@ Steps for one message:
      them and lists the numbers it used. The citations in the reply are written by code from the passages it used:
      a number that was not returned is dropped, and an answer with no valid citation becomes the no-match reply.
 """
-from .base import (Branch, BranchContext, BranchResult, Run, ask_model, conversation_text, fill, parse_object, tool_loop)
+from ..checks import check
+from .base import (Branch, BranchContext, BranchResult, Run, ask_model, check_answer, conversation_text, fill, parse_object,
+                   tool_loop)
 
 
 class PolicyQuestionBranch(Branch):
@@ -50,6 +52,28 @@ class PolicyQuestionBranch(Branch):
             lines.append(f"[{number}] {hit['citation']}\n{hit['text'][:limit]}")
         return "\n\n".join(lines)
 
+    def fallback(self, ctx: BranchContext, run: Run) -> BranchResult:
+        """The model's answer failed the answer check: a template from the tool data (refund times, then the top passage)."""
+        a, b = ctx.cfg.answer_check, ctx.cfg.branches
+        lines = []
+        for call in run.tool_calls:
+            out = call["output"] or {}
+            if call["tool"] == "get_refund_timeline" and not call["refused"] and out.get("ok") is True:
+                for t in out["timelines"]:
+                    lines.append(fill(a.replies["fallback_timeline_line"], order_type=out["order_type"].replace("_", " "),
+                                      refund_method=t["refund_method"].replace("_", " "), time_text=t["time_text"]))
+        sources = ""
+        if run.passages:
+            top = run.passages[0]
+            passage = top["text"].strip()
+            passage = passage[:a.max_passage_chars].rstrip() + ("..." if len(passage) > a.max_passage_chars else "")
+            lines.append(fill(a.replies["fallback_policy_line"], passage=passage))
+            top["cited"] = True
+            sources = "\n" + fill(b.replies["sources_line"], sources=top["citation"])
+        if not lines:
+            return BranchResult(b.replies["no_policy_match"], run)
+        return BranchResult("\n".join(lines) + sources, run)
+
     def run(self, ctx: BranchContext) -> BranchResult:
         b = ctx.cfg.branches
         run = Run()
@@ -77,10 +101,20 @@ class PolicyQuestionBranch(Branch):
         if final is None:
             return self.failed(ctx, run)
 
-        answer, cited = final.get("answer"), final.get("cited")
+        answer = final.get("answer")
+        if isinstance(answer, str) and answer.strip():
+            checked = check_answer(ctx, run, final, "answer")      # numbers, dates and file names must come from the tools
+            if checked.used == "fallback":
+                return self.fallback(ctx, run)
+            final, answer = checked.final, checked.text
+        cited = final.get("cited")
         numbers = [n for n in (cited if isinstance(cited, list) else []) if isinstance(n, int) and not isinstance(n, bool)]
         valid = sorted({n for n in numbers if 1 <= n <= len(run.passages)})
         run.notes["cited_dropped"] = [n for n in numbers if n not in valid]
+        if run.notes["cited_dropped"]:
+            run.checks.append(check("citations", False, f"passage number(s) {run.notes['cited_dropped']} were not returned by the search and were dropped"))
+        elif valid:
+            run.checks.append(check("citations", True, "every cited passage was returned by the search"))
         if not isinstance(answer, str) or not answer.strip() or not valid:
             run.notes["no_match"] = "the answer was empty or cited no returned passage"
             return BranchResult(b.replies["no_policy_match"], run)

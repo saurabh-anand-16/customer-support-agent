@@ -116,14 +116,16 @@ def test_human_help_calls_no_tool_and_one_model_call_only(tmp_path, spy):
 
 # === the pending action goes first (the confirm step itself is phase 4c) ===================================================
 def test_after_a_proposal_the_next_message_goes_to_the_confirm_step_not_the_router(tmp_path, spy, pick, raw):
+    # the confirm step itself is tested in test_confirm_step.py; here only the routing and that an unusable label writes nothing
     item = pick("oi.item_status='processing'")
     replies = [router("cancel_item"), call("get_order", order_id=order_of(raw, item["item_id"])), final(outcome="decide", item_id=item["item_id"])]
     agent, chat, sid, _ = make_agent(tmp_path, spy, replies, item["customer_id"])
     agent.respond(sid, "cancel it")
     calls_before = len(chat.calls)
     result = agent.respond(sid, "yes")
-    assert len(chat.calls) == calls_before and result["route"] == "confirm_step" and result["reply"] == "NOT-BUILT[confirm step]"
-    assert spy.writer_calls == []                                                       # the confirm step is a stub: still nothing written
+    assert len(chat.calls) == calls_before + 1 and result["route"] == "confirm_step"       # one call: the confirm label, not the router
+    assert chat.calls[-1]["system"].startswith("CONFIRM PROMPT") and chat.calls[-1]["model"] == "confirm-test-model"
+    assert result["reply"].startswith("UNCLEAR-ASK") and spy.writer_calls == []         # the fake's reply was no label: unclear, nothing written
 
 
 # === the rules that must hold whatever the model does ======================================================================
@@ -199,12 +201,12 @@ def test_a_failed_branch_model_call_gives_the_fixed_error_reply_and_the_error_is
 
 
 def test_the_branch_reply_is_remembered_and_shown_to_the_next_branch_call(tmp_path, spy):
-    replies = [router("order_status"), final(reply="You have 3 orders."), router("order_status"), final(reply="ok")]
+    replies = [router("order_status"), final(reply="You have some orders."), router("order_status"), final(reply="ok")]
     agent, chat, sid, _ = make_agent(tmp_path, spy, replies, "C0001")
     agent.respond(sid, "how many orders?")
     agent.respond(sid, "and the last one?")
-    assert agent.sessions.get(sid).history[0]["assistant"] == "You have 3 orders."
-    assert "You have 3 orders." in chat.calls[3]["messages"][0]["content"]
+    assert agent.sessions.get(sid).history[0]["assistant"] == "You have some orders."
+    assert "You have some orders." in chat.calls[3]["messages"][0]["content"]
 
 
 def test_the_api_key_never_appears_in_the_evidence_or_trace(tmp_path, spy, monkeypatch):

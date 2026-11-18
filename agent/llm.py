@@ -90,6 +90,31 @@ class BranchSettings:
 
 
 @dataclass(frozen=True)
+class ConfirmSettings:
+    """[confirm]: the yes or no step before a write (phase 4c). `name` is the model that labels the customer's answer."""
+    name: str
+    temperature: float
+    max_output_tokens: int
+    max_message_chars: int
+    pending_max_turns: int       # messages the customer may send while an action waits; the next one finds it expired
+    max_unclear_asks: int        # how many times an unclear answer is asked about again before the action is dropped
+    prompt: str
+    replies: dict
+
+
+@dataclass(frozen=True)
+class AnswerCheckSettings:
+    """[answer_check]: numbers, amounts and dates in a model-written reply must come from this turn's tool results."""
+    enabled: bool
+    max_retries: int
+    max_facts_listed: int
+    max_passage_chars: int       # the template fallback for a policy answer quotes the top passage cut to this length
+    allowed_text: list           # config text whose numbers and dates are also allowed in an answer
+    retry_instruction: str
+    replies: dict
+
+
+@dataclass(frozen=True)
 class EvalSettings:
     test_fraction: float
 
@@ -102,6 +127,8 @@ class AgentConfig:
     router: RouterSettings
     scope: ScopeSettings
     branches: BranchSettings
+    confirm: ConfirmSettings
+    answer_check: AnswerCheckSettings
     replies: dict     # kind -> text, plus person_offer, not_built, blank_message
     eval: EvalSettings
 
@@ -124,6 +151,16 @@ BRANCH_REPLY_FIELDS = {"product_name", "item_id", "order_id", "amount", "reason"
                        "approval_note", "approval_reasons", "order_part", "delivered_at", "day_number", "window_days",
                        "last_eligible_date", "days_late", "days_left", "return_id", "sources"}
 
+CONFIRM_REPLIES = ("done_return", "done_return_refund_line", "done_cancel", "declined", "unclear_ask", "unclear_drop", "expired",
+                   "approval_needed", "refund_method_needed", "refused")
+CONFIRM_REPLY_FIELDS = {"product_name", "item_id", "order_id", "return_id", "resolution", "refund_line", "next_step", "question",
+                        "message", "options", "amount", "method", "timeline"}
+ANSWER_CHECK_REPLIES = ("fallback_intro", "fallback_order_line", "fallback_item_line", "fallback_return_line", "fallback_timeline_line",
+                        "fallback_policy_line", "fallback_nothing")
+ANSWER_CHECK_REPLY_FIELDS = {"order_id", "ordered_at", "product_name", "item_id", "item_status", "delivered_at", "return_id", "return_status",
+                             "refund_line", "order_type", "refund_method", "time_text", "passage", "sources", "payment_type"}
+RETRY_FIELDS = {"problems", "facts"}
+
 _SPEC = {
     "model": (ModelSettings, {"name": str, "temperature": float, "max_output_tokens": int, "timeout_seconds": int,
                               "api_key_env": str, "env_file": str}),
@@ -136,6 +173,10 @@ _SPEC = {
                                   "rewrite_follow_ups": bool, "rewrite_max_chars": int, "policy_top_k": int,
                                   "max_passage_chars": int, "prompts": dict, "reason_texts": dict,
                                   "resolution_texts": dict, "approval_texts": dict, "replies": dict}),
+    "confirm": (ConfirmSettings, {"name": str, "temperature": float, "max_output_tokens": int, "max_message_chars": int,
+                                  "pending_max_turns": int, "max_unclear_asks": int, "prompt": str, "replies": dict}),
+    "answer_check": (AnswerCheckSettings, {"enabled": bool, "max_retries": int, "max_facts_listed": int, "max_passage_chars": int,
+                                           "allowed_text": list, "retry_instruction": str, "replies": dict}),
     "eval": (EvalSettings, {"test_fraction": float}),
 }
 
@@ -231,6 +272,59 @@ def _check(cfg: AgentConfig, where: str) -> None:
     if not r.generic_clarify.strip().endswith("?"):
         raise AgentConfigError(f"{where}: [router].generic_clarify must be a question")
     _check_branches(cfg.branches, where)
+    _check_confirm(cfg.confirm, where)
+    _check_answer_check(cfg.answer_check, where)
+
+
+def _fields_of(text: str) -> set:
+    return {name for _, name, _, _ in string.Formatter().parse(text) if name}
+
+
+def _check_table(where: str, section: str, table: dict, needed, allowed_fields) -> None:
+    for key in needed:
+        if not isinstance(table.get(key), str) or not table[key].strip():
+            raise AgentConfigError(f"{where}: [{section}] needs non-empty text for '{key}'")
+    for key, text in table.items():
+        if key not in needed:
+            raise AgentConfigError(f"{where}: [{section}] has '{key}', which is not one of {', '.join(needed)}")
+        try:
+            used = _fields_of(text)
+        except ValueError as err:
+            raise AgentConfigError(f"{where}: [{section}].{key} cannot be filled in ({err!r})") from err
+        if used - allowed_fields:
+            raise AgentConfigError(f"{where}: [{section}].{key} uses {sorted(used - allowed_fields)}; allowed fields: {', '.join(sorted(allowed_fields))}")
+
+
+def _check_confirm(c: ConfirmSettings, where: str) -> None:
+    if not c.name.strip():
+        raise AgentConfigError(f"{where}: [confirm].name (the model) must not be empty")
+    if not 0 <= c.temperature <= 2:
+        raise AgentConfigError(f"{where}: [confirm].temperature must be between 0 and 2")
+    for key in ("max_output_tokens", "max_message_chars", "pending_max_turns"):
+        if getattr(c, key) < 1:
+            raise AgentConfigError(f"{where}: [confirm].{key} must be 1 or more")
+    if c.max_unclear_asks < 0:
+        raise AgentConfigError(f"{where}: [confirm].max_unclear_asks must be 0 or more")
+    _check_table(where, "confirm.replies", c.replies, CONFIRM_REPLIES, CONFIRM_REPLY_FIELDS)
+    if not c.prompt.strip():
+        raise AgentConfigError(f"{where}: [confirm].prompt must not be empty")      # used as written: it is not a template
+
+
+def _check_answer_check(a: AnswerCheckSettings, where: str) -> None:
+    for key in ("max_facts_listed", "max_passage_chars"):
+        if getattr(a, key) < 1:
+            raise AgentConfigError(f"{where}: [answer_check].{key} must be 1 or more")
+    if a.max_retries < 0:
+        raise AgentConfigError(f"{where}: [answer_check].max_retries must be 0 or more")
+    if not all(isinstance(t, str) for t in a.allowed_text):
+        raise AgentConfigError(f"{where}: [answer_check].allowed_text must be a list of text")
+    try:
+        found = _fields_of(a.retry_instruction)
+    except ValueError as err:
+        raise AgentConfigError(f"{where}: [answer_check].retry_instruction cannot be filled in ({err!r})") from err
+    if found != RETRY_FIELDS:
+        raise AgentConfigError(f"{where}: [answer_check].retry_instruction must use exactly the fields {sorted(RETRY_FIELDS)}, got {sorted(found)}")
+    _check_table(where, "answer_check.replies", a.replies, ANSWER_CHECK_REPLIES, ANSWER_CHECK_REPLY_FIELDS)
 
 
 def _check_branches(b: BranchSettings, where: str) -> None:

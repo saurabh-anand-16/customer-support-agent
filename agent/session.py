@@ -9,6 +9,8 @@ model.
 A Session holds:
   history          the recent exchanges, oldest first: {"user", "assistant", "route"}
   pending_action   None, or a description of an action waiting for a yes or no (set from phase 4b)
+  pending_age      messages the customer has sent while that action waited (the confirm step counts them)
+  pending_unclear  how many times an unclear answer was asked about again
   off_topic_count  off-topic messages in a row
 """
 import uuid
@@ -25,6 +27,8 @@ class Session:
     customer_id: str
     history: list = field(default_factory=list)
     pending_action: dict | None = None
+    pending_age: int = 0
+    pending_unclear: int = 0
     off_topic_count: int = 0
 
     def __post_init__(self):
@@ -36,6 +40,13 @@ class Session:
         if name == "customer_id" and "customer_id" in self.__dict__:
             raise AttributeError("The customer of a session cannot be changed")
         super().__setattr__(name, value)
+
+    def set_pending(self, action: dict) -> None:
+        """Hold an action for a yes or no. The counters start again."""
+        self.pending_action, self.pending_age, self.pending_unclear = action, 0, 0
+
+    def clear_pending(self) -> None:
+        self.pending_action, self.pending_age, self.pending_unclear = None, 0, 0
 
     def add_exchange(self, user: str, assistant: str, route: str, keep: int) -> None:
         """Remember one message and its reply, keeping only the newest `keep` exchanges."""

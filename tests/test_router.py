@@ -20,7 +20,7 @@ from agent.rag.embedders.base import MissingKeyError
 from agent.router import CONFIRM_STEP, Router
 from agent.session import Session
 
-from .branch_helpers import FIXED_BRANCHES
+from .branch_helpers import FIXED_ANSWER_CHECK, FIXED_BRANCHES, FIXED_CONFIRM
 from .rag_helpers import to_toml
 
 LABELS = ["order_status", "policy_question", "return_or_replace", "cancel_item", "human_help", "out_of_scope", "clarify"]
@@ -42,6 +42,8 @@ FIXED_AGENT = {
     },
     "scope": {"statement": "SCOPE-STATEMENT: orders yes, gifts no"},
     "branches": FIXED_BRANCHES,
+    "confirm": FIXED_CONFIRM,
+    "answer_check": FIXED_ANSWER_CHECK,
     "replies": {**{kind: f"REPLY[{kind}]" for kind in KINDS}, "person_offer": "OFFER-A-PERSON",
                 "not_built": "NOT-BUILT[{branch}]", "blank_message": "BLANK-REPLY"},
     "eval": {"test_fraction": 0.4},

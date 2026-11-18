@@ -108,7 +108,12 @@ class ReturnOrReplaceBranch(Branch):
                    "parameters": {"item_id": fields["item_id"], "reason": check["reason"], "resolution": resolution},
                    "summary": f"{b.resolution_texts[resolution]} {fields['product_name']} (item {fields['item_id']})",
                    "question": question, "needs_staff_approval": bool(check["staff_approval_required"]),
-                   "approval_reasons": list(check["approval_reasons"]), "decision": check["decision"]}
+                   "approval_reasons": list(check["approval_reasons"]), "decision": check["decision"],
+                   # what a UI card shows (agent/confirm.py public_pending): all of it from the check_eligibility result
+                   "display": {"item_id": fields["item_id"], "product_name": fields["product_name"], "order_id": fields["order_id"],
+                               "resolution": resolution, "refund_amount_inr": check.get("line_total_inr") if resolution == "refund" else None,
+                               "return_window": {"window_days": check.get("window_days_applied"), "day_number": check.get("day_number"),
+                                                 "last_eligible_date": check.get("last_eligible_date"), "days_left": check.get("days_left")}}}
         return BranchResult(question, run, pending_action=pending)
 
     def late(self, ctx, run: Run, check: dict, fields: dict) -> BranchResult:

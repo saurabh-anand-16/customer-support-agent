@@ -1,0 +1,101 @@
+"""
+actions.py - runs a pending action. This is the only module that calls a writer (create_return, cancel_order).
+
+The writer is called from CODE, after the customer's yes was read by the confirm step:
+
+  * the customer id comes from the session, never from the pending action and never from the model;
+  * `confirmed=True` is written here, as a constant. The model's output is a label, nothing else, and has no way to set it;
+  * `staff_approved` is never passed. Only the review-queue code (phase 5) may set it. When the tool says a reviewer must
+    approve first, nothing is written and the request goes to the escalation seam instead;
+  * the tool re-runs every check itself (eligibility, resolution, status), so a pending action that went stale is refused.
+
+The reply is built from the tool's result and, for a return, from reading the new row back (get_return_status), so what
+the customer reads is what the database holds. The wording is fixed text from [confirm.replies] in config/agent.toml.
+"""
+from dataclasses import dataclass, field
+
+from .branches.base import fill
+from .branches.return_or_replace import money
+from .checks import check
+from .escalation import escalate
+from .llm import AgentConfig
+
+_RETURN_KEYS = ("item_id", "reason", "resolution")
+_CANCEL_KEYS = ("item_id",)
+
+
+@dataclass
+class ActionResult:
+    reply: str
+    wrote: bool = False
+    checks: list = field(default_factory=list)
+    tool_calls: list = field(default_factory=list)       # evidence records, same shape as the adapter's
+    escalation: dict | None = None
+    error_code: str | None = None
+
+
+def _record(tool: str, args: dict, output: dict) -> dict:
+    """An evidence record for a writer call. `args` never holds the customer id or the confirmed flag."""
+    return {"tool": tool, "input": dict(args), "dropped_arguments": [], "output": output, "refused": None}
+
+
+def run_pending(session, pending: dict, tools, cfg: AgentConfig, escalate_fn=escalate) -> ActionResult:
+    """Do the pending action once. The caller has already cleared it from the session, so it cannot run twice."""
+    kind, params = (pending or {}).get("type"), (pending or {}).get("parameters")
+    needed = _RETURN_KEYS if kind == "return" else _CANCEL_KEYS if kind == "cancel" else None
+    if needed is None or not isinstance(params, dict) or any(not isinstance(params.get(k), str) or not params[k] for k in needed):
+        return ActionResult(fill(cfg.confirm.replies["refused"], message="That request is no longer valid."), error_code="invalid_pending",
+                            checks=[check("write", False, "the pending action was malformed, so nothing was run")])
+    args = {k: params[k] for k in needed}
+    if kind == "return":
+        output = tools.create_return(session.customer_id, args["item_id"], args["reason"], args["resolution"], confirmed=True)
+        result = _after_return(session, pending, args, output, tools, cfg, escalate_fn)
+    else:
+        output = tools.cancel_order(session.customer_id, args["item_id"], confirmed=True)
+        result = _after_cancel(output, cfg)
+    result.tool_calls.insert(0, _record("create_return" if kind == "return" else "cancel_order", args, output))
+    return result
+
+
+def _refused(output: dict, cfg: AgentConfig) -> ActionResult:
+    code = output.get("error_code")
+    return ActionResult(fill(cfg.confirm.replies["refused"], message=str(output.get("message", "")).strip()), error_code=code,
+                        checks=[check("write", False, f"the tool refused: {code}")])
+
+
+def _after_return(session, pending, args, output, tools, cfg, escalate_fn) -> ActionResult:
+    r = cfg.confirm.replies
+    if output.get("ok") is not True:
+        code = output.get("error_code")
+        if code == "staff_approval_required":              # the review gate: nothing was written, the seam is asked
+            sent = escalate_fn(session, "approval_required",
+                               {"item_id": args["item_id"], "reason": args["reason"], "resolution": args["resolution"],
+                                "approval_reasons": output.get("approval_reasons", [])}, r["approval_needed"])
+            return ActionResult(sent["reply"], escalation=sent, error_code=code,
+                                checks=[check("review_gate", False, f"a reviewer must approve first ({', '.join(output.get('approval_reasons', []))}); nothing was written"),
+                                        check("write", False, "the tool refused: staff_approval_required")])
+        if code == "refund_method_required":
+            return ActionResult(fill(r["refund_method_needed"], options=", ".join(m.replace("_", " ") for m in output.get("valid", []))),
+                                error_code=code, checks=[check("write", False, "the tool needs a refund method (Pay on Delivery); nothing was written")])
+        return _refused(output, cfg)
+    # read the new row back so the reply shows what the database holds
+    row = tools.get_return_status(session.customer_id, item_id=args["item_id"])
+    saved = row["return"] if row.get("ok") else {}
+    refund_line = ""
+    if output.get("refund_amount_inr") is not None and output.get("refund_method"):
+        refund_line = fill(r["done_return_refund_line"], amount=money(output["refund_amount_inr"]),
+                           method=str(output["refund_method"]).replace("_", " "), timeline=saved.get("refund_time") or "the time the policy gives")
+    product = (pending.get("display") or {}).get("product_name") or saved.get("product_name") or ""
+    reply = fill(r["done_return"], resolution=cfg.branches.resolution_texts.get(output["resolution"], output["resolution"]),
+                 product_name=product, item_id=output["item_id"], return_id=output["return_id"], refund_line=refund_line,
+                 next_step=output.get("next_step", "")).strip()
+    return ActionResult(reply, wrote=True, tool_calls=[_record("get_return_status", {"item_id": args["item_id"]}, row)],
+                        checks=[check("write", True, f"return {output['return_id']} was created by create_return")])
+
+
+def _after_cancel(output: dict, cfg: AgentConfig) -> ActionResult:
+    if output.get("ok") is not True:
+        return _refused(output, cfg)
+    reply = fill(cfg.confirm.replies["done_cancel"], product_name=output.get("product_name"), item_id=output["item_id"],
+                 order_id=output.get("order_id"), next_step=output.get("next_step", "")).strip()
+    return ActionResult(reply, wrote=True, checks=[check("write", True, f"item {output['item_id']} was cancelled by cancel_order")])

@@ -97,3 +97,36 @@ class FakePolicy:
 
     def citation(self, result):
         return f"{result['heading_path']} ({result['source_file']})"
+
+
+# --- phase 4c: the confirm step and the answer check (fixed, recognisable wording; the tests never read config/agent.toml) ---
+FIXED_CONFIRM = {
+    "name": "confirm-test-model", "temperature": 0.1, "max_output_tokens": 77, "max_message_chars": 100, "pending_max_turns": 3,
+    "max_unclear_asks": 1, "prompt": "CONFIRM PROMPT {\"label\": \"x\"}",
+    "replies": {
+        "done_return": "DONE-RETURN {resolution} | {product_name} | {item_id} | {return_id} | {refund_line}{next_step}",
+        "done_return_refund_line": "REFUND INR {amount} to {method} in {timeline}. ",
+        "done_cancel": "DONE-CANCEL {product_name} | {item_id} | {next_step}",
+        "declined": "DECLINED-NOTHING-DONE",
+        "unclear_ask": "UNCLEAR-ASK {question}",
+        "unclear_drop": "UNCLEAR-DROPPED",
+        "expired": "EXPIRED-NOTHING-DONE",
+        "approval_needed": "APPROVAL-NEEDED-NOT-BUILT",
+        "refund_method_needed": "REFUND-METHOD-NEEDED {options}",
+        "refused": "REFUSED {message}",
+    },
+}
+
+FIXED_ANSWER_CHECK = {
+    "enabled": True, "max_retries": 1, "max_facts_listed": 30, "max_passage_chars": 60, "allowed_text": [],
+    "retry_instruction": "RETRY. PROBLEMS: {problems}. FACTS: {facts}.",
+    "replies": {
+        "fallback_intro": "FALLBACK-INTRO",
+        "fallback_order_line": "ORDER {order_id} placed {ordered_at}",
+        "fallback_item_line": "ITEM {product_name} | {item_id} | {item_status}{delivered_at}",
+        "fallback_return_line": "RETURN {return_id} | {product_name} | {item_id} | {return_status}{refund_line}",
+        "fallback_timeline_line": "TIMELINE {order_type} | {refund_method} | {time_text}",
+        "fallback_policy_line": "POLICY: {passage}",
+        "fallback_nothing": "FALLBACK-NOTHING",
+    },
+}

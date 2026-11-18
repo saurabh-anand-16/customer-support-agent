@@ -3,14 +3,19 @@ agent.py - the front of the agent: Agent.start_session(customer_id) and Agent.re
 
 Phase 4a built the first half of the chain: session, router, the out-of-scope and clarify replies.
 Phase 4b added the five branches (agent/branches/), which call tools through agent/tool_adapter.py.
-Nothing is written to the database yet: a branch that reaches a decision stores a pending action in the
-session, and the confirm step (phase 4c) is still a stub. `respond` returns:
+A branch that reaches a decision stores a pending action in the session. The next message goes to the confirm step
+(phase 4c, agent/confirm.py), and only a yes there makes code run the writer tool (agent/actions.py).
+`respond` returns:
 
   {"session_id": ..., "reply": the text for the customer, "route": the branch taken,
    "kind": the out-of-scope kind (else None),
+   "pending_action": None, or what a card may show: {"action": "return"|"cancel", "item": {"item_id", "product_name",
+                     "order_id"}, "resolution", "refund_amount_inr", "return_window": {"window_days", "day_number",
+                     "last_eligible_date", "days_left"}, "needs_staff_approval", "question"} (never the customer id),
    "evidence": {"tool_calls": [{"tool", "input", "dropped_arguments", "output", "refused"}],
                 "policy_passages": [{"number", "citation", "source_file", "heading_path", "text", "cited"}]},
-   "trace": {"steps", "router" (input summary, raw output, label, kind, reason, latency, error, ignored_field),
+   "trace": {"steps", "checks" (guardrail checks, each {"name", "passed", "reason"}), "confirm" (what the confirm step
+             did, or None), "router" (input summary, raw output, label, kind, reason, latency, error, ignored_field),
              "branch" (model calls, tool calls, refused tools, round limit, pending action, notes),
              "off_topic", "pending_action_bypass"}}
 
@@ -20,9 +25,10 @@ imported when an Agent is created, so the other agent modules work without it.
 """
 from pathlib import Path
 
+from .confirm import ConfirmStep, public_pending
 from .llm import ROOT, AgentConfig, ChatModel, OpenAIChat, load_agent_config
 from .replies import Replies
-from .router import CONFIRM_STEP, Router
+from .router import Router
 from .session import SessionStore
 from .tool_adapter import ToolAdapter
 
@@ -55,7 +61,8 @@ class Agent:
             return PolicySearch()
 
         self.adapter = ToolAdapter(tools, policy_search, open_tools, open_policy, top_k=self.cfg.branches.policy_top_k)
-        self._graph = build_graph(self.cfg, self.router, self.replies, self.chat, self.adapter)
+        self.confirm = ConfirmStep(self.cfg, self.chat, self.adapter)
+        self._graph = build_graph(self.cfg, self.router, self.replies, self.chat, self.adapter, self.confirm)
 
     def start_session(self, customer_id: str) -> str:
         """A new conversation for this customer. The customer cannot be changed afterwards. Returns the session id."""
@@ -73,8 +80,10 @@ class Agent:
             "branch": state.get("branch"),
             "off_topic": {"count": session.off_topic_count, "limit": self.cfg.session.off_topic_limit,
                           "person_offered": bool(state.get("person_offered", False))},
-            "pending_action_bypass": decision.route == CONFIRM_STEP,
+            "pending_action_bypass": state.get("confirm") is not None,
+            "confirm": state.get("confirm"),
+            "checks": state.get("checks", []),
         }
         return {"session_id": session.session_id, "reply": state["reply"], "route": decision.route,
-                "kind": decision.kind,
+                "kind": decision.kind, "pending_action": public_pending(session.pending_action),
                 "evidence": state.get("evidence") or {"tool_calls": [], "policy_passages": []}, "trace": trace}

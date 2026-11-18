@@ -51,7 +51,12 @@ class CancelItemBranch(Branch):
         if item["cancellable"]:
             question = fill(b.replies["confirm_cancel"], **fields)
             pending = {"type": "cancel", "parameters": {"item_id": item["item_id"]},
-                       "summary": f"cancel {item['product_name']} (item {item['item_id']})", "question": question}
+                       "summary": f"cancel {item['product_name']} (item {item['item_id']})", "question": question,
+                       # what a UI card shows (agent/confirm.py public_pending); only a prepaid item has money to refund
+                       "display": {"item_id": item["item_id"], "product_name": item["product_name"], "order_id": order["order_id"],
+                                   "resolution": None,
+                                   "refund_amount_inr": item["line_total_inr"] if order.get("payment_type") == "prepaid" else None,
+                                   "return_window": None}}
             return BranchResult(question, run, pending_action=pending)
         key = f"cancel_{item['item_status']}"
         return BranchResult(fill(b.replies[key if key in b.replies else "cancel_other"], **fields), run)
