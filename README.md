@@ -24,6 +24,8 @@ python scripts/04_build_db.py
 python scripts/05_chunk_policy.py   # policy pages -> data/clean/policy_chunks.csv (phase 3a)
 pip install -r requirements-rag.txt # extra packages for policy search (phase 3b)
 python scripts/06_build_policy_index.py   # embed the chunks into the vector index (needs OPENAI_API_KEY in .env)
+pip install -r requirements-agent.txt     # langgraph, for the agent (phase 4a)
+python scripts/08_eval_router.py          # try the router on the labelled messages (needs OPENAI_API_KEY in .env)
 ```
 
 `python -m pytest` leaves out the tests marked `live` (they call real services such as OpenAI). `python -m pytest -m live` runs only those.
@@ -50,7 +52,7 @@ On Windows use `py` instead of `python` if `python` is not found. Every script p
 | `data/rag/` | The vector index and embedding cache (generated; not committed) |
 | `config/rag.toml` | Every tunable value for policy search: chunking, metadata, embedding, retrieval, profiles |
 | `docs/phases/` | One document per build phase: what it is for, files touched, how it was checked |
-| `tests/` | 476 tests run by default (67 for the tools, 409 for policy search), plus 4 `live` tests; run with `python -m pytest` (`-m live` for the live ones) |
+| `tests/` | 659 tests run by default (67 for the tools, 409 for policy search, 183 for the session and router), plus 5 `live` tests; run with `python -m pytest` (`-m live` for the live ones) |
 
 ## What each script does
 
@@ -128,6 +130,14 @@ The result has one fixed shape: `ok`, `query`, `profile`, `index_fingerprint` an
 Scope is decided per page (`[sources].out_of_scope_files`) and, since phase 3c.1, per section: each `[[scope.rules]]` entry in `config/rag.toml` names one page, one exact section heading and a reason. A chunk that matches is stored with `in_scope = false` and the reason, so it is hidden by default and shown (marked out of scope, with the reason in `provenance.scope_reason`) when `include_out_of_scope=True`. A rule that matches no chunk, or a repeated rule, is an error when the config loads, and the rules are part of the index fingerprint (changing them means rebuilding the index; the embedding cache makes that free). These rules are our decision, not Amazon's.
 
 The no-match thresholds in `config/rag.toml` are placeholders; phase 3d calibrates them. Nothing in policy search computes eligibility, windows or refund times.
+
+## The agent: session, router and out-of-scope reply (phase 4a)
+
+`from agent import Agent` gives the front half of the agent. `agent.start_session(customer_id)` fixes the customer for the life of the conversation (nothing the customer types, the router returns or a branch does can change it, and the id is never sent to the model). `agent.respond(session_id, message)` runs one message through a LangGraph graph: a router (one model call, which only picks a route and never answers or calls a tool) sends it to one of the branches, to an out-of-scope reply or to a clarifying question. A message that arrives while an action is pending skips the router. In this phase **no tool is called**: the five branches (order status, policy question, return or replace, cancel an item, human help) and the confirm step are stubs that say they are not built yet, and the trace says so.
+
+The reply for greetings, thanks, general questions, unsupported requests (gifts, marketplace sellers, A-to-z claims, international orders, address or payment changes, product advice), prompt injection and requests for another customer's data is fixed text from `config/agent.toml`; the model only picks the kind. After three off-topic messages in a row the reply offers a person. If the router's output is not valid, the agent asks a generic clarifying question and the error is recorded. `respond` returns the reply, the route, the kind and a trace (the router's input summary, raw output, label, kind, reason, latency and any error) for the Developer page.
+
+The model name, temperature, prompt wording, scope statement and every reply text are in `config/agent.toml`; the API key is read from `.env` in the same way as for the embeddings. `scripts/08_eval_router.py` scores the router on `data/evals/router_messages.csv` (the labels there are unreviewed drafts, so the numbers are a first look, not a result). The graph needs `langgraph` (`requirements-agent.txt`); tests that need it skip with a message when it is missing.
 
 ## Day counting
 

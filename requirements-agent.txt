@@ -1,0 +1,4 @@
+# Extra packages for the agent (phase 4 onward). Install with: pip install -r requirements-agent.txt
+# The core requirements.txt is not changed. Tests that need these packages skip with a message when they are missing.
+langgraph>=1.0     # the graph that wires session, router and branches
+openai>=1.50       # the router model (also listed in requirements-rag.txt)

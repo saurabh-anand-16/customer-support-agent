@@ -8,8 +8,10 @@ An Amazon.in returns/refunds support agent. Real product data (Kaggle CSV), Amaz
 python scripts/01_clean_products.py      # then 02, 03, 04 in order: rebuilds data/clean/*.csv and returns_agent.db
 python scripts/05_chunk_policy.py      # policy pages -> data/clean/policy_chunks.csv (phase 3a)
 pip install -r requirements-rag.txt    # extra packages for policy search
+pip install -r requirements-agent.txt  # langgraph, for the agent (phase 4a)
 python scripts/06_build_policy_index.py  # embed chunks into data/rag (needs OPENAI_API_KEY in .env; phase 3b)
-python -m pytest                         # 476 tests; must all pass before any change is called done. 4 `live` tests (real services) are left out; `-m live` runs them
+python scripts/08_eval_router.py         # router accuracy on data/evals/router_messages.csv (real model; phase 4a)
+python -m pytest                         # 659 tests; must all pass before any change is called done. 5 `live` tests (real services) are left out; `-m live` runs them
 ```
 
 Windows: use `py` if `python` is not found. Activate the venv first: `.venv\Scripts\Activate.ps1`.
@@ -20,6 +22,7 @@ Windows: use `py` if `python` is not found. Activate the venv first: `.venv\Scri
 - `scripts/` build the data (clean products, policy tables, synthetic orders, database). `config.py` holds today's date and the seed.
 - `agent/eligibility.py` pure decision logic. `agent/tools.py` the seven tools so far. Both are framework-free.
 - `agent/rag/` policy search parts so far: `config.py` (loads `config/rag.toml`, index fingerprint), `ingest.py`, `registry.py`, `types.py`, `chunkers/`, `embedders/` (OpenAI, local, disk cache), `stores/` (ChromaDB, in-memory), `index.py` (build and check the index), `retrievers/` (bm25, vector, hybrid), `fusion/` (rrf, weighted), `rerankers/` (none, cross_encoder, llm), `filters.py`, `nomatch.py`, `pipeline.py`. `agent/policy_search.py` is the front door, `PolicySearch.search_policy`. Scope is per page (`[sources].out_of_scope_files`) and per section (`[[scope.rules]]` in `config/rag.toml`: our decision, not Amazon's; an unmatched or repeated rule is a config error and the rules are in the index fingerprint). `config/rag.toml` holds every tunable value for it. The API key lives in `.env` only and is never printed, logged or stored.
+- `agent/` front half of the agent (phase 4a): `llm.py` (settings from `config/agent.toml` and the chat-model wrapper, with a fake for tests), `session.py` (customer fixed at creation), `router.py`, `replies.py` (fixed reply text from config), `graph.py` (LangGraph), `agent.py` (`Agent.start_session`, `Agent.respond`). No tool is called yet. The model name and temperature live only in `config/agent.toml`.
 - `docs/phases/` one document per phase: plan, files touched, results.
 - `tests/` pytest. `schema.sql` is the database layout and the window view.
 
@@ -80,6 +83,6 @@ Chain per message: session state (customer_id fixed) -> router -> branch flow ->
 
 **Routing evals must include:** ambiguous messages ("cancel my order" for a shipped item), topic changes mid-conversation, a bare "yes" with and without a pending action, off-topic questions, prompt-injection attempts, and a request for a person.
 
-## Roadmap (phases 2, 2b, 3a, 3b, 3c and 3c.1 done)
+## Roadmap (phases 2, 2b, 3a, 3b, 3c, 3c.1 and 4a done)
 
-~~3a config, ingestion and chunking~~ done · ~~3b embeddings and ChromaDB~~ done · ~~3c retrievers, fusion, reranking and `search_policy`~~ done · ~~3c.1 section scope rules~~ done · 3d retrieval evals and tuning · 4 agent flow in LangGraph with guardrails and the out-of-scope behaviour · 5 human review and escalation (`request_review`) · 6 Langfuse tracing · 7 Streamlit shell, Home and persona picker, Customer chat · 8 Manager page · 9 Developer page (traces) · 10-11 evaluation suite and results · 12 policy explorer and assumptions · 13 CI and packaging. Optional last: wrap the tools as an MCP server.
+~~3a config, ingestion and chunking~~ done · ~~3b embeddings and ChromaDB~~ done · ~~3c retrievers, fusion, reranking and `search_policy`~~ done · ~~3c.1 section scope rules~~ done · 3d retrieval evals and tuning · 4 agent flow in LangGraph with guardrails and the out-of-scope behaviour (~~4a session, router and out-of-scope reply~~ done; 4b branch flows; 4c confirm step, answer check, injection tests) · 5 human review and escalation (`request_review`) · 6 Langfuse tracing · 7 Streamlit shell, Home and persona picker, Customer chat · 8 Manager page · 9 Developer page (traces) · 10-11 evaluation suite and results · 12 policy explorer and assumptions · 13 CI and packaging. Optional last: wrap the tools as an MCP server.
