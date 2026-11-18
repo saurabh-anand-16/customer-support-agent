@@ -1,6 +1,6 @@
 # Phase 8: the Manager queue page
 
-**Status:** to build, after phase 7 is merged. **Branch:** `phase-8-manager-page`. **Follows:** phase 7 (merged: the app shell, Home and customer chat; pages in `app/views/`, one corner tag, one worker thread for the agent in `app/backend.py`). **Next:** phase 6c (richer trace), then phase 9 (Developer trace).
+**Status:** built, in review (see [the build report](../builds/phase-08-build.md)). **Branch:** `phase-8-manager-page`. **Follows:** phase 7 (merged: the app shell, Home and customer chat; pages in `app/views/`, one corner tag, one worker thread for the agent in `app/backend.py`). **Next:** phase 6c (richer trace), then phase 9 (Developer trace).
 
 Look at `docs/design/reference/Manager.dc.html`. It is a visual reference, not code to copy. Where this document and the picture differ, this document wins.
 

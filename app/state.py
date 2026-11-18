@@ -62,6 +62,8 @@ def reset_demo() -> None:
     own record of the choice, never a message), a fresh session and an empty chat. The page stays where it is. Nobody signed in: nothing else changes.
     """
     cid, scenario = customer_id(), st.session_state.get("scenario")
+    for key in [k for k in st.session_state if str(k).startswith("mgr_")]:      # the Manager page's own state: the queue starts again from the database
+        st.session_state.pop(key, None)
     try:
         get_backend().reset()
         notice = "Demo data was reset."

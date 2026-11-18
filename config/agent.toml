@@ -340,4 +340,6 @@ corner_tag = "Demo with synthetic data · Not affiliated with Amazon"   # shown 
 fixed_date_line = "Today is fixed at 17 Nov 2026 so results never change."
 waiting_line = "Checking your order and the policy..."
 error_reply = "I could not finish that. Nothing has been changed. Please try again in a moment."
+manager_label = "Manager (demo)"                      # Phase 8: the name written as decided_by when the Manager page decides a case. Never typed on the page
+claim_stale_minutes = 10                            # Phase 8: a claimed case older than this shows "This claim looks stuck"
 missing_key_help = "The assistant needs an OpenAI API key. Create a file named .env in the project folder with a line OPENAI_API_KEY=your-key, then restart the app. The key is never shown here."

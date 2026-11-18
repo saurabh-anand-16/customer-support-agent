@@ -30,7 +30,7 @@ TESTS = ["tests/test_confirm_step.py", "tests/test_answer_check.py", "tests/test
          "tests/test_branch_return.py", "tests/test_branch_policy.py", "tests/test_branch_order_status.py", "tests/test_session.py",
          "tests/test_review_queue.py", "tests/test_escalation.py", "tests/test_review_safety.py", "tests/test_branch_human_help.py",
          "tests/test_refund_method.py", "tests/test_build_script.py", "tests/test_router.py", "tests/test_review_decision.py",
-         "tests/test_tracing.py", "tests/test_langfuse_export.py", "tests/test_app.py", "tests/app_helpers.py"]
+         "tests/test_tracing.py", "tests/test_langfuse_export.py", "tests/test_app.py", "tests/app_helpers.py", "tests/test_manager_page.py"]
 
 # (id, the rule that is broken, file, text to replace, replacement)
 MUTATIONS = [
@@ -368,6 +368,13 @@ MUTATIONS = [
      "            sign_in(cid, scenario)\n            notice +=", "            sign_out()\n            notice +="),
     ("M154", "the agent's worker thread is a daemon, so the app stops at once", "app/backend.py",
      'name="agent-worker", daemon=True)', 'name="agent-worker", daemon=False)'),
+    # phase 8: the Manager page
+    ("M155", "late approve is off: a late request's Approve button is on", "app/views/manager.py",
+     'type="primary", disabled=locked or late)', 'type="primary", disabled=locked)'),
+    ("M156", "decide is called only from the Manager page: the chat code imports it", "app/chat_flow.py",
+     "from .backend import MissingApiKey\n", "from .backend import MissingApiKey\nfrom agent.review_decision import decide  # noqa: F401\n"),
+    ("M157", "the Manager page never changes the session's customer: choosing a case signs in that case's customer", "app/views/manager.py",
+     'st.session_state[f"mgr_sel_{tab}"] = case_id', 'st.session_state[f"mgr_sel_{tab}"] = case_id\n    st.session_state["customer_id"] = "C0301"'),
 ]
 
 

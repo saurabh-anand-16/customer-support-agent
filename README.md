@@ -55,7 +55,7 @@ On Windows use `py` instead of `python` if `python` is not found. Every script p
 | `data/rag/` | The vector index and embedding cache (generated; not committed) |
 | `config/rag.toml` | Every tunable value for policy search: chunking, metadata, embedding, retrieval, profiles |
 | `docs/phases/` | One document per build phase: what it is for, files touched, how it was checked |
-| `tests/` | 1447 tests run by default (67 for the tools, 409 for policy search, 187 for the session and router, 227 for the branch flows, 170 for the confirm step, answer check and guardrails, 97 for the review queue, 73 for the refund-method question, 1 for the database build script, 65 for the manager's decision and the outcome notice, 43 for the trace file and its reader, 40 for the Langfuse copy, 68 for the app), plus 34 `live` tests; run with `python -m pytest` (`-m live` for the live ones) |
+| `tests/` | 1483 tests run by default (67 for the tools, 409 for policy search, 187 for the session and router, 227 for the branch flows, 170 for the confirm step, answer check and guardrails, 97 for the review queue, 73 for the refund-method question, 1 for the database build script, 65 for the manager's decision and the outcome notice, 43 for the trace file and its reader, 40 for the Langfuse copy, 68 for the app, 36 for the Manager page), plus 34 `live` tests; run with `python -m pytest` (`-m live` for the live ones) |
 
 ## What each script does
 
@@ -176,7 +176,7 @@ pip install -r requirements-agent.txt     # the agent; the chat needs OPENAI_API
 streamlit run app/main.py                 # or: python -m streamlit run app/main.py
 ```
 
-Open the address it prints. Pick a scenario card on Home (start with "Return on the last day"), then say "I want to return the laptop table" and answer the agent's questions; a confirm card appears, and "Behind the scenes" on the right shows the route, the tools, the eligibility facts and the policy passages. The app works on a copy of the database (`data/demo/returns_agent_demo.db`, made on first start, in `.gitignore`); **Reset demo data** in the sidebar copies the real file over it and starts a fresh chat for the same customer, on the same page. The Manager queue, Developer trace, How it works and Limits and assumptions pages are short "coming in phase N" pages for now. The demo serves one request at a time and all browser tabs share one demo copy; see the phase 7 build report.
+Open the address it prints. Pick a scenario card on Home (start with "Return on the last day"), then say "I want to return the laptop table" and answer the agent's questions; a confirm card appears, and "Behind the scenes" on the right shows the route, the tools, the eligibility facts and the policy passages. The app works on a copy of the database (`data/demo/returns_agent_demo.db`, made on first start, in `.gitignore`); **Reset demo data** in the sidebar copies the real file over it and starts a fresh chat for the same customer, on the same page. **Manager queue** (phase 8) lists the cases the agent sent to a person, with the evidence stored for each; Approve and Decline call `decide()` with the label `[app].manager_label`. **There is no login on that page: anyone who opens it can decide.** Developer trace, How it works and Limits and assumptions are short "coming in phase N" pages for now. The demo serves one request at a time and all browser tabs share one demo copy; see the phase 7 build report.
 
 ## Day counting
 

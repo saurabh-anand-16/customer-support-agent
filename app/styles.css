@@ -123,3 +123,41 @@
 [data-testid="stSidebar"] [data-testid="stCaptionContainer"], [data-testid="stSidebar"] [data-testid="stCaptionContainer"] p { font-size: 13px; color: var(--muted-dark); opacity: 1; }
 /* Streamlit's own markup: buttons in the sidebar. */
 [data-testid="stSidebar"] button p { font-size: 14px; }
+
+/* ---- Manager queue (phase 8) --------------------------------------------------------------------------------- */
+.amber-box { background: var(--amber-bg); color: #6E3A04; border-radius: 10px; padding: 0.7rem 1rem; font-size: 0.92rem; line-height: 1.5; margin: 0.4rem 0; }
+.amber-box b { margin-right: 0.35rem; }
+.outcome-box { background: var(--teal-soft); border-left: 4px solid var(--teal); border-radius: 10px; padding: 0.8rem 1rem; font-size: 0.92rem; line-height: 1.5; margin: 0.6rem 0; }
+.outcome-title { font-weight: 650; margin-bottom: 0.2rem; }
+.notice-text { background: var(--card); border: 1px solid var(--line); border-radius: 8px; padding: 0.5rem 0.7rem; margin-top: 0.2rem; font-size: 0.9rem; }
+.record-box { background: #F1F0EB; border-radius: 10px; padding: 0.7rem 1rem; font-size: 0.92rem; line-height: 1.5; }
+.empty-box { border: 1px dashed #B9B8AF; border-radius: 10px; padding: 1.6rem 1.2rem; font-size: 0.92rem; line-height: 1.55; }
+.empty-title { font-size: 1rem; font-weight: 650; margin-bottom: 0.3rem; }
+.case-card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 0.8rem 1rem; display: flex; flex-direction: column; gap: 0.35rem; }
+.case-card.case-selected { border: 2px solid var(--teal); }
+.case-card.case-busy { border: 2px solid var(--amber); }
+.case-top { display: flex; justify-content: space-between; gap: 0.5rem; font-size: 0.78rem; color: var(--muted); }
+.case-title { font-size: 0.95rem; font-weight: 600; line-height: 1.35; }
+.case-badges { display: flex; flex-wrap: wrap; gap: 0.4rem; align-items: center; }
+.badge { font-size: 0.75rem; font-weight: 600; background: var(--amber-bg); color: var(--amber); border-radius: 6px; padding: 0.1rem 0.5rem; }
+.badge-approved { background: var(--teal-soft); color: #0B6657; }
+.badge-declined { background: var(--red-bg); color: var(--red); }
+.badge-busy { background: var(--amber-bg); color: var(--amber); }
+.detail-kicker { font-size: 0.78rem; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+.detail-title { margin: 0.2rem 0 0.4rem 0; font-size: 1.35rem; line-height: 1.3; }
+.detail-text { font-size: 0.92rem; line-height: 1.55; }
+.detail-h { font-size: 0.78rem; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); margin: 0.9rem 0 0.35rem 0; }
+.facts { display: flex; flex-wrap: wrap; gap: 0 2rem; }
+.facts > div { flex: 1 1 15rem; min-width: 0; }
+.mono-block { font-family: "JetBrains Mono", ui-monospace, monospace; font-size: 0.8rem; background: #F3F3EF; border-radius: 8px; padding: 0.7rem 0.9rem; line-height: 1.7; overflow-wrap: anywhere; }
+.convo { border-left: 3px solid var(--line); padding-left: 0.9rem; display: flex; flex-direction: column; gap: 0.4rem; font-size: 0.9rem; line-height: 1.5; }
+/* Streamlit's own class: a case in the list and the detail panel of the Manager page. */
+[class*="st-key-mgr_case_"] { margin-bottom: 0.5rem; }
+/* Streamlit's own class: the detail panel gets a card around it. */
+[class*="st-key-mgr_detail_"] { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 1.2rem 1.3rem; }
+/* Streamlit's own class: the Decline button (outline, red text), and Approve and Decline at least 44 px high for touch. */
+[class*="st-key-mgr_decline_"] button { color: var(--red); border-color: var(--red); }
+/* Streamlit's own class: a disabled Decline keeps the grey look of every disabled button. */
+[class*="st-key-mgr_decline_"] button:disabled { color: #7A7F87; border-color: #D9D8D2; }
+/* Streamlit's own class: the two decision buttons are tall enough to tap. */
+[class*="st-key-mgr_approve_"] button, [class*="st-key-mgr_decline_"] button { min-height: 44px; }

@@ -149,3 +149,70 @@ def story_line(db: Path, customer_id: str, item_id: str | None) -> str | None:
         if line:
             return line
     return order_line(newest_order(db, customer_id))
+
+
+# -- the Manager queue (phase 8): read-only lookups ---------------------------------------------------------------------
+def review_cases(db: Path) -> list[dict]:
+    """
+    Every review case, oldest first, as the queue stores it (the `excerpt` and `eligibility` columns are read back from JSON).
+    Read-only: this connection cannot write. A database without the table gives an empty list.
+    """
+    import json
+    con = _read_only(db)
+    con.row_factory = sqlite3.Row
+    try:
+        try:
+            rows = con.execute("SELECT * FROM review_items ORDER BY id").fetchall()
+        except sqlite3.Error:
+            return []
+        cases = []
+        for row in rows:
+            case = dict(row)
+            for key in ("excerpt", "eligibility"):
+                case[key] = json.loads(case[key]) if case.get(key) else None
+            cases.append(case)
+        return cases
+    finally:
+        con.close()
+
+
+def customer_facts(db: Path, customer_id: str) -> dict | None:
+    """The customer's own record: {"customer_id", "account_created_at", "account_standing", "returns_last_12_months"}. Read-only."""
+    con = _read_only(db)
+    con.row_factory = sqlite3.Row
+    try:
+        row = con.execute("SELECT customer_id, account_created_at, account_standing, returns_last_12_months FROM customers WHERE customer_id = ?",
+                          (customer_id,)).fetchone()
+    finally:
+        con.close()
+    return dict(row) if row else None
+
+
+def policy_fact(db: Path, key: str) -> str | None:
+    """One value from policy_facts (for example approval_value_limit_inr), as text. Read-only."""
+    con = _read_only(db)
+    try:
+        row = con.execute("SELECT fact_value FROM policy_facts WHERE fact_key = ?", (key,)).fetchone()
+    except sqlite3.Error:
+        return None
+    finally:
+        con.close()
+    return row[0] if row else None
+
+
+def case_item(db: Path, customer_id: str, item_id: str) -> dict | None:
+    """
+    The item of a case with its order facts, read through the agent's read tools (`list_orders`, `get_order`) for the case's own
+    customer: the item fields plus "order": {"order_id", "payment_type", "payment_method", ...}. None when it is not found.
+    """
+    from agent.tools import ReturnsTools
+    tools = ReturnsTools(db)
+    try:
+        for order in (tools.list_orders(customer_id, limit=100).get("orders") or []):
+            if any(i["item_id"] == item_id for i in order["items"]):
+                full = tools.get_order(customer_id, order["order_id"])
+                found = next((i for i in full.get("items") or [] if i["item_id"] == item_id), None)
+                return {**found, "order": full.get("order") or {"order_id": order["order_id"]}} if found else None
+    finally:
+        tools.con.close()
+    return None

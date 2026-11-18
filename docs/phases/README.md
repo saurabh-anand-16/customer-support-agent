@@ -30,7 +30,7 @@ Rules for these files:
 | 6 | Local trace file and reader (steps 1 and 2) | Done, in review ([build report](../builds/phase-06-build.md)) | 1 | [phase-06-tracing.md](phase-06-tracing.md) |
 | 6b | Optional Langfuse export (step 3 of phase 6): keyed hash, mask, background send, `.env` order, search fingerprint | Done, in review ([build report](../builds/phase-06b-build.md)); real-server run done | | [phase-06-tracing.md](phase-06-tracing.md) |
 | 7 | Streamlit shell, Home, persona picker, customer chat | Done, in review ([build report](../builds/phase-07-build.md)); real-model run done | 2 | [phase-07-streamlit-app.md](phase-07-streamlit-app.md) |
-| 8 | Manager page | Not started | 1 | |
+| 8 | Manager page: Open, Approved and Declined tabs, approve and decline through `decide()` | Done, in review ([build report](../builds/phase-08-build.md)); real-model run done | 1 | [phase-08-manager-page.md](phase-08-manager-page.md) |
 | 9 | Developer page (traces) | Not started | 2 | |
 | 10 | Evaluation suite | Not started | 3 | |
 | 11 | Evaluation results page | Not started | 1 | |

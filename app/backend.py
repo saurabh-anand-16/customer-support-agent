@@ -90,6 +90,10 @@ class Backend:
     def _run(self, fn, *args):
         return self._worker.run(fn, *args)
 
+    def run_on_worker(self, fn):
+        """Run `fn()` on the worker thread and return its result (the Manager page uses this for the decision; see manager_flow.py)."""
+        return self._run(fn)
+
     def start_session(self, customer_id: str) -> str:
         return self._run(lambda: self._get_agent().start_session(customer_id))
 

@@ -12,7 +12,7 @@ ROOT = Path(__file__).resolve().parent.parent
 CONFIG_FILE = ROOT / "config" / "agent.toml"
 PERSONAS_FILE = Path(__file__).resolve().parent / "personas.toml"
 
-_KEYS = ("source_db_path", "demo_db_path", "corner_tag", "fixed_date_line", "waiting_line", "error_reply", "missing_key_help")
+_KEYS = ("source_db_path", "demo_db_path", "corner_tag", "fixed_date_line", "waiting_line", "error_reply", "missing_key_help", "manager_label", "claim_stale_minutes")
 
 
 class AppConfigError(ValueError):
@@ -29,6 +29,8 @@ class AppSettings:
     error_reply: str
     missing_key_help: str
     root: Path = ROOT
+    manager_label: str = "Manager (demo)"     # phase 8: decided_by of the Manager page
+    claim_stale_minutes: int = 10             # phase 8: a claim older than this looks stuck
 
 
 def load_app_settings(path: Path | None = None) -> AppSettings:
@@ -41,12 +43,16 @@ def load_app_settings(path: Path | None = None) -> AppSettings:
         if key not in _KEYS:
             raise AppConfigError(f"{path.name}: unknown key '{key}' in [app]. Allowed: {', '.join(_KEYS)}")
     for key in _KEYS:
-        if not isinstance(raw.get(key), str) or not raw[key].strip():
+        if key == "claim_stale_minutes":
+            if not isinstance(raw.get(key), int) or isinstance(raw.get(key), bool) or raw[key] < 1:
+                raise AppConfigError(f"{path.name}: [app].{key} must be a whole number of minutes, 1 or more")
+        elif not isinstance(raw.get(key), str) or not raw[key].strip():
             raise AppConfigError(f"{path.name}: [app].{key} must be non-empty text")
     root = path.resolve().parent.parent
     return AppSettings(source_db=root / raw["source_db_path"], demo_db=root / raw["demo_db_path"], corner_tag=raw["corner_tag"],
                        fixed_date_line=raw["fixed_date_line"], waiting_line=raw["waiting_line"], error_reply=raw["error_reply"],
-                       missing_key_help=raw["missing_key_help"], root=root)
+                       missing_key_help=raw["missing_key_help"], root=root,
+                       manager_label=raw["manager_label"].strip(), claim_stale_minutes=raw["claim_stale_minutes"])
 
 
 @dataclass(frozen=True)

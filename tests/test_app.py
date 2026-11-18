@@ -51,6 +51,8 @@ def test_the_app_never_writes_orders_or_calls_a_writer():
     for path in APP.rglob("*.py"):
         text = path.read_text(encoding="utf-8")
         for word in ("create_return", "cancel_order", "staff_approved", "run_approved_return", "review_decision", "test_scenario"):
+            if word == "review_decision" and path.name == "manager_flow.py":      # phase 8: the one helper of the Manager page that calls decide()
+                continue
             assert word not in text, f"{path.name} mentions {word}"
         assert not re.search(r"\b(INSERT|UPDATE|DELETE|DROP|ALTER)\b", text), f"{path.name} has a write statement"
         assert ".commit(" not in text, path.name
@@ -141,7 +143,7 @@ def test_the_sidebar_lists_the_six_pages_by_their_exact_names(tmp_path):
 def test_the_not_yet_built_pages_say_which_phase_builds_them(tmp_path):
     at, _, _ = make_app(tmp_path)
     at.run()
-    for page, phase in (("views/manager.py", 8), ("views/developer.py", 9), ("views/how_it_works.py", 13), ("views/limits.py", 13)):
+    for page, phase in (("views/developer.py", 9), ("views/how_it_works.py", 13), ("views/limits.py", 13)):
         at.switch_page(page).run()
         assert f"Coming in phase {phase}" in page_text(at)
 
