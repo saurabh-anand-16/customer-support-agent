@@ -49,11 +49,13 @@ On Windows use `py` instead of `python` if `python` is not found. Every script p
 | `agent/` | The agent's seven tools (`tools.py`), the pure decision logic (`eligibility.py`) and policy search (`policy_search.py`) |
 | `agent/rag/` | Policy search parts: config loader, page reader, chunkers (3a), embedders, vector stores and index build (3b), retrievers, fusion, rerankers, filters, no-match rule and pipeline (3c) |
 | `requirements-rag.txt` | Extra packages for policy search (`chromadb`, `openai`); the core `requirements.txt` is unchanged |
+| `requirements-app.txt` | `streamlit`, pinned to 1.66.0, for the app (phase 7) |
+| `app/`, `.streamlit/config.toml` | the Streamlit app: Home and the customer chat (phase 7); the theme is in `.streamlit/config.toml` |
 | `requirements-tracing.txt` | `langfuse`, pinned, only for the optional Langfuse copy of the traces (phase 6b) |
 | `data/rag/` | The vector index and embedding cache (generated; not committed) |
 | `config/rag.toml` | Every tunable value for policy search: chunking, metadata, embedding, retrieval, profiles |
 | `docs/phases/` | One document per build phase: what it is for, files touched, how it was checked |
-| `tests/` | 1379 tests run by default (67 for the tools, 409 for policy search, 187 for the session and router, 227 for the branch flows, 170 for the confirm step, answer check and guardrails, 97 for the review queue, 73 for the refund-method question, 1 for the database build script, 65 for the manager's decision and the outcome notice, 43 for the trace file and its reader, 40 for the Langfuse copy), plus 34 `live` tests; run with `python -m pytest` (`-m live` for the live ones) |
+| `tests/` | 1447 tests run by default (67 for the tools, 409 for policy search, 187 for the session and router, 227 for the branch flows, 170 for the confirm step, answer check and guardrails, 97 for the review queue, 73 for the refund-method question, 1 for the database build script, 65 for the manager's decision and the outcome notice, 43 for the trace file and its reader, 40 for the Langfuse copy, 68 for the app), plus 34 `live` tests; run with `python -m pytest` (`-m live` for the live ones) |
 
 ## What each script does
 
@@ -165,6 +167,16 @@ Every turn appends one JSON line to `data/traces/traces.jsonl` (in `.gitignore`)
 **Langfuse is off by default.** `[tracing].langfuse_enabled` in `config/agent.toml` is `false`, and having Langfuse keys in `.env` does not turn it on. **Turning it on sends the turn to Langfuse's servers: the customer's message, the reply, tool inputs and outputs, check results and the retrieved passages' names** (set `capture_text = false` to send "[not captured]" and the lengths instead). Before sending, customer ids, phone numbers and e-mail addresses are masked, and the customer id becomes a keyed hash (`LANGFUSE_HASH_KEY`) used as the user id. Never put real customers' data through it without a data-processing agreement with Langfuse.
 
 To use it: `pip install -r requirements-tracing.txt`, put `LANGFUSE_PUBLIC_KEY`, `LANGFUSE_SECRET_KEY`, `LANGFUSE_BASE_URL` and `LANGFUSE_HASH_KEY` in `.env` (names only in `.env.example`), and set `TRACING_LANGFUSE_ENABLED=true` in `.env` or the shell. The shell wins over `.env`. Only `agent/langfuse_export.py` imports the package; sending and flushing run on a background thread and an error there never changes a reply. `python scripts/16_live_langfuse_paths.py` runs three real turns against the real server on a copy of the database.
+
+## Run the app (phase 7)
+
+```
+pip install -r requirements-app.txt       # streamlit 1.66.0
+pip install -r requirements-agent.txt     # the agent; the chat needs OPENAI_API_KEY in .env
+streamlit run app/main.py                 # or: python -m streamlit run app/main.py
+```
+
+Open the address it prints. Pick a scenario card on Home (start with "Return on the last day"), then say "I want to return the laptop table" and answer the agent's questions; a confirm card appears, and "Behind the scenes" on the right shows the route, the tools, the eligibility facts and the policy passages. The app works on a copy of the database (`data/demo/returns_agent_demo.db`, made on first start, in `.gitignore`); **Reset demo data** in the sidebar copies the real file over it and starts a fresh chat for the same customer, on the same page. The Manager queue, Developer trace, How it works and Limits and assumptions pages are short "coming in phase N" pages for now. The demo serves one request at a time and all browser tabs share one demo copy; see the phase 7 build report.
 
 ## Day counting
 

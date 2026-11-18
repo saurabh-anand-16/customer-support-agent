@@ -1,6 +1,6 @@
 # Phase 7: the Streamlit app (Home and customer chat)
 
-**Status:** to build as one phase. **Branch:** `phase-7-streamlit-app`. **Follows:** phase 6b (merged). **Next:** phase 8 (Manager page), phase 9 (Developer page), phase 13 (How it works, Limits, deployment).
+**Status:** built, in review (see [the build report](../builds/phase-07-build.md) for what differs from this plan). **Branch:** `phase-7-streamlit-app`. **Follows:** phase 6b (merged). **Next:** phase 8 (Manager page), phase 9 (Developer page), phase 13 (How it works, Limits, deployment).
 
 Build in this order, inside one branch and one build report:
 
@@ -17,11 +17,11 @@ The agent works from a script. The app lets a person pick a customer, chat as th
 
 - **The app never writes orders itself.** It only calls the agent and shows what comes back. A return or cancel is written only by the 4c writer after the customer confirms in the chat.
 - **The customer is chosen by the app, never by the message.** Choosing a customer on Home creates the agent session with that id. Nothing typed in the chat can change it. Switching customer starts a fresh session.
-- **The app works on a copy of the database.** On first start, copy the database to a demo file (path in config, outside git). "Reset demo data" copies the original over it. A test proves reset restores the file's hash.
-- **Facts come from the database through the tools or the agent's result.** `app/personas.toml` holds only the customer id, a short label and a one-line hint. Order, amount and days left shown on a card are read live. Never type a value into the app that the agent should return. The sample reference numbers in the pictures (R-0002, RT-0074) are made up: show a reference only if the result contains one.
+- **The app works on a copy of the database.** On first start, copy the database to a demo file (path in config, outside git). "Reset demo data" copies the original over it, and a signed-in customer is signed in again as the same customer with a fresh session and an empty chat, on the same page. A test proves reset restores the file's hash.
+- **Facts come from the database through the tools or the agent's result.** `app/personas.toml` holds the customer id, a short label, a one-line hint and an optional `item_id` (the story item; it is only an id, and the card and chat header read the item live; without one they show the newest order). Order, amount and days left shown on a card are read live. Never type a value into the app that the agent should return. The sample reference numbers in the pictures (R-0002, RT-0074) are made up: show a reference only if the result contains one.
 - **No customer data in logs.** The app prints no message text to the console.
 - **Friendly errors.** If the agent raises, the page shows a short fixed message ("I could not finish that. Nothing has been changed. Please try again in a moment."), stays usable, and shows no traceback. A missing API key shows how to set it up and never prints the key.
-- **A demo banner on every page:** "Demo with synthetic data. Nothing here is a real order. Not affiliated with Amazon."
+- **One small corner tag on every page:** "Demo with synthetic data · Not affiliated with Amazon", fixed in the top-right corner, shown once. No other copy of this notice (no banner, no Home label, no sidebar line).
 - **Names.** Use exactly these page names everywhere (sidebar, page title, links): Home, Customer chat, Manager queue, Developer trace, How it works, Limits and assumptions. The chat's side panel is "Behind the scenes".
 
 ## Styling rules
@@ -39,7 +39,7 @@ The agent works from a script. The app lets a person pick a customer, chat as th
 **Sidebar (every page):** app name and one line; a "Pages" list with the six names above (Manager queue, Developer trace, How it works and Limits and assumptions show a short "coming in phase N" page for now); a "Now playing" card once a customer is chosen (customer id, hint, "Change customer"); a "Reset demo data" button with one line saying what it does; the fixed-date line ("Today is fixed at 17 Nov 2026 so results never change.").
 
 **Home** (see `Main.dc.html`):
-- A small label "Demo · synthetic data", the heading "Hello, and welcome.", and a short welcome paragraph. Use the wording in the picture as the starting point.
+- The heading "Hello, and welcome.", and a short welcome paragraph. Use the wording in the picture as the starting point.
 - A callout: **"Choosing a customer is how you sign in here."** with the two sentences explaining that a real store would ask for a login and this demo lets you pick a made-up customer.
 - **Six scenario cards**, each with title, customer id, a one-line story and a filled "Sign in and start" button: Return on the last day (C0076), One day too late (C0301), Needs a manager (C0399), Cancel before it ships (C0087), Ask a policy question (C0117), Try to trick it (C0358). The first card carries a "Start here" tag and a teal border. Card text comes from `app/personas.toml`; any amount, item or days-left shown is read live.
 - **"Or sign in as any customer":** a searchable select (type to filter by customer id) plus an outline "Sign in" button. Customers that have a hint in `personas.toml` show it (this covers C0011 and C0325 too). The list comes from a read-only lookup in `app/data.py`. If no existing tool lists customers, report that and use the existing data layer read-only, with no writes.
@@ -71,11 +71,11 @@ The agent works from a script. The app lets a person pick a customer, chat as th
 
 **Created**
 - `app/main.py`, `app/styles.css`, `app/personas.toml`, `app/data.py`, `app/components.py`, the page files (`app/pages/...` or the structure that fits the installed version), `.streamlit/config.toml`, `requirements-app.txt`
-- Tests for the app (Home, chat, session, reset, banner, stylesheet, personas)
+- Tests for the app (Home, chat, session, reset, corner tag, stylesheet, personas)
 - `docs/builds/phase-07-build.md`
 
 **Changed**
-- `.gitignore` (the demo database path), `config/agent.toml` (a small `[app]` section: demo database path, banner text), the config loader only if it needs to know the new section
+- `.gitignore` (the demo database path), `config/agent.toml` (a small `[app]` section: demo database path, corner tag text), the config loader only if it needs to know the new section
 - Test counts in `README.md` and `CLAUDE.md`; the phase 7 row in `docs/phases/README.md`; the README gets a "Run the app" section
 
 **Left alone**
@@ -86,7 +86,7 @@ The agent works from a script. The app lets a person pick a customer, chat as th
 - Every page renders without an exception with a fake agent.
 - The session's customer is always the one chosen on Home. No message can change it, and switching customer starts a fresh session.
 - The reset button restores the demo database's hash.
-- The banner is on every page.
+- The corner tag is on every page exactly once.
 - The confirm card shows from a fake pending action, Yes and No send ordinary messages, and the card cannot be pressed twice.
 - The review receipt shows only fields the fake result holds.
 - An agent error shows the friendly message and the page stays usable.

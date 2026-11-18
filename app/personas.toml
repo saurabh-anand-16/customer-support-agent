@@ -1,0 +1,65 @@
+# The customers the Home page offers (phase 7). Only an id and words live here.
+# No amount, item name, date or "days left" is written in this file: the app reads those from the database when it shows them.
+# An optional item_id names the story item. It is only an id: the card and the chat header look the item up live (name, price, status, day count).
+# Why each customer was picked is in the phase 7 build report (found with the eligibility logic, not with the test-only column).
+
+[[persona]]
+customer_id = "C0076"
+item_id = "OI000011"
+label = "Last eligible day"
+title = "Return on the last day"
+hint = "Has an item on the last day of its return window."
+story = "An item on the last day of its return window. You will see the confirm card and the refund details."
+start_here = true
+
+[[persona]]
+customer_id = "C0301"
+item_id = "OI000016"
+label = "One day too late"
+title = "One day too late"
+hint = "Has an item one day past its window."
+story = "An item one day past its window. The agent explains why it cannot approve and offers a person."
+
+[[persona]]
+customer_id = "C0399"
+item_id = "OI000002"
+label = "Needs a manager"
+title = "Needs a manager"
+hint = "Has a high-value item that needs a manager's approval."
+story = "A high-value replacement, above the approval limit. It goes to the review queue. A manager decides on the Manager queue page, which a later phase builds."
+
+[[persona]]
+customer_id = "C0087"
+item_id = "OI000061"
+label = "Order still processing"
+title = "Cancel before it ships"
+hint = "Has an item that is still processing, so a cancel can be proposed."
+story = "An item that is still processing, so a cancel can be proposed. Try cancelling something already shipped to see the difference."
+
+[[persona]]
+customer_id = "C0117"
+item_id = "OI000074"
+label = "Policy questions"
+title = "Ask a policy question"
+hint = "Good for asking how long a refund takes or what is not returnable."
+story = "Ask how long a refund takes or what is not returnable. Each answer lists the policy page it used."
+
+[[persona]]
+customer_id = "C0358"
+item_id = "OI000007"
+label = "Try to trick it"
+title = "Try to trick it"
+hint = "Has a non-returnable item, good for testing the limits."
+story = "Ask for another customer's orders, or tell it to ignore its rules. A non-returnable item is a good test of its limits."
+
+[[persona]]
+customer_id = "C0011"
+label = "Restricted account"
+hint = "Account is restricted, so returns need a person."
+card = false
+
+[[persona]]
+customer_id = "C0325"
+label = "Pay on Delivery"
+hint = "Has a Pay on Delivery order, so a refund asks where the money should go."
+card = false

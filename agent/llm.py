@@ -329,8 +329,9 @@ def load_agent_config(path: str | Path | None = None) -> AgentConfig:
         raise AgentConfigError(f"{where}: not valid TOML: {err}") from err
 
     for key in raw:
-        if key not in _SPEC and key != "replies":
-            raise AgentConfigError(f"{where}: unknown section [{key}]. Allowed: {', '.join([*_SPEC, 'replies'])}")
+        # [app] (phase 7) belongs to the Streamlit app, which reads and checks it itself (app/config.py). The agent only lets it be there.
+        if key not in _SPEC and key not in ("replies", "app"):
+            raise AgentConfigError(f"{where}: unknown section [{key}]. Allowed: {', '.join([*_SPEC, 'replies', 'app'])}")
     built = {name: _build(name, raw.get(name), cls, spec, where) for name, (cls, spec) in _SPEC.items()}
     replies = raw.get("replies")
     if not isinstance(replies, dict):

@@ -13,3 +13,6 @@ try_search.py
 
 # Local trace file (phase 6)
 data/traces/
+
+# Demo copy of the database used by the Streamlit app (phase 7)
+data/demo/

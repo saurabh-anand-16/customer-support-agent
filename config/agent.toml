@@ -331,3 +331,13 @@ refund_method_not_offered = "{reference} holds a refund method this agent does n
 write_refused = "The return was not written: {message} {reference} stays open."
 write_failed = "The return could not be written. {reference} stays open and nothing was changed."
 record_failed = "Return {return_id} was written, but {reference} could not be marked approved. Check the queue before doing anything else."
+
+[app]
+# Phase 7: the Streamlit app. Read by app/config.py. The agent ignores this section.
+source_db_path = "returns_agent.db"                 # the real database; the app only copies it, never writes to it
+demo_db_path = "data/demo/returns_agent_demo.db"    # the copy the app works on (folder is in .gitignore). "Reset demo data" copies the real one over it
+corner_tag = "Demo with synthetic data · Not affiliated with Amazon"   # shown once, small, in a corner of every page
+fixed_date_line = "Today is fixed at 17 Nov 2026 so results never change."
+waiting_line = "Checking your order and the policy..."
+error_reply = "I could not finish that. Nothing has been changed. Please try again in a moment."
+missing_key_help = "The assistant needs an OpenAI API key. Create a file named .env in the project folder with a line OPENAI_API_KEY=your-key, then restart the app. The key is never shown here."

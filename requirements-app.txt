@@ -1,0 +1,3 @@
+# Extra packages for the Streamlit app (phase 7). The agent's own packages are in requirements-agent.txt, requirements-rag.txt.
+# Pinned to the version the app was built and tested with (it uses st.navigation, st.html, container keys and AppTest).
+streamlit==1.66.0

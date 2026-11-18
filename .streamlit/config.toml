@@ -1,0 +1,20 @@
+# Theme for the app (phase 7). Colours from docs/design/reference/README.md.
+# The font is fetched by the visitor's browser from Google Fonts; if that fails the browser uses its default sans-serif.
+[theme]
+primaryColor = "#0E7C6B"
+backgroundColor = "#F7F7F4"
+secondaryBackgroundColor = "#EFEEE9"
+textColor = "#16181D"
+font = "Inter:https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+baseRadius = "0.75rem"
+buttonRadius = "full"
+
+[server]
+headless = true
+
+[browser]
+gatherUsageStats = false
+
+[client]
+showErrorDetails = "none"
+toolbarMode = "minimal"

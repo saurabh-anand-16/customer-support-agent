@@ -1,5 +1,5 @@
 """
-09_mutation_check.py - break each safety rule on purpose and check that a test notices (phases 4c, 5a, 4d, 5b, 6 and 6b).
+09_mutation_check.py - break each safety rule on purpose and check that a test notices (phases 4c, 5a, 4d, 5b, 6, 6b and 7).
 
     python scripts/09_mutation_check.py              # all mutations
     python scripts/09_mutation_check.py M07 M11      # only these
@@ -24,13 +24,13 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 COPY = ["agent", "config", "tests", "scripts", "returns_agent.db", "pytest.ini", "schema.sql", "data/clean", ".gitignore", ".env.example",
-        "requirements.txt", "requirements-agent.txt", "requirements-rag.txt", "requirements-tracing.txt"]
+        "requirements.txt", "requirements-agent.txt", "requirements-rag.txt", "requirements-tracing.txt", "requirements-app.txt", "app", ".streamlit"]
 TESTS = ["tests/test_confirm_step.py", "tests/test_answer_check.py", "tests/test_agent_safety.py", "tests/test_confirm_config.py",
          "tests/test_tool_adapter.py", "tests/test_agent_branches.py", "tests/test_agent_flow.py", "tests/test_branch_cancel.py",
          "tests/test_branch_return.py", "tests/test_branch_policy.py", "tests/test_branch_order_status.py", "tests/test_session.py",
          "tests/test_review_queue.py", "tests/test_escalation.py", "tests/test_review_safety.py", "tests/test_branch_human_help.py",
          "tests/test_refund_method.py", "tests/test_build_script.py", "tests/test_router.py", "tests/test_review_decision.py",
-         "tests/test_tracing.py", "tests/test_langfuse_export.py"]
+         "tests/test_tracing.py", "tests/test_langfuse_export.py", "tests/test_app.py", "tests/app_helpers.py"]
 
 # (id, the rule that is broken, file, text to replace, replacement)
 MUTATIONS = [
@@ -348,6 +348,26 @@ MUTATIONS = [
     ("M146", "a failed check is an event with a warning level", "agent/langfuse_export.py",
      '                                      level="WARNING" if step.get("status") == "failed" else None)',
      "                                      level=None)"),
+    # Phase 7: the app's own rules (customer fixed by the session, reset, no key in the output).
+    ("M147", "choosing a customer always starts a new agent session (a session of one customer is never reused for another)", "app/state.py",
+     "    session_id = get_backend().start_session(new_customer_id)",
+     '    session_id = st.session_state.get("session_id") or get_backend().start_session(new_customer_id)'),
+    ("M148", "the session is made for the customer that was chosen, not for a customer from anywhere else", "app/state.py",
+     "    session_id = get_backend().start_session(new_customer_id)",
+     '    session_id = get_backend().start_session(st.session_state.get("customer_id") or new_customer_id)'),
+    ("M149", "reset copies the real database over the demo copy", "app/demo_db.py",
+     "        shutil.copyfile(settings.source_db, settings.demo_db)\n    except OSError", "        pass\n    except OSError"),
+    ("M150", "reset never writes to the real database file", "app/demo_db.py",
+     "        shutil.copyfile(settings.source_db, settings.demo_db)\n    except OSError", "        shutil.copyfile(settings.demo_db, settings.source_db)\n    except OSError"),
+    ("M151", "reset lets go of the agent and its sessions", "app/backend.py",
+     "        self._agent = None                      # lets go of the agent, its sessions and its database connections", "        pass"),
+    ("M152", "a failed turn shows the fixed message only, never the error text (which could hold a key)", ["app/chat_flow.py", "app/chat_flow.py"],
+     ["    except Exception:           # any failure", "        turn.update(status=\"error\", reply=settings.error_reply)\n        return turn\n    if not isinstance"],
+     ["    except Exception as err:    # any failure", "        turn.update(status=\"error\", reply=settings.error_reply + \" \" + str(err))\n        return turn\n    if not isinstance"]),
+    ("M153", "after a reset the signed-in customer is signed in again (same customer, fresh session)", "app/state.py",
+     "            sign_in(cid, scenario)\n            notice +=", "            sign_out()\n            notice +="),
+    ("M154", "the agent's worker thread is a daemon, so the app stops at once", "app/backend.py",
+     'name="agent-worker", daemon=True)', 'name="agent-worker", daemon=False)'),
 ]
 
 
