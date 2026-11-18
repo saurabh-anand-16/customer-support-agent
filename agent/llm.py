@@ -13,6 +13,8 @@ Two jobs, kept together because they are the only things every other agent modul
    phase 3b (the variable named in [model].api_key_env, then the env file, by read_secret()). It is
    used only to build the client and is never printed, logged, traced or written to an error message.
 """
+import dataclasses
+import os
 import string
 import tomllib
 from dataclasses import dataclass
@@ -152,6 +154,44 @@ class EvalSettings:
 
 
 @dataclass(frozen=True)
+class TracingSettings:
+    """[tracing] (phase 6): the local trace file, and the optional Langfuse copy. The three switches can be overridden by environment variables."""
+    enabled: bool                # write one JSON line per turn to local_path
+    local_path: str              # relative paths are under the project root
+    max_lines: int               # the newest this many lines are kept; older ones are dropped (a warning is logged)
+    capture_text: bool           # false: the customer's message and the reply are replaced by "[not captured]" and their lengths
+    step_chars: int              # a step's short input or output is cut to this many characters
+    hidden_keys: list            # key names that are dropped from every record, at any depth (the customer id is written only in its own field)
+    langfuse_enabled: bool       # off by default; having Langfuse keys never turns it on
+    langfuse_environment: str
+    langfuse_sample_rate: float  # share of turns sent to Langfuse, 0 to 1
+    langfuse_timeout: int        # seconds
+    hash_key_env_name: str       # name of the variable that holds the key for hashing the customer id (the key itself stays in .env)
+
+
+# Environment variable -> the [tracing] field it overrides. Only these three; an unreadable value is a config error.
+TRACING_ENV = {"TRACING_ENABLED": "enabled", "TRACING_LANGFUSE_ENABLED": "langfuse_enabled", "TRACING_CAPTURE_TEXT": "capture_text"}
+_TRUE, _FALSE = {"1", "true", "yes", "on"}, {"0", "false", "no", "off"}
+
+
+def apply_tracing_env(settings: TracingSettings, environ=None) -> TracingSettings:
+    """`settings` with the three environment overrides applied. A variable that is unset or empty changes nothing."""
+    environ = os.environ if environ is None else environ
+    changes = {}
+    for name, field_name in TRACING_ENV.items():
+        raw = (environ.get(name) or "").strip().lower()
+        if not raw:
+            continue
+        if raw in _TRUE:
+            changes[field_name] = True
+        elif raw in _FALSE:
+            changes[field_name] = False
+        else:
+            raise AgentConfigError(f"The environment variable {name} must be true or false, got {raw!r}")
+    return dataclasses.replace(settings, **changes) if changes else settings
+
+
+@dataclass(frozen=True)
 class AgentConfig:
     root: Path
     model: ModelSettings
@@ -163,6 +203,7 @@ class AgentConfig:
     answer_check: AnswerCheckSettings
     review: ReviewSettings
     refund_method: RefundMethodSettings
+    tracing: TracingSettings
     replies: dict     # kind -> text, plus person_offer, not_built, blank_message
     eval: EvalSettings
 
@@ -234,6 +275,9 @@ _SPEC = {
     "refund_method": (RefundMethodSettings, {"name": str, "temperature": float, "max_output_tokens": int, "max_message_chars": int,
                                              "not_offered": list, "escalation_kind": str, "prompt": str, "option_texts": dict,
                                              "notes": dict, "replies": dict}),
+    "tracing": (TracingSettings, {"enabled": bool, "local_path": str, "max_lines": int, "capture_text": bool, "step_chars": int, "hidden_keys": list,
+                                  "langfuse_enabled": bool, "langfuse_environment": str, "langfuse_sample_rate": float,
+                                  "langfuse_timeout": int, "hash_key_env_name": str}),
     "eval": (EvalSettings, {"test_fraction": float}),
 }
 
@@ -283,9 +327,23 @@ def load_agent_config(path: str | Path | None = None) -> AgentConfig:
     if not isinstance(replies, dict):
         raise AgentConfigError(f"{where}: [replies] is missing or is not a table")
 
+    built["tracing"] = apply_tracing_env(built["tracing"])        # the three environment overrides, if set
     cfg = AgentConfig(root=ROOT, replies=dict(replies), **built)
     _check(cfg, where)
     return cfg
+
+
+def _check_tracing(t: TracingSettings, where: str) -> None:
+    if not all(isinstance(k, str) and k.strip() for k in t.hidden_keys):
+        raise AgentConfigError(f"{where}: [tracing].hidden_keys must be a list of key names")
+    for label, value in (("max_lines", t.max_lines), ("step_chars", t.step_chars), ("langfuse_timeout", t.langfuse_timeout)):
+        if value < 1:
+            raise AgentConfigError(f"{where}: [tracing].{label} must be 1 or more")
+    if not 0 <= t.langfuse_sample_rate <= 1:
+        raise AgentConfigError(f"{where}: [tracing].langfuse_sample_rate must be between 0 and 1")
+    for label, value in (("local_path", t.local_path), ("langfuse_environment", t.langfuse_environment), ("hash_key_env_name", t.hash_key_env_name)):
+        if not value.strip():
+            raise AgentConfigError(f"{where}: [tracing].{label} must not be empty")
 
 
 def _check(cfg: AgentConfig, where: str) -> None:
@@ -333,6 +391,7 @@ def _check(cfg: AgentConfig, where: str) -> None:
     _check_answer_check(cfg.answer_check, where)
     _check_review(cfg.review, where)
     _check_refund_method(cfg.refund_method, where)
+    _check_tracing(cfg.tracing, where)
 
 
 def _fields_of(text: str) -> set:

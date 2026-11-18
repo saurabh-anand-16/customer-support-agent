@@ -1,5 +1,5 @@
 """
-09_mutation_check.py - break each safety rule on purpose and check that a test notices (phases 4c, 5a, 4d and 5b).
+09_mutation_check.py - break each safety rule on purpose and check that a test notices (phases 4c, 5a, 4d, 5b and 6).
 
     python scripts/09_mutation_check.py              # all mutations
     python scripts/09_mutation_check.py M07 M11      # only these
@@ -23,12 +23,13 @@ import tempfile
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-COPY = ["agent", "config", "tests", "scripts", "returns_agent.db", "pytest.ini", "schema.sql", "data/clean"]
+COPY = ["agent", "config", "tests", "scripts", "returns_agent.db", "pytest.ini", "schema.sql", "data/clean", ".gitignore", ".env.example"]
 TESTS = ["tests/test_confirm_step.py", "tests/test_answer_check.py", "tests/test_agent_safety.py", "tests/test_confirm_config.py",
          "tests/test_tool_adapter.py", "tests/test_agent_branches.py", "tests/test_agent_flow.py", "tests/test_branch_cancel.py",
          "tests/test_branch_return.py", "tests/test_branch_policy.py", "tests/test_branch_order_status.py", "tests/test_session.py",
          "tests/test_review_queue.py", "tests/test_escalation.py", "tests/test_review_safety.py", "tests/test_branch_human_help.py",
-         "tests/test_refund_method.py", "tests/test_build_script.py", "tests/test_router.py", "tests/test_review_decision.py"]
+         "tests/test_refund_method.py", "tests/test_build_script.py", "tests/test_router.py", "tests/test_review_decision.py",
+         "tests/test_tracing.py"]
 
 # (id, the rule that is broken, file, text to replace, replacement)
 MUTATIONS = [
@@ -255,6 +256,36 @@ MUTATIONS = [
      "from ..checks import check\n", "from ..checks import check\nfrom ..review_decision import decide\n"),
     ("M105", "the agent adds the outcome notice to the reply", "agent/agent.py",
      'reply = notice + "\\n\\n" + state["reply"] if notice else state["reply"]', 'reply = state["reply"]'),
+    # --- phase 6: the local trace file and its reader ---
+    ("M106", "any error inside tracing is caught (both guards, the tracer's and the agent's)", ["agent/tracing.py", "agent/agent.py"],
+     ["        except BaseException as err:", "        except Exception:\n            pass\n        return result"],
+     ["        except ZeroDivisionError as err:", "        except ZeroDivisionError:\n            pass\n        return result"]),
+    ("M107", "a trace line is written under a lock", "agent/tracing.py", "    with _lock_for(path):\n", "    if True:\n"),
+    ("M108", "a key-like text is removed from the record", "agent/tracing.py", "        return KEY_PATTERN.sub(REDACTED, value)", "        return value"),
+    ("M109", "hidden keys (staff_approved, confirmed, nested customer_id) are dropped from the record", "agent/tracing.py",
+     "if k not in hidden}", "if True}"),
+    ("M110", "capture_text off replaces the customer's message", "agent/tracing.py",
+     '"message": clean(message, hidden) if settings.capture_text else NOT_CAPTURED,', '"message": clean(message, hidden),'),
+    ("M111", "capture_text off replaces the reply", "agent/tracing.py",
+     '"reply": clean(reply, hidden) if settings.capture_text else NOT_CAPTURED,', '"reply": clean(reply, hidden),'),
+    ("M112", "capture_text off leaves out the policy search query", "agent/tracing.py",
+     'if kind == "retrieval" and not text_on:', "if False:"),
+    ("M113", "capture_text off leaves out the router model's reason", "agent/tracing.py",
+     'if text_on and router.get("reason"):', 'if router.get("reason"):'),
+    ("M114", "a blocked-by-design check keeps its own status", "agent/tracing.py",
+     'status = item.get("status") or ("passed" if item.get("passed") else "failed")', 'status = "passed" if item.get("passed") else "failed"'),
+    ("M115", "a writer tool call is recorded as a write step", "agent/tracing.py",
+     'kind = "write" if name in WRITER_TOOLS else', 'kind = "tool_call" if name in WRITER_TOOLS else'),
+    ("M116", "the trace file is limited in size", "agent/tracing.py", "if _COUNTS[key] > max_lines + max(1, max_lines // 10):", "if False:"),
+    ("M117", "the size limit keeps the newest lines", "agent/tracing.py", "f.writelines(lines[-max_lines:])", "f.writelines(lines[:max_lines])"),
+    ("M118", "a broken line is skipped by the reader, not fatal", "agent/tracing.py", "        except (ValueError, UnicodeDecodeError):", "        except UnicodeDecodeError:"),
+    ("M119", "the environment overrides the three tracing switches", "agent/llm.py",
+     "    return dataclasses.replace(settings, **changes) if changes else settings", "    return settings"),
+    ("M120", "an unreadable override value is an error, not ignored", "agent/llm.py",
+     '            raise AgentConfigError(f"The environment variable {name} must be true or false, got {raw!r}")', "            continue"),
+    ("M121", "tracing never changes the result of a turn", "agent/tracing.py",
+     "            append_line(self.path, record, self.settings.max_lines)\n", '            append_line(self.path, record, self.settings.max_lines)\n            result["reply"] = result["reply"] + " "\n'),
+    ("M122", "tracing off writes nothing", "agent/tracing.py", "        if not self.settings.enabled:\n            return\n", ""),
 ]
 
 

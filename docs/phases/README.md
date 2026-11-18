@@ -27,7 +27,7 @@ Rules for these files:
 | 5a | Review queue: `review_items` table, real escalation seam | Done, in review ([build report](../builds/phase-05a-build.md)) | | [phase-05a-review-queue.md](phase-05a-review-queue.md) |
 | 5b | Manager decision: approve or decline, outcome notice to the customer | Done, in review ([build report](../builds/phase-05b-build.md)) | | [phase-05b-manager-decision.md](phase-05b-manager-decision.md) |
 | 5 | Review gate, `request_review`, human help | Done as 5a and 5b | 1.5 to 2 | |
-| 6 | Langfuse tracing | Not started | 1 | |
+| 6 | Local trace file, reader, optional Langfuse export | Steps 1 and 2 done, in review ([build report](../builds/phase-06-build.md)); step 3 (Langfuse) not built: no Langfuse keys in `.env` | 1 | [phase-06-tracing.md](phase-06-tracing.md) |
 | 7 | Streamlit shell, Home, persona picker, customer chat | Not started | 2 | |
 | 8 | Manager page | Not started | 1 | |
 | 9 | Developer page (traces) | Not started | 2 | |

@@ -48,6 +48,10 @@ FIXED_AGENT = {
     "refund_method": FIXED_REFUND_METHOD,
     "replies": {**{kind: f"REPLY[{kind}]" for kind in KINDS}, "person_offer": "OFFER-A-PERSON",
                 "not_built": "NOT-BUILT[{branch}]", "blank_message": "BLANK-REPLY"},
+    "tracing": {"enabled": False, "local_path": "fixed-traces/traces.jsonl", "max_lines": 50, "capture_text": True, "step_chars": 80,
+                "hidden_keys": ["staff_approved", "confirmed", "customer_id"],
+                "langfuse_enabled": False, "langfuse_environment": "fixed-env", "langfuse_sample_rate": 1.0, "langfuse_timeout": 3,
+                "hash_key_env_name": "FIXED_HASH_KEY"},
     "eval": {"test_fraction": 0.4},
 }
 

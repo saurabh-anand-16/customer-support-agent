@@ -82,3 +82,10 @@ def _agents_never_open_the_real_queue(monkeypatch):
     `queue_for_tools` imports it from agent.escalation (this patch changes the name inside agent.agent only).
     """
     monkeypatch.setattr("agent.agent.queue_for_tools", lambda tools: in_memory_queue())
+
+
+@pytest.fixture(autouse=True)
+def _no_tracing_env(monkeypatch):
+    """The three tracing overrides in the developer's own shell must not change any test."""
+    for name in ("TRACING_ENABLED", "TRACING_LANGFUSE_ENABLED", "TRACING_CAPTURE_TEXT"):
+        monkeypatch.delenv(name, raising=False)

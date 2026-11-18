@@ -27,6 +27,7 @@ The customer id is set once, in start_session(), and is neither read from a mess
 The model name and temperature come from config/agent.toml. LangGraph (requirements-agent.txt) is
 imported when an Agent is created, so the other agent modules work without it.
 """
+import time
 from pathlib import Path
 
 from .checks import check
@@ -38,25 +39,29 @@ from .review_notice import outcome_notices
 from .router import Router
 from .session import SessionStore
 from .tool_adapter import ToolAdapter
+from .tracing import Tracer
 
 DEFAULT_DB = ROOT / "returns_agent.db"
 
 
 class Agent:
     def __init__(self, config: AgentConfig | None = None, chat: ChatModel | None = None, sessions: SessionStore | None = None,
-                 tools=None, policy_search=None, db_path: str | Path | None = None, review_queue=None):
+                 tools=None, policy_search=None, db_path: str | Path | None = None, review_queue=None, tracer: Tracer | None = None):
         """
         `config` defaults to config/agent.toml, `chat` to the OpenAI model named in it. Tests give a fixed config and a fake.
         `tools` (a ReturnsTools) and `policy_search` (a PolicySearch) default to the real ones, opened only when first used;
         `db_path` chooses the database for the default tools. Tests give a fake policy search.
         `review_queue` (a ReviewQueue) is where cases for a person are written; by default the queue is opened, when first
         needed, on the same database file the tools use.
+        `tracer` (phase 6) writes one line per turn to the local trace file; by default it follows [tracing] in the config.
         """
         try:
             from .graph import build_graph
         except ImportError as err:
             raise ImportError("The 'langgraph' package is not installed: pip install -r requirements-agent.txt") from err
         self.cfg = config or load_agent_config()
+        self.tracer = tracer or Tracer(self.cfg.tracing, self.cfg.root, {"router": self.cfg.model.name, "branch": self.cfg.branches.name,
+                                                                         "confirm": self.cfg.confirm.name})
         self.chat = chat or OpenAIChat(self.cfg.root)
         self.sessions = sessions or SessionStore()
         self.router = Router(self.cfg, self.chat)
@@ -94,6 +99,7 @@ class Agent:
         return outcome_notices(queue, tools, self.cfg, session.customer_id)
 
     def respond(self, session_id: str, message: str) -> dict:
+        started = time.perf_counter()
         session = self.sessions.get(session_id)        # raises UnknownSession for an id that was never issued
         text = message if isinstance(message, str) else ""
         session.current_message = text            # for the excerpt of a review case; it joins `history` when the turn ends
@@ -112,6 +118,13 @@ class Agent:
             "confirm": state.get("confirm"),
             "checks": [*state.get("checks", []), *notice_checks],
         }
-        return {"session_id": session.session_id, "reply": reply, "route": decision.route,
-                "kind": decision.kind, "pending_action": public_pending(session.pending_action),
-                "evidence": state.get("evidence") or {"tool_calls": [], "policy_passages": []}, "trace": trace}
+        result = {"session_id": session.session_id, "reply": reply, "route": decision.route,
+                  "kind": decision.kind, "pending_action": public_pending(session.pending_action),
+                  "evidence": state.get("evidence") or {"tool_calls": [], "policy_passages": []}, "trace": trace}
+        # Phase 6: save the turn. The tracer reads `result` and never raises, so the reply is the same with tracing on, off or failing.
+        try:
+            self.tracer.record_turn(result=result, session_id=session.session_id, customer_id=session.customer_id, message=text,
+                                    duration_ms=(time.perf_counter() - started) * 1000)
+        except Exception:
+            pass
+        return result
