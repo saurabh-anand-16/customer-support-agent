@@ -309,9 +309,14 @@ def test_a_request_that_needs_approval_is_not_written_and_goes_to_the_seam(tmp_p
     assert len(spy.writer_calls) == 1 and spy.writer_calls[0][2] == {"confirmed": True}      # the tool was asked, and refused; staff_approved was not passed
 
 
-def test_a_pay_on_delivery_refund_asks_for_a_method_and_writes_nothing(tmp_path, tools_rw, pick, raw):
+def test_a_pay_on_delivery_return_with_no_method_chosen_still_writes_nothing(tmp_path, tools_rw, pick, raw):
+    # since phase 4d the question comes first (tests/test_refund_method.py); this is the second line of defence:
+    # a pending return that has no method and no flag for one (an old or damaged pending action) is refused by the tool
     where = "e.policy_code='RET_10' AND e.day_number BETWEEN 2 AND 8 AND o.payment_type='pay_on_delivery'"
     agent, _, sid, spy, _, _ = propose_return(tmp_path, tools_rw, pick, raw, confirm=[label("confirm")], where=where)
+    session = agent.sessions.get(sid)
+    stale = {k: v for k, v in session.pending_action.items() if k not in ("stage", "needs_refund_method")}
+    session.set_pending(stale)
     before = db_state(spy.con)
     result = agent.respond(sid, "yes")
     assert result["reply"].startswith("REFUND-METHOD-NEEDED") and db_state(spy.con) == before

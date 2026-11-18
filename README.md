@@ -52,7 +52,7 @@ On Windows use `py` instead of `python` if `python` is not found. Every script p
 | `data/rag/` | The vector index and embedding cache (generated; not committed) |
 | `config/rag.toml` | Every tunable value for policy search: chunking, metadata, embedding, retrieval, profiles |
 | `docs/phases/` | One document per build phase: what it is for, files touched, how it was checked |
-| `tests/` | 1157 tests run by default (67 for the tools, 409 for policy search, 187 for the session and router, 227 for the branch flows, 170 for the confirm step, answer check and guardrails, 97 for the review queue), plus 17 `live` tests; run with `python -m pytest` (`-m live` for the live ones) |
+| `tests/` | 1231 tests run by default (67 for the tools, 409 for policy search, 187 for the session and router, 227 for the branch flows, 170 for the confirm step, answer check and guardrails, 97 for the review queue, 73 for the refund-method question, 1 for the database build script), plus 23 `live` tests; run with `python -m pytest` (`-m live` for the live ones) |
 
 ## What each script does
 

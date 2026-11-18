@@ -26,6 +26,7 @@ from dataclasses import dataclass, field
 from .actions import fill, run_pending
 from .checks import check
 from .llm import AgentConfig, ChatModel, LlmError
+from .refund_method import STAGE_METHOD, RefundMethodStep
 from .session import Session
 from .tool_adapter import ToolAdapter
 
@@ -41,7 +42,7 @@ def public_pending(pending: dict | None) -> dict | None:
         return None
     d = pending.get("display") if isinstance(pending.get("display"), dict) else {}
     window = d.get("return_window") if isinstance(d.get("return_window"), dict) else None
-    return {
+    card = {
         "action": pending.get("type"),
         "item": {"item_id": d.get("item_id"), "product_name": d.get("product_name"), "order_id": d.get("order_id")},
         "resolution": d.get("resolution"),
@@ -50,6 +51,10 @@ def public_pending(pending: dict | None) -> dict | None:
         "needs_staff_approval": bool(pending.get("needs_staff_approval", False)),
         "question": pending.get("question"),
     }
+    if pending.get("needs_refund_method"):           # only a Pay on Delivery refund has these keys; other cards are unchanged
+        card["refund_method"] = pending.get("refund_method") if isinstance(pending.get("refund_method"), str) else None
+        card["refund_method_options"] = [m for m in pending.get("refund_method_options", []) if isinstance(m, str)]
+    return card
 
 
 @dataclass
@@ -68,6 +73,7 @@ class ConfirmOutcome:
 class ConfirmStep:
     def __init__(self, cfg: AgentConfig, chat: ChatModel, adapter: ToolAdapter, escalate_fn=None):
         self.cfg, self.chat, self.adapter, self.escalate_fn = cfg, chat, adapter, escalate_fn
+        self.method_step = RefundMethodStep(cfg, chat, adapter, escalate_fn)
 
     # -- the model's label -------------------------------------------------------------------------------
     def _settings(self):
@@ -111,6 +117,10 @@ class ConfirmStep:
             return ConfirmOutcome(None, None, reroute=True, reply_prefix=c.replies["expired"],
                                   checks=[check("pending_expiry", False, f"the action waited more than {c.pending_max_turns} message(s), so it was dropped")],
                                   info={"label": None, "expired": True, "model_called": False})
+
+        if isinstance(pending, dict) and pending.get("stage") == STAGE_METHOD:       # the refund method is asked first (phase 4d)
+            done = self.method_step.handle(session, message, pending)
+            return ConfirmOutcome(done.label, done.reply, checks=done.checks, tool_calls=done.tool_calls, info={**done.info, "model_called": done.info.get("model_called", False)})
 
         got = self.label(pending, message)
         label = got["label"]

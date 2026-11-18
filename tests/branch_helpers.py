@@ -140,3 +140,18 @@ FIXED_REVIEW = {
         "approval_required": "REASON approval {resolution} item={item_id} because={approval_reasons}",
     },
 }
+
+
+# --- phase 4d: the refund-method question (fixed, recognisable wording; the tests never read config/agent.toml) ---
+FIXED_REFUND_METHOD = {
+    "name": "method-test-model", "temperature": 0.2, "max_output_tokens": 55, "max_message_chars": 100,
+    "not_offered": ["paper_cheque"], "escalation_kind": "customer_asked_for_person",
+    "prompt": "METHOD PROMPT {\"label\": \"x\"}",
+    "option_texts": {"neft_bank_account": "OPT-NEFT", "amazon_pay_balance": "OPT-PAYBAL"},
+    "notes": {"neft_bank_account": "NOTE-NEFT-ACCOUNT-MUST-BE-ADDED"},
+    "replies": {
+        "ask": "ASK-METHOD {product_name} | {options}",
+        "chosen_line": "METHOD-CHOSEN {method} {note}",
+        "cheque_reply": "CHEQUE-EXCEPTIONAL ref={reference}",
+    },
+}

@@ -7,7 +7,10 @@ The writer is called from CODE, after the customer's yes was read by the confirm
   * `confirmed=True` is written here, as a constant. The model's output is a label, nothing else, and has no way to set it;
   * `staff_approved` is never passed. Only the review-queue code (phase 5b) may set it. When the tool says a reviewer must
     approve first, nothing is written to orders or returns and the request goes to the escalation seam, which makes a queue item;
-  * the tool re-runs every check itself (eligibility, resolution, status), so a pending action that went stale is refused.
+  * the tool re-runs every check itself (eligibility, resolution, status), so a pending action that went stale is refused;
+  * a Pay on Delivery refund (pending["needs_refund_method"]) carries the refund method the customer chose in the pending action.
+    It is checked here against the tool's own list (get_refund_timeline) before it is passed, and it is passed by code only:
+    no model output reaches it. A card or UPI return has no such key and the writer is called exactly as in phase 4c.
 
 The reply is built from the tool's result and, for a return, from reading the new row back (get_return_status), so what
 the customer reads is what the database holds. The wording is fixed text from [confirm.replies] in config/agent.toml.
@@ -18,6 +21,7 @@ from .branches.base import fill
 from .branches.return_or_replace import money
 from .checks import check
 from .llm import AgentConfig
+from .refund_method import ORDER_TYPE, STAGE_CONFIRM, read_options
 
 _RETURN_KEYS = ("item_id", "reason", "resolution")
 _CANCEL_KEYS = ("item_id",)
@@ -47,13 +51,37 @@ def run_pending(session, pending: dict, tools, cfg: AgentConfig, escalate_fn=Non
                             checks=[check("write", False, "the pending action was malformed, so nothing was run")])
     args = {k: params[k] for k in needed}
     if kind == "return":
-        output = tools.create_return(session.customer_id, args["item_id"], args["reason"], args["resolution"], confirmed=True)
+        method_checks, extra = [], {}                      # extra: the refund method, for a Pay on Delivery refund only
+        if pending.get("needs_refund_method"):
+            method, method_checks = _checked_method(pending, params, tools, cfg)
+            if method is None:
+                return ActionResult(fill(cfg.confirm.replies["refused"], message="That request is no longer valid."), error_code="invalid_refund_method",
+                                    checks=[*method_checks, check("write", False, "the refund method was missing or not on the tool's list, so nothing was run")])
+            args["refund_method"], extra["refund_method"] = method, method
+        output = tools.create_return(session.customer_id, args["item_id"], args["reason"], args["resolution"], confirmed=True, **extra)
         result = _after_return(session, pending, args, output, tools, cfg, escalate_fn)
+        result.checks[:0] = method_checks
     else:
         output = tools.cancel_order(session.customer_id, args["item_id"], confirmed=True)
         result = _after_cancel(output, cfg)
     result.tool_calls.insert(0, _record("create_return" if kind == "return" else "cancel_order", args, output))
     return result
+
+
+def _checked_method(pending: dict, params: dict, tools, cfg: AgentConfig):
+    """
+    The refund method of a Pay on Delivery return, checked against the tool's list read now. Returns (method or None, checks).
+    The pending action must be past the question (stage "confirm"), and the method must be a text on the tool's list that this
+    agent offers. Anything else gives None and nothing is written.
+    """
+    method = params.get("refund_method")
+    if pending.get("stage") != STAGE_CONFIRM:
+        return None, [check("refund_method_validated", False, "the refund method was not chosen yet")]
+    listed = tools.get_refund_timeline(ORDER_TYPE)
+    options = read_options({"output": listed, "refused": None}, cfg.refund_method)
+    if options.error or not isinstance(method, str) or method not in options.offered:
+        return None, [check("refund_method_validated", False, "the refund method is not on the tool's list of methods this agent offers")]
+    return method, [check("refund_method_validated", True, f"{method} is on the tool's list; it is passed to create_return by code")]
 
 
 def _refused(output: dict, cfg: AgentConfig) -> ActionResult:
@@ -77,6 +105,8 @@ def _after_return(session, pending, args, output, tools, cfg, escalate_fn) -> Ac
         if code == "staff_approval_required":              # the review gate: nothing was written, the seam is asked
             details = {"item_id": args["item_id"], "reason": args["reason"], "resolution": args["resolution"],
                        "approval_reasons": output.get("approval_reasons", []), "eligibility": _eligibility_of(pending)}
+            if args.get("refund_method"):                      # phase 5b will store this; for now it travels in `details`
+                details["refund_method"] = args["refund_method"]
             sent = (escalate_fn(session, "approval_required", details, cfg.review.reply_template) if escalate_fn is not None
                     else {"queued": False, "reply": cfg.review.error_reply, "reason": "approval_required", "details": details,
                           "note": "no review queue is wired; nothing was queued",

@@ -22,7 +22,8 @@ Rules for these files:
 | 4a | Session, router and out-of-scope reply | Done, in review ([build report](../builds/phase-04a-build.md)) | | [phase-04a-router-and-session.md](phase-04a-router-and-session.md) |
 | 4b | The five branch flows (tools, pending actions, evidence) | Done, in review ([build report](../builds/phase-04b-build.md)) | | [phase-04b-branch-flows.md](phase-04b-branch-flows.md) |
 | 4c | Confirm step, writes, answer check, guardrail tests | Done, in review ([build report](../builds/phase-04c-build.md)) | | [phase-04c-confirm-and-answer-check.md](phase-04c-confirm-and-answer-check.md) |
-| 4 | Agent: router, six branches, confirm step, answer check | Done as 4a, 4b and 4c | 3 to 4 | |
+| 4d | Refund method question for Pay on Delivery returns | Done, in review ([build report](../builds/phase-04d-build.md)) | | [phase-04d-refund-method.md](phase-04d-refund-method.md) |
+| 4 | Agent: router, six branches, confirm step, answer check | Done as 4a, 4b, 4c and 4d | 3 to 4 | |
 | 5a | Review queue: `review_items` table, real escalation seam | Done, in review ([build report](../builds/phase-05a-build.md)) | | [phase-05a-review-queue.md](phase-05a-review-queue.md) |
 | 5 | Review gate, `request_review`, human help (5a done; 5b approve and decline next) | In progress | 1.5 to 2 | |
 | 6 | Langfuse tracing | Not started | 1 | |

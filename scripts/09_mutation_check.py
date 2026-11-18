@@ -1,5 +1,5 @@
 """
-09_mutation_check.py - break each safety rule on purpose and check that a test notices (phase 4c).
+09_mutation_check.py - break each safety rule on purpose and check that a test notices (phases 4c, 5a and 4d).
 
     python scripts/09_mutation_check.py              # all mutations
     python scripts/09_mutation_check.py M07 M11      # only these
@@ -20,11 +20,12 @@ import tempfile
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-COPY = ["agent", "config", "tests", "scripts", "returns_agent.db", "pytest.ini", "schema.sql"]
+COPY = ["agent", "config", "tests", "scripts", "returns_agent.db", "pytest.ini", "schema.sql", "data/clean"]
 TESTS = ["tests/test_confirm_step.py", "tests/test_answer_check.py", "tests/test_agent_safety.py", "tests/test_confirm_config.py",
          "tests/test_tool_adapter.py", "tests/test_agent_branches.py", "tests/test_agent_flow.py", "tests/test_branch_cancel.py",
          "tests/test_branch_return.py", "tests/test_branch_policy.py", "tests/test_branch_order_status.py", "tests/test_session.py",
-         "tests/test_review_queue.py", "tests/test_escalation.py", "tests/test_review_safety.py", "tests/test_branch_human_help.py"]
+         "tests/test_review_queue.py", "tests/test_escalation.py", "tests/test_review_safety.py", "tests/test_branch_human_help.py",
+         "tests/test_refund_method.py", "tests/test_build_script.py", "tests/test_router.py"]
 
 # (id, the rule that is broken, file, text to replace, replacement)
 MUTATIONS = [
@@ -48,7 +49,7 @@ MUTATIONS = [
     ("M09", "the card shown to the UI never carries parameters or the customer id", "agent/confirm.py",
      '        "question": pending.get("question"),\n    }', '        "question": pending.get("question"), "parameters": pending.get("parameters"), "customer_id": pending.get("customer_id"),\n    }'),
     ("M10", "staff_approved is never passed to a writer", "agent/actions.py",
-     'args["reason"], args["resolution"], confirmed=True)', 'args["reason"], args["resolution"], confirmed=True, staff_approved=True)'),
+     'args["reason"], args["resolution"], confirmed=True, **extra)', 'args["reason"], args["resolution"], confirmed=True, staff_approved=True, **extra)'),
     ("M11", "the writer's customer is the session's, never one from the pending action", "agent/actions.py",
      "tools.cancel_order(session.customer_id,", 'tools.cancel_order(pending.get("customer_id", session.customer_id),'),
     ("M12", "a request that needs approval goes to the review seam", "agent/actions.py",
@@ -127,9 +128,58 @@ MUTATIONS = [
     ("M47", "a new item is always open", "agent/review_queue.py",
      'OPEN = "open" ', 'OPEN = "approved" '),
     ("M48", "the real config reply carries the reference", "config/agent.toml",
-     "Your reference is {reference}.", "Your reference is REV."),
+     'reply_template = "I have asked a person to review this. Your reference is {reference}.', 'reply_template = "I have asked a person to review this. Your reference is REV.'),
     ("M49", "no module but the seam uses the queue", "agent/branches/base.py",
      "from ..checks import check\n", "from ..checks import check\nfrom ..review_queue import ReviewQueue\n"),
+    # --- phase 4d: the refund method of a Pay on Delivery refund ---
+    ("M50", "an unusable method label counts as unclear, never as a method", "agent/refund_method.py",
+     'out = {"label": UNCLEAR, "reason": "", "raw_output": None', 'out = {"label": allowed[0], "reason": "", "raw_output": None'),
+    ("M51", "a label that is on no list is an error, not a method", "agent/refund_method.py",
+     "if not isinstance(value, str) or value not in allowed:", "if not isinstance(value, str):"),
+    ("M52", "only a label read from the tool's offered list is taken as the method", "agent/refund_method.py",
+     "        if label in options.offered:                        # code's own check", "        if label in options.offered or label in options.withheld:                        # code's own check"),
+    ("M53", "methods config does not offer are left out of the options", "agent/refund_method.py",
+     "offered = [m for m in methods if m not in cfg.not_offered]", "offered = list(methods)"),
+    ("M54", "a request for a method that is not offered drops the pending action", "agent/refund_method.py",
+     "        session.clear_pending()                             # nothing is written, and nothing waits", "        pass"),
+    ("M55", "a request for a method that is not offered gets the fixed message", "agent/refund_method.py",
+     'details, m.replies["cheque_reply"])', "details, self.cfg.review.reply_template)"),
+    ("M56", "a reply to the method question goes to the refund-method step", "agent/confirm.py",
+     'pending.get("stage") == STAGE_METHOD:', "False:"),
+    ("M57", "the writer gets a method for a Pay on Delivery refund", "agent/actions.py",
+     'if pending.get("needs_refund_method"):', "if False:"),
+    ("M58", "a return still at the question cannot be run", "agent/actions.py",
+     'if pending.get("stage") != STAGE_CONFIRM:', "if False:"),
+    ("M59", "the writer's method is the one validated in code", "agent/actions.py",
+     'args["refund_method"], extra["refund_method"] = method, method', 'args["refund_method"], extra["refund_method"] = method, "neft_bank_account"'),
+    ("M60", "a method not on the tool's offered list is refused before the writer runs", "agent/actions.py",
+     "or not isinstance(method, str) or method not in options.offered:", "or not isinstance(method, str):"),
+    ("M61", "the method goes to the escalation in details", "agent/actions.py",
+     'if args.get("refund_method"):', "if False:"),
+    ("M62", "a chosen method moves the pending action on to the yes or no", "agent/refund_method.py",
+     "new.update(stage=STAGE_CONFIRM,", "new.update(stage=STAGE_METHOD,"),
+    ("M63", "the confirm card shows the chosen method", "agent/refund_method.py",
+     '    return base.replace(SLOT, " " + line) if SLOT in base else f"{base} {line}"', "    return base"),
+    ("M64", "a method that needs an account gets its fixed note", "agent/refund_method.py",
+     'note=cfg.notes.get(method, "")', 'note=""'),
+    ("M65", "a card or UPI return skips the question", "agent/branches/return_or_replace.py",
+     'needs_method = resolution == "refund" and check.get("payment_type") == "pay_on_delivery"', 'needs_method = resolution == "refund"'),
+    ("M66", "a replacement skips the question", "agent/branches/return_or_replace.py",
+     'needs_method = resolution == "refund" and check.get("payment_type") == "pay_on_delivery"', 'needs_method = check.get("payment_type") == "pay_on_delivery"'),
+    ("M67", "only the label of the method model's output is read", "agent/refund_method.py",
+     'out["label"] = value                              # no other field of the output is read', 'out["label"] = data.get("refund_method", value)'),
+    ("M68", "an unclear reply is asked again only as often as the config says", "agent/refund_method.py",
+     "if session.pending_unclear < c.max_unclear_asks:", "if True:"),
+    ("M69", "the question adds its entry to the checks", "agent/branches/return_or_replace.py",
+     """        run.checks.append(check("refund_method_asked", True, f"asked the customer to choose a refund method from: {', '.join(options.offered)}"))""", "        pass"),
+    ("M70", "a chosen method adds its validation entry to the checks", "agent/refund_method.py",
+     """[*checks, check("refund_method_validated", True, f"{method} is one of the tool's refund methods")]""", "checks"),
+    ("M71", "a failed label read is a failed check", "agent/refund_method.py",
+     'check("refund_method_label", got["error"] is None,', 'check("refund_method_label", True,'),
+    ("M72", "with the default config the pending lifetime can fire", "config/agent.toml",
+     "max_unclear_asks = 3 ", "max_unclear_asks = 1 "),
+    ("M73", "the build script creates the review queue's table", "scripts/04_build_db.py",
+     'con.executescript(SCHEMA_SQL.read_text(encoding="utf-8"))', 'con.executescript(SCHEMA_SQL.read_text(encoding="utf-8").split("-- review_items:begin")[0])'),
 ]
 
 

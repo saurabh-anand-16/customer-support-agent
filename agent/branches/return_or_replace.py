@@ -13,6 +13,7 @@ or asks one short question. After that, code does the rest:
   * any other "not eligible" and the other decisions: an explanation from fixed text and the tool's data.
 """
 from .. import eligibility as elig
+from ..checks import check
 from .base import Branch, BranchContext, BranchResult, Run, conversation_text, fill, question_or_generic, tool_loop
 
 
@@ -101,8 +102,11 @@ class ReturnOrReplaceBranch(Branch):
         if check["staff_approval_required"]:
             why = ", and ".join(b.approval_texts[r] for r in check["approval_reasons"])
             approval = fill(b.replies["approval_note"], approval_reasons=why)
+        needs_method = resolution == "refund" and check.get("payment_type") == "pay_on_delivery"
+        # a Pay on Delivery refund leaves a slot for the refund method; the slot is filled once the customer has chosen (phase 4d)
         question = fill(b.replies["confirm_return"], resolution=b.resolution_texts[resolution], approval_note=approval,
-                        condition_note=check.get("condition_note", ""), **{k: v for k, v in fields.items() if k != "resolution"}).replace("  ", " ")
+                        condition_note=check.get("condition_note", ""), refund_method_line="{refund_method_line}" if needs_method else "",
+                        **{k: v for k, v in fields.items() if k != "resolution"}).replace("  ", " ")
         pending = {"type": "return",
                    "parameters": {"item_id": fields["item_id"], "reason": check["reason"], "resolution": resolution},
                    "summary": f"{b.resolution_texts[resolution]} {fields['product_name']} (item {fields['item_id']})",
@@ -113,6 +117,25 @@ class ReturnOrReplaceBranch(Branch):
                                "resolution": resolution, "refund_amount_inr": check.get("line_total_inr") if resolution == "refund" else None,
                                "return_window": {"window_days": check.get("window_days_applied"), "day_number": check.get("day_number"),
                                                  "last_eligible_date": check.get("last_eligible_date"), "days_left": check.get("days_left")}}}
+        if needs_method:
+            return self.ask_method(ctx, run, pending, question, fields)
+        return BranchResult(question, run, pending_action=pending)
+
+    def ask_method(self, ctx, run: Run, pending: dict, confirm_question: str, fields: dict) -> BranchResult:
+        """A Pay on Delivery refund: ask where the refund should go before the confirm card. The options come from the tool."""
+        from .. import refund_method as rm                      # imported here: refund_method itself imports from agent.branches
+        m = ctx.cfg.refund_method
+        record = ctx.adapter.call(ctx.session, rm.TOOL, {"order_type": rm.ORDER_TYPE}, (rm.TOOL,))
+        run.tool_calls.append(record)
+        options = rm.read_options(record, m)
+        if options.error:
+            run.error = f"refund methods unavailable: {options.error}"
+            run.checks.append(check("refund_method_asked", False, f"{options.error}; no question was asked and nothing is pending"))
+            return BranchResult(ctx.cfg.branches.replies["branch_error"], run)
+        question = rm.question_for(m, fields["product_name"], options.offered)
+        pending.update(stage=rm.STAGE_METHOD, needs_refund_method=True, refund_method=None, refund_method_options=list(options.offered),
+                       confirm_question=confirm_question, question=question)
+        run.checks.append(check("refund_method_asked", True, f"asked the customer to choose a refund method from: {', '.join(options.offered)}"))
         return BranchResult(question, run, pending_action=pending)
 
     def late(self, ctx, run: Run, check: dict, fields: dict) -> BranchResult:

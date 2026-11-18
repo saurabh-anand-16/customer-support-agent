@@ -103,6 +103,21 @@ class ConfirmSettings:
 
 
 @dataclass(frozen=True)
+class RefundMethodSettings:
+    """[refund_method]: the question asked before the confirm card of a Pay on Delivery refund (phase 4d)."""
+    name: str                    # the model that labels the customer's reply (it picks nothing: code checks the label)
+    temperature: float
+    max_output_tokens: int
+    max_message_chars: int
+    not_offered: list            # methods the tool lists that this agent never offers (a customer who asks for one goes to a person)
+    escalation_kind: str         # the review kind used for that case; one of REVIEW_KINDS
+    prompt: str
+    option_texts: dict           # method name -> how the question words it (a method with no text is shown by its name)
+    notes: dict                  # method name -> a fixed note shown with the confirm card when that method is chosen
+    replies: dict
+
+
+@dataclass(frozen=True)
 class AnswerCheckSettings:
     """[answer_check]: numbers, amounts and dates in a model-written reply must come from this turn's tool results."""
     enabled: bool
@@ -141,6 +156,7 @@ class AgentConfig:
     confirm: ConfirmSettings
     answer_check: AnswerCheckSettings
     review: ReviewSettings
+    refund_method: RefundMethodSettings
     replies: dict     # kind -> text, plus person_offer, not_built, blank_message
     eval: EvalSettings
 
@@ -159,13 +175,15 @@ BRANCH_REPLIES = ("no_policy_match", "sources_line", "tool_limit", "branch_error
 BRANCH_RESOLUTIONS = ("refund", "replacement", "exchange", "brand_service")
 BRANCH_APPROVALS = ("account_restricted", "high_value", "repeat_returner")
 BRANCH_REPLY_FIELDS = {"product_name", "item_id", "order_id", "amount", "reason", "resolution", "options", "condition_note",
-                       "approval_note", "approval_reasons", "order_part", "delivered_at", "day_number", "window_days",
+                       "approval_note", "approval_reasons", "order_part", "delivered_at", "day_number", "window_days", "refund_method_line",
                        "last_eligible_date", "days_late", "days_left", "return_id", "sources"}
 
 CONFIRM_REPLIES = ("done_return", "done_return_refund_line", "done_cancel", "declined", "unclear_ask", "unclear_drop", "expired",
                    "refund_method_needed", "refused")
 CONFIRM_REPLY_FIELDS = {"product_name", "item_id", "order_id", "return_id", "resolution", "refund_line", "next_step", "question",
                         "message", "options", "amount", "method", "timeline"}
+REFUND_METHOD_REPLIES = ("ask", "chosen_line", "cheque_reply")
+REFUND_METHOD_REPLY_FIELDS = {"options", "product_name", "method", "note", "reference"}
 ANSWER_CHECK_REPLIES = ("fallback_intro", "fallback_order_line", "fallback_item_line", "fallback_return_line", "fallback_timeline_line",
                         "fallback_policy_line", "fallback_nothing")
 ANSWER_CHECK_REPLY_FIELDS = {"order_id", "ordered_at", "product_name", "item_id", "item_status", "delivered_at", "return_id", "return_status",
@@ -195,6 +213,9 @@ _SPEC = {
                                            "allowed_text": list, "retry_instruction": str, "replies": dict}),
     "review": (ReviewSettings, {"excerpt_messages": int, "excerpt_message_chars": int, "dedupe_open_items": bool,
                                 "reply_template": str, "error_reply": str, "reasons": dict}),
+    "refund_method": (RefundMethodSettings, {"name": str, "temperature": float, "max_output_tokens": int, "max_message_chars": int,
+                                             "not_offered": list, "escalation_kind": str, "prompt": str, "option_texts": dict,
+                                             "notes": dict, "replies": dict}),
     "eval": (EvalSettings, {"test_fraction": float}),
 }
 
@@ -293,6 +314,7 @@ def _check(cfg: AgentConfig, where: str) -> None:
     _check_confirm(cfg.confirm, where)
     _check_answer_check(cfg.answer_check, where)
     _check_review(cfg.review, where)
+    _check_refund_method(cfg.refund_method, where)
 
 
 def _fields_of(text: str) -> set:
@@ -327,6 +349,30 @@ def _check_confirm(c: ConfirmSettings, where: str) -> None:
     _check_table(where, "confirm.replies", c.replies, CONFIRM_REPLIES, CONFIRM_REPLY_FIELDS)
     if not c.prompt.strip():
         raise AgentConfigError(f"{where}: [confirm].prompt must not be empty")      # used as written: it is not a template
+
+
+def _check_refund_method(m: RefundMethodSettings, where: str) -> None:
+    if not m.name.strip():
+        raise AgentConfigError(f"{where}: [refund_method].name (the model) must not be empty")
+    if not 0 <= m.temperature <= 2:
+        raise AgentConfigError(f"{where}: [refund_method].temperature must be between 0 and 2")
+    for key in ("max_output_tokens", "max_message_chars"):
+        if getattr(m, key) < 1:
+            raise AgentConfigError(f"{where}: [refund_method].{key} must be 1 or more")
+    if not m.prompt.strip():
+        raise AgentConfigError(f"{where}: [refund_method].prompt must not be empty")      # used as written: it is not a template
+    if not all(isinstance(x, str) and x.strip() for x in m.not_offered):
+        raise AgentConfigError(f"{where}: [refund_method].not_offered must be a list of method names")
+    if m.escalation_kind not in REVIEW_KINDS:
+        raise AgentConfigError(f"{where}: [refund_method].escalation_kind must be one of {', '.join(REVIEW_KINDS)}")
+    for table_name in ("option_texts", "notes"):
+        table = getattr(m, table_name)
+        if not all(isinstance(k, str) and isinstance(v, str) and v.strip() for k, v in table.items()):
+            raise AgentConfigError(f"{where}: [refund_method.{table_name}] must be a table of method name -> non-empty text")
+    _check_table(where, "refund_method.replies", m.replies, REFUND_METHOD_REPLIES, REFUND_METHOD_REPLY_FIELDS)
+    for key, field_name in (("ask", "options"), ("chosen_line", "method"), ("cheque_reply", "reference")):
+        if field_name not in _fields_of(m.replies[key]):
+            raise AgentConfigError(f"{where}: [refund_method.replies].{key} must contain {{{field_name}}}")
 
 
 def _check_review(r: ReviewSettings, where: str) -> None:

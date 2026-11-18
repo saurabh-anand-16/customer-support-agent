@@ -43,19 +43,21 @@ class WriterSpy:
 
 class RoleChat(ChatModel):
     """
-    A fake model that answers by role, chosen from the system prompt: "ROUTER PROMPT", "CONFIRM PROMPT", else the branch.
+    A fake model that answers by role, chosen from the system prompt: "ROUTER PROMPT", "CONFIRM PROMPT", "METHOD PROMPT" (the
+    refund-method label, phase 4d), else the branch.
     A role's replies are a list used in order; the last repeats. An Exception in a list is raised. Every call is recorded
     in `.calls` with its role.
     """
 
-    def __init__(self, router=None, branch=None, confirm=None):
-        self.queues = {"router": list(router or []), "branch": list(branch or []), "confirm": list(confirm or [])}
-        self.used = {"router": 0, "branch": 0, "confirm": 0}
+    def __init__(self, router=None, branch=None, confirm=None, method=None):
+        self.queues = {"router": list(router or []), "branch": list(branch or []), "confirm": list(confirm or []), "method": list(method or [])}
+        self.used = {"router": 0, "branch": 0, "confirm": 0, "method": 0}
         self.calls = []
 
     @staticmethod
     def role_of(system: str) -> str:
-        return "router" if system.startswith("ROUTER PROMPT") else "confirm" if system.startswith("CONFIRM PROMPT") else "branch"
+        return ("router" if system.startswith("ROUTER PROMPT") else "confirm" if system.startswith("CONFIRM PROMPT")
+                else "method" if system.startswith("METHOD PROMPT") else "branch")
 
     def complete(self, system, messages, settings):
         role = self.role_of(system)
@@ -78,6 +80,11 @@ def label(name, **extra) -> str:
     return json.dumps({"label": name, "reason": "because", **extra})
 
 
+def method_label(name, **extra) -> str:
+    """What the refund-method step's model says."""
+    return json.dumps({"label": name, "reason": "because", **extra})
+
+
 def agent_for(tmp_path, spy, chat, customer, policy=None, **changes):
     """A whole Agent (needs langgraph) over the fixed config, `chat`, and the spy-wrapped tools. Returns (agent, session id)."""
     from agent import Agent
@@ -95,4 +102,4 @@ def sent_to_the_model(chat, role=None) -> str:
     return json.dumps([(c["system"], c["messages"]) for c in chat.calls if role in (None, c["role"])])
 
 
-__all__ = ["LlmError", "RoleChat", "WriterSpy", "agent_for", "db_state", "label", "sent_to_the_model"]
+__all__ = ["LlmError", "RoleChat", "WriterSpy", "agent_for", "db_state", "label", "method_label", "sent_to_the_model"]

@@ -1,6 +1,6 @@
 # Phase 4d: refund method for Pay on Delivery returns
 
-**Status:** to build. **Branch:** `phase-4d-refund-method`. **Follows:** 5a (merged). **Next:** 5b.
+**Status:** built, in review ([build report](../builds/phase-04d-build.md)). **Branch:** `phase-4d-refund-method`. **Follows:** 5a (merged). **Next:** 5b.
 
 ## Why this phase exists
 
@@ -60,3 +60,15 @@ Use a copy of the database. Pick customers from tool output only. Run: (1) a Pay
 ## Not in 4d
 
 The manager's approval (5b), the Manager page (phase 8), and collecting any account details.
+
+
+## What was built (added when the phase ended)
+
+Decisions taken after the first report (the tool lists three Pay on Delivery methods; NEFT needs a bank account added in the customer's Amazon account):
+
+- NEFT is offered, with a fixed note in config. The agent never asks for or stores account details, and says it cannot check whether the account is added.
+- Paper cheque is not offered. A customer who asks for one gets a fixed message and the case goes to a person through the existing escalation, under the kind `customer_asked_for_person` (the closest of the three existing kinds).
+- `agent/tools.py` and `schema.sql` are unchanged. The missing "bank account on file" check is a limitation.
+- A Pay on Delivery return that needs staff approval still asks for the method first; the method goes to the escalation in `details`. The queue table has no column for it (5b adds one).
+
+Files: `agent/refund_method.py` (new), `agent/confirm.py`, `agent/actions.py`, `agent/branches/return_or_replace.py`, `agent/llm.py`, `config/agent.toml`, `scripts/13_live_refund_method_paths.py`, `scripts/09_mutation_check.py`, and the tests listed in the build report. Results, mutation counts and the real-model run are in the build report.
