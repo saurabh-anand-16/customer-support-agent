@@ -1,0 +1,6 @@
+# Extra packages for policy search (phase 3b onward). Install with: pip install -r requirements-rag.txt
+# The core requirements.txt is not changed; tests that need these packages skip when they are missing.
+chromadb>=1.0        # the vector store
+openai>=1.50         # provider = "openai" (also needs OPENAI_API_KEY in .env)
+# Optional: only for provider = "local". It is large (it installs PyTorch), so it is commented out.
+# sentence-transformers>=3.0

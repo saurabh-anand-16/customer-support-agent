@@ -4,6 +4,7 @@ One report per finished phase, written from real git history and command output 
 
 | Phase | Report | Status |
 | --- | --- | --- |
-| 3a | [phase-03a-build.md](phase-03a-build.md) | In review (not committed) |
+| 3a | [phase-03a-build.md](phase-03a-build.md) | Committed (`79c14ae`) |
+| 3b | [phase-03b-build.md](phase-03b-build.md) | In review (not committed) |
 
 Phases 0 to 2b were finished before build reports existed and have none.

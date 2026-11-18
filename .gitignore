@@ -4,3 +4,7 @@ returns_agent.db
 .venv/
 .env
 .env.*
+
+# Policy-search index and embedding cache (phase 3b)
+data/rag/
+.vscode/

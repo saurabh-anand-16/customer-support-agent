@@ -76,6 +76,9 @@ class Embedding:
     batch_size: int
     normalize: bool
     query_prefix: str
+    cache_path: str       # embedding cache file; empty text turns the cache off
+    api_key_env: str      # name of the environment variable that holds the API key (never the key itself)
+    env_file: str         # file read for that variable when it is not already set
 
 
 @dataclass(frozen=True)
@@ -84,6 +87,7 @@ class Store:
     path: str
     collection: str
     distance: str
+    meta_path: str        # where the index fingerprint is also written, as JSON
 
 
 @dataclass(frozen=True)

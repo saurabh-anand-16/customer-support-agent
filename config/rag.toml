@@ -49,19 +49,28 @@ toc_label = "**Table of Contents**"
 toc_item_pattern = '^\s*[-*]\s+\[.*\]\(#[^)]*\)\s*$'
 collapse_blank_lines = true     # after removing the contents list, keep at most one blank line in a row
 
-[embedding]                     # used in 3b
-provider = "sentence-transformers"
-model = "BAAI/bge-small-en-v1.5"
-dimensions = 384
+[embedding]
+# Two providers are built. Switch between them by changing "provider" and "model" only:
+#   provider = "openai"   model = "text-embedding-3-small"   (needs OPENAI_API_KEY; the default)
+#   provider = "local"    model = "all-MiniLM-L6-v2"          (runs on this computer; needs sentence-transformers)
+# dimensions: 0 means "the model's own size". A positive number is requested from OpenAI and
+# checked against what the local model returns.
+provider = "openai"
+model = "text-embedding-3-small"
+dimensions = 0
 batch_size = 32
 normalize = true
-query_prefix = "Represent this sentence for searching relevant passages: "
+query_prefix = ""               # text put in front of a search query before it is embedded (some models want one)
+cache_path = "data/rag/embedding_cache.jsonl"   # vectors by model + text hash, so a rebuild embeds only what changed; "" = no cache
+api_key_env = "OPENAI_API_KEY"  # name of the variable holding the key. The key itself lives in .env only
+env_file = ".env"               # read for that variable when it is not already set in the environment
 
-[store]                         # used in 3b
-kind = "chroma"
-path = "data/index"
+[store]
+kind = "chroma"                 # "chroma" (on disk) or "memory" (used by tests)
+path = "data/rag/chroma"
 collection = "policy_chunks"
-distance = "cosine"
+distance = "cosine"             # "cosine", "ip" or "l2"
+meta_path = "data/rag/index_meta.json"   # the index fingerprint and build details, as JSON
 
 [retrieval]                     # used in 3c
 strategy = "bm25"               # "bm25", "vector" or "hybrid"

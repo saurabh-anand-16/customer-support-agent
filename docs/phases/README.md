@@ -13,9 +13,9 @@ Rules for these files:
 | 1 | Data layer | Done | | [phase-01-data-layer.md](phase-01-data-layer.md) |
 | 2 | Six tools and eligibility logic | Done | | [phase-02-tools.md](phase-02-tools.md) |
 | 2b | `cancel_order` | Done | | [phase-02b-cancel-order.md](phase-02b-cancel-order.md) |
-| 3 | Policy search (split into 3a to 3d, see below) | In progress (3a done) | 5 to 6 | [phase-03-policy-search.md](phase-03-policy-search.md) |
+| 3 | Policy search (split into 3a to 3d, see below) | In progress (3a, 3b done) | 5 to 6 | [phase-03-policy-search.md](phase-03-policy-search.md) |
 | 3a | Config system, ingestion, chunking, metadata | Done, in review ([build report](../builds/phase-03a-build.md)) | 1 | [phase-03a-config-and-ingestion.md](phase-03a-config-and-ingestion.md) |
-| 3b | Embeddings, ChromaDB, index build | Planned (next) | 1 to 1.5 | [phase-03b-embeddings-and-vector-store.md](phase-03b-embeddings-and-vector-store.md) |
+| 3b | Embeddings, ChromaDB, index build | Done, in review ([build report](../builds/phase-03b-build.md)) | 1 to 1.5 | [phase-03b-embeddings-and-vector-store.md](phase-03b-embeddings-and-vector-store.md) |
 | 3c | Retrievers, fusion, reranking, `search_policy` | Not started | 1.5 | [phase-03c-retrieval-pipeline.md](phase-03c-retrieval-pipeline.md) |
 | 3d | Retrieval eval set and tuning | Not started | 1 to 1.5 | [phase-03d-retrieval-evals-and-tuning.md](phase-03d-retrieval-evals-and-tuning.md) |
 | 4 | Agent: router, six branches, confirm step, answer check | Not started | 3 to 4 | |

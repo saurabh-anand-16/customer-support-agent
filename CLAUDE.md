@@ -7,7 +7,9 @@ An Amazon.in returns/refunds support agent. Real product data (Kaggle CSV), Amaz
 ```
 python scripts/01_clean_products.py      # then 02, 03, 04 in order: rebuilds data/clean/*.csv and returns_agent.db
 python scripts/05_chunk_policy.py      # policy pages -> data/clean/policy_chunks.csv (phase 3a)
-python -m pytest                         # 155 tests; must all pass before any change is called done
+pip install -r requirements-rag.txt    # extra packages for policy search
+python scripts/06_build_policy_index.py  # embed chunks into data/rag (needs OPENAI_API_KEY in .env; phase 3b)
+python -m pytest                         # 246 tests; must all pass before any change is called done
 ```
 
 Windows: use `py` if `python` is not found. Activate the venv first: `.venv\Scripts\Activate.ps1`.
@@ -17,7 +19,7 @@ Windows: use `py` if `python` is not found. Activate the venv first: `.venv\Scri
 - `policy/` the 18 polished Amazon policy pages. Amazon's text: never edit it without logging the change in `policy/CHANGES.md`.
 - `scripts/` build the data (clean products, policy tables, synthetic orders, database). `config.py` holds today's date and the seed.
 - `agent/eligibility.py` pure decision logic. `agent/tools.py` the seven tools so far. Both are framework-free.
-- `agent/rag/` policy search parts so far: `config.py` (loads `config/rag.toml`, index fingerprint), `ingest.py`, `registry.py`, `types.py`, `chunkers/`. `config/rag.toml` holds every tunable value for it.
+- `agent/rag/` policy search parts so far: `config.py` (loads `config/rag.toml`, index fingerprint), `ingest.py`, `registry.py`, `types.py`, `chunkers/`, `embedders/` (OpenAI, local, disk cache), `stores/` (ChromaDB, in-memory). `config/rag.toml` holds every tunable value for it. The API key lives in `.env` only and is never printed, logged or stored.
 - `docs/phases/` one document per phase: plan, files touched, results.
 - `tests/` pytest. `schema.sql` is the database layout and the window view.
 
@@ -78,6 +80,6 @@ Chain per message: session state (customer_id fixed) -> router -> branch flow ->
 
 **Routing evals must include:** ambiguous messages ("cancel my order" for a shipped item), topic changes mid-conversation, a bare "yes" with and without a pending action, off-topic questions, prompt-injection attempts, and a request for a person.
 
-## Roadmap (phases 2, 2b and 3a done)
+## Roadmap (phases 2, 2b, 3a and 3b done)
 
-~~3a config, ingestion and chunking~~ done · 3b embeddings and ChromaDB · 3c retrievers, fusion, reranking and `search_policy` · 3d retrieval evals and tuning · 4 agent flow in LangGraph with guardrails and the out-of-scope behaviour · 5 human review and escalation (`request_review`) · 6 Langfuse tracing · 7 Streamlit shell, Home and persona picker, Customer chat · 8 Manager page · 9 Developer page (traces) · 10-11 evaluation suite and results · 12 policy explorer and assumptions · 13 CI and packaging. Optional last: wrap the tools as an MCP server.
+~~3a config, ingestion and chunking~~ done · ~~3b embeddings and ChromaDB~~ done · 3c retrievers, fusion, reranking and `search_policy` · 3d retrieval evals and tuning · 4 agent flow in LangGraph with guardrails and the out-of-scope behaviour · 5 human review and escalation (`request_review`) · 6 Langfuse tracing · 7 Streamlit shell, Home and persona picker, Customer chat · 8 Manager page · 9 Developer page (traces) · 10-11 evaluation suite and results · 12 policy explorer and assumptions · 13 CI and packaging. Optional last: wrap the tools as an MCP server.

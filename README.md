@@ -22,6 +22,8 @@ python scripts/02_build_policy_tables.py
 python scripts/03_generate_orders.py
 python scripts/04_build_db.py
 python scripts/05_chunk_policy.py   # policy pages -> data/clean/policy_chunks.csv (phase 3a)
+pip install -r requirements-rag.txt # extra packages for policy search (phase 3b)
+python scripts/06_build_policy_index.py   # embed the chunks into the vector index (needs OPENAI_API_KEY in .env)
 ```
 
 ```
@@ -41,10 +43,12 @@ On Windows use `py` instead of `python` if `python` is not found. Every script p
 | `returns_agent.db` | The SQLite database (generated; not committed) |
 | `scripts/config.py` | Settings in one place: today's date, seed, sizes, paths |
 | `agent/` | The agent's seven tools (`tools.py`) and the pure decision logic (`eligibility.py`) |
-| `agent/rag/` | Policy search, so far: config loader, page reader, chunkers (phase 3a) |
+| `agent/rag/` | Policy search, so far: config loader, page reader, chunkers (3a), embedders and vector stores (3b) |
+| `requirements-rag.txt` | Extra packages for policy search (`chromadb`, `openai`); the core `requirements.txt` is unchanged |
+| `data/rag/` | The vector index and embedding cache (generated; not committed) |
 | `config/rag.toml` | Every tunable value for policy search: chunking, metadata, embedding, retrieval, profiles |
 | `docs/phases/` | One document per build phase: what it is for, files touched, how it was checked |
-| `tests/` | 155 tests (67 for the tools, 88 for the policy-search config and chunking); run with `python -m pytest` |
+| `tests/` | 246 tests (67 for the tools, 179 for policy search: config, chunking, embedders, stores and the index build); run with `python -m pytest` |
 
 ## What each script does
 
@@ -104,6 +108,14 @@ Seven plain Python functions in `agent/tools.py`, used as `ReturnsTools("returns
 `config/rag.toml` holds every choice for policy search: which pages to read, how to chunk them, which metadata to keep, the embedding model, retrieval settings, and five named profiles (`baseline_bm25`, `vector_only`, `hybrid`, `hybrid_cross_encoder`, `hybrid_llm_rerank`). Pick a profile with the `RAG_PROFILE` environment variable. A wrong key or value stops loading with a message naming it. The settings that shape the index (pages, chunking, metadata, text handling, embedding model and size) are hashed into an index fingerprint; search-only settings are not.
 
 `python scripts/05_chunk_policy.py` reads the 18 pages, removes the table-of-contents lists, splits the pages and writes `data/clean/policy_chunks.csv`, one row per chunk. With the starting settings (heading chunker, 1,200 characters, long tables split between rows) that is 138 chunks. Nothing is searched yet.
+
+## Embeddings and the vector index (phase 3b)
+
+`config/rag.toml` `[embedding]` picks the provider and model. The default is `provider = "openai"` with `model = "text-embedding-3-small"`; a second option is `provider = "local"` with `model = "all-MiniLM-L6-v2"` (needs `sentence-transformers`, which is not installed by `requirements-rag.txt` because it brings in PyTorch). Switching is a change to those two settings only; no model name is written in the code.
+
+The OpenAI key is read from the `OPENAI_API_KEY` variable or from `.env` (the file and variable names are in the config), by a small loader in `agent/rag/embedders/base.py`, not python-dotenv. It is not printed, logged or written to the index, the cache or any other file.
+
+`python scripts/06_build_policy_index.py` chunks the pages, embeds the chunks, and writes them to ChromaDB in `data/rag/chroma`, with the index fingerprint stored beside them (`data/rag/index_meta.json`). Vectors are cached by model and text, so a second run embeds nothing. If a setting that shapes the index changes, the index reports itself out of date and the next build starts clean. Nothing is searched yet.
 
 ## Day counting
 
