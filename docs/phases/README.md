@@ -34,7 +34,7 @@ Rules for these files:
 | 8b | Review follow-ups: chat sides, red dot, notices that arrive by themselves, the manager's reply, no second case, returns lookup | Done, in review ([build report](../builds/phase-08b-build.md)); real-model and real-browser run done; price questions and policy thresholds reported, not changed | | [phase-08b-review-followups.md](phase-08b-review-followups.md) |
 | 8c | Polish: solid corner tag, replacement wording and short product names in notices and cards, a "try" message per scenario, two replaced suggested chips | Done, in review ([build report](../builds/phase-08c-build.md)); real-model run and screenshots done | | [phase-08c-polish.md](phase-08c-polish.md) |
 | 6c | Richer trace: tokens, cost from a price table, timing and order, search and answer-check detail, versions, errors; fingerprint out of the prompt | Done, in review ([build report](../builds/phase-06c-build.md)); real-model and real-Langfuse run done | | [phase-06c-richer-trace.md](phase-06c-richer-trace.md) |
-| 9 | Developer page (traces) | Not started | 2 | |
+| 9 | Developer trace page: turn list, path drawing, model and tool calls, passages, answer check, versions, checks; chat links; `turn_id` in the result | Done, in review ([build report](../builds/phase-09-build.md)); real-model traces and screenshots done | 2 | [phase-09-developer-trace.md](phase-09-developer-trace.md) |
 | 10 | Evaluation suite | Not started | 3 | |
 | 11 | Evaluation results page | Not started | 1 | |
 | 12 | Policy explorer and assumptions pages | Not started | 1 | |

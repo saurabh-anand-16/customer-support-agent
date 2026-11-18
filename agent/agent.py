@@ -14,6 +14,7 @@ A branch that reaches a decision stores a pending action in the session. The nex
                      "last_eligible_date", "days_left"}, "needs_staff_approval", "question"} (never the customer id),
    "evidence": {"tool_calls": [{"tool", "input", "dropped_arguments", "output", "refused"}],
                 "policy_passages": [{"number", "citation", "source_file", "heading_path", "text", "cited"}]},
+   "turn_id": the id of this turn's line in the trace file, or None when it was not recorded (phase 9),
    "trace": {"steps", "checks" (guardrail checks, each {"name", "passed", "reason"}), "confirm" (what the confirm step
              did, or None), "router" (input summary, raw output, label, kind, reason, latency, error, ignored_field),
              "branch" (model calls, tool calls, refused tools, round limit, pending action, notes),
@@ -133,9 +134,11 @@ class Agent:
                   "kind": decision.kind, "pending_action": public_pending(session.pending_action),
                   "evidence": state.get("evidence") or {"tool_calls": [], "policy_passages": []}, "trace": trace}
         # Phase 6: save the turn. The tracer reads `result` and never raises, so the reply is the same with tracing on, off or failing.
+        turn_id = None
         try:
-            self.tracer.record_turn(result=result, session_id=session.session_id, customer_id=session.customer_id, message=text,
-                                    duration_ms=(time.perf_counter() - started) * 1000, capture=capture)
+            turn_id = self.tracer.record_turn(result=result, session_id=session.session_id, customer_id=session.customer_id, message=text,
+                                              duration_ms=(time.perf_counter() - started) * 1000, capture=capture)
         except Exception:
             pass
+        result["turn_id"] = turn_id if isinstance(turn_id, str) and turn_id else None      # phase 9: lets a page link to this turn; None when it was not recorded
         return result

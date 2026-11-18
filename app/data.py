@@ -5,6 +5,7 @@ No existing tool lists customers (every tool takes one customer from the session
 table with a read-only connection. The order line uses the agent's own read tool `list_orders`, so what the page shows is what
 the tools return. A test checks that no module in app/ calls a writer or runs a write statement.
 """
+import functools
 import sqlite3
 from datetime import date
 from pathlib import Path
@@ -228,3 +229,44 @@ def case_item(db: Path, customer_id: str, item_id: str) -> dict | None:
     finally:
         tools.con.close()
     return None
+
+
+# -- the Developer trace page (phase 9): read-only lookups of the local trace file ------------------------------------------
+def trace_path() -> Path:
+    """Where the agent writes its trace file: [tracing].local_path of config/agent.toml, under the project root."""
+    from agent.llm import ROOT, load_agent_config
+    from agent.tracing import resolve_path
+    return resolve_path(load_agent_config().tracing, ROOT)
+
+
+def trace_switches() -> dict:
+    """{"langfuse_enabled", "capture_text"} as the agent's config (and its three overrides) says now. Reads the config only, never a key."""
+    from agent.llm import load_agent_config
+    t = load_agent_config().tracing
+    return {"langfuse_enabled": bool(t.langfuse_enabled), "capture_text": bool(t.capture_text)}
+
+
+@functools.lru_cache(maxsize=24)
+def _read_turns_cached(path_text: str, mtime_ns, size, session_id, customer_id, route, has_failed_check, limit):
+    from agent.tracing import list_turns
+    return list_turns(path_text, limit=limit, session_id=session_id, customer_id=customer_id, route=route, has_failed_check=has_failed_check)
+
+
+def read_turns(path, *, session_id=None, customer_id=None, route=None, has_failed_check=None, limit: int = 100000):
+    """
+    Turn records newest first through the agent's reader (a broken line is skipped and counted). A missing file is an empty page.
+    The result is kept per file state (modified time and size) and filter, so a page run that asks again does not read and parse the
+    file again; a file that changed is read again. The caller must not change what it gets back.
+    """
+    try:
+        stat = Path(path).stat()
+        state = (stat.st_mtime_ns, stat.st_size)
+    except OSError:
+        state = (None, None)
+    return _read_turns_cached(str(path), *state, session_id, customer_id, route, has_failed_check, limit)
+
+
+def read_turn(path, turn_id: str):
+    """One turn record by id through the agent's reader, or None."""
+    from agent.tracing import get_turn
+    return get_turn(path, turn_id)

@@ -424,10 +424,11 @@ class Tracer:
             self._logged.add(key)
             log.warning("tracing failed (%s); the turn is not affected. Further errors of this kind are not logged.", key)
 
-    def record_turn(self, *, result: dict, session_id: str, customer_id: str, message: str, duration_ms: float, capture: dict | None = None) -> None:
-        """Write the record of one turn. Never raises and never changes `result`."""
+    def record_turn(self, *, result: dict, session_id: str, customer_id: str, message: str, duration_ms: float, capture: dict | None = None) -> str | None:
+        """Write the record of one turn. Never raises and never changes `result`. Returns the turn id when the record was written (or handed to
+        the Langfuse copy), else None (phase 9: the agent puts it in its result so a page can link to the turn)."""
         if not self.settings.enabled and self.exporter is None:
-            return
+            return None
         try:
             record = build_record(self.settings, result=result, session_id=session_id, customer_id=customer_id, message=message,
                                   duration_ms=duration_ms, model_names=self.model_names, capture=capture, pricing=self.pricing,
@@ -436,10 +437,12 @@ class Tracer:
                 append_line(self.path, record, self.settings.max_lines)
             if self.exporter is not None:
                 self.exporter.submit(record)               # queued for a background thread; never raises
+            return record["turn_id"]
         except BaseException as err:                       # tracing must never break a chat (KeyboardInterrupt excepted below)
             if isinstance(err, (KeyboardInterrupt, SystemExit)):
                 raise
             self._log_once(err)
+            return None
 
 
 # -- the reader (step 2) ----------------------------------------------------------------------------------------

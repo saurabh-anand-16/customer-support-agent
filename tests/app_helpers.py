@@ -77,6 +77,7 @@ def make_app(tmp_path, agent=None, backend=None):
     backend = backend or Backend(settings, agent_factory=lambda: agent)
     at = AppTest.from_file(MAIN, default_timeout=30)
     at.session_state["_backend"] = backend
+    at.session_state["_trace_path"] = tmp_path / "traces.jsonl"       # phase 9: the Developer page never reads the developer's own trace file in a test
     return at, backend, agent
 
 

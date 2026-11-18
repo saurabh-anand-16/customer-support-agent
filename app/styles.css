@@ -201,3 +201,30 @@
   [data-testid="stChatMessage"] [data-testid="stChatMessageContent"] { max-width: 100% !important; }
 }
 .plain-text { white-space: pre-wrap; overflow-wrap: anywhere; }
+
+/* ---- Developer trace (phase 9) -------------------------------------------------------------------------------- */
+.dev-totals { font-size: 0.85rem; color: var(--muted-dark); margin-bottom: 0.5rem; }
+.dev-turn { border: 1px solid var(--line); border-radius: 12px; padding: 0.6rem 0.8rem; background: var(--card); display: flex; flex-direction: column; gap: 0.35rem; }
+.dev-turn-selected { border: 2px solid var(--teal); }
+.dev-row { display: flex; min-width: 0; }
+.dev-user { justify-content: flex-end; }
+.dev-agent { justify-content: flex-start; }
+.dev-bubble { box-sizing: border-box; overflow-wrap: anywhere; max-width: 90%; border-radius: 14px; padding: 0.45rem 0.8rem; font-size: 0.9rem; line-height: 1.45; }
+.dev-bubble-user { background: #E7EDF8; color: #1F3A6B; border-radius: 14px 14px 4px 14px; }
+.dev-bubble-agent { background: #E3F1EE; color: #074A3F; border-radius: 14px 14px 14px 4px; }
+.dev-meta { margin-top: 0.1rem; }
+.dev-scroll { overflow-x: auto; }
+.dev-table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+.dev-table th { text-align: left; font-weight: 600; color: var(--muted); border-bottom: 1px solid var(--line); padding: 0.25rem 0.5rem 0.25rem 0; white-space: nowrap; }
+.dev-table td { border-bottom: 1px solid #ECEBE6; padding: 0.3rem 0.5rem 0.3rem 0; vertical-align: top; overflow-wrap: anywhere; }
+.path-img { width: 100%; max-width: 570px; height: auto; display: block; }
+.nw { white-space: nowrap; }
+.check-row { font-size: 0.85rem; padding: 0.2rem 0; }
+.badge-off { background: #ECEBE6; color: var(--muted-dark); }
+.detail-title { overflow-wrap: anywhere; }
+/* Streamlit's own class: the detail panel of the Developer trace page gets a card around it. */
+.st-key-dev_detail { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 1.1rem 1.2rem; }
+/* Streamlit's own class: the "Open this turn" button of each turn in the list is small. */
+[class*="st-key-dev_pick_"] button { min-height: 0; font-size: 0.8rem; padding: 0.15rem 0.7rem; }
+/* Phone: the tables keep a readable width and scroll sideways inside their box, so no column breaks letter by letter. */
+@media (max-width: 640px) { .dev-table { min-width: 34rem; } }

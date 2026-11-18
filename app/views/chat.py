@@ -108,6 +108,9 @@ def draw_turn(turn: dict, index: int, busy: bool, customer_id: str) -> None:
                     st.html(components.sources_html(lines))
             else:
                 st.html(components.error_html(turn["reply"]))
+        trace_id = (turn.get("result") or {}).get("turn_id")
+        if turn["status"] == "ok" and trace_id:                   # phase 9: the turn behind this reply, in the Developer trace page
+            st.page_link("views/developer.py", label="See this turn in Developer trace", query_params={"turn": trace_id})
         if turn.get("review"):
             draw_receipt(turn, index, customer_id)
         card = (turn.get("result") or {}).get("pending_action")
@@ -124,6 +127,9 @@ def draw_panel(all_turns: list) -> None:
             st.caption("Send a message and the last turn's details appear here.")
             return
         st.html(components.turn_panel_html(turns[-1]))
+        last_id = (turns[-1].get("result") or {}).get("turn_id")
+        if last_id:
+            st.page_link("views/developer.py", label="Open in Developer trace", query_params={"turn": last_id})
         earlier = turns[:-1]
         if earlier:
             with st.expander("Earlier in this chat"):

@@ -1,6 +1,6 @@
 # Phase 9: the Developer trace page
 
-**Status:** to build, after phase 6c. **Branch:** `phase-9-developer-trace`. **Follows:** phase 6c (richer trace). **Next:** phase 10 (evaluation and tuning), then phases 11 and 12 (the other Developer tabs).
+**Status:** built, in review ([build report](../builds/phase-09-build.md)); not committed. **Branch:** `phase-9-developer-trace`. **Follows:** phase 6c (richer trace). **Next:** phase 10 (evaluation and tuning), then phases 11 and 12 (the other Developer tabs).
 
 Look at `docs/design/reference/Developer.dc.html` (visual reference only; do not copy the markup). Where this document and the picture differ, this document wins. The sample numbers in the picture (timings, tokens, costs, the version block) are made up: the page shows only what the trace file holds.
 
@@ -66,3 +66,14 @@ Use the traces produced by the real-model turns of phase 6c, plus two or three n
 ## Not in phase 9
 
 The Evaluation, Tests, Policy explorer and Assumptions tabs (phases 11 and 12), scoring or feedback buttons, editing a trace, login, deployment.
+
+## What was really built
+
+The full account is in the [build report](../builds/phase-09-build.md). It followed the plan, with these differences:
+
+- The path drawing is an SVG shown as a data-address image, because Streamlit's `st.html` removes inline SVG. The route is also written as text under it.
+- `read_turns` in `app/data.py` keeps the reader's result per file state and filter, because the reader parses the whole file and the page asks several times per run.
+- No Langfuse deep link: the Langfuse trace id is not recorded in the trace file, so the page shows the turn id to search for.
+- `Tracer.record_turn` (in `agent/tracing.py`, a "left alone" file) now returns the turn id, which `Agent.respond` puts in its result as `turn_id`.
+- Files outside the list: `tests/app_helpers.py` (the page gets a trace file under `tmp_path`), `tests/test_app.py` and `tests/test_agent_flow.py` (one expectation each).
+- No mutation checks were run, as asked.

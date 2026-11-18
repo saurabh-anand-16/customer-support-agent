@@ -143,7 +143,7 @@ def test_the_sidebar_lists_the_six_pages_by_their_exact_names(tmp_path):
 def test_the_not_yet_built_pages_say_which_phase_builds_them(tmp_path):
     at, _, _ = make_app(tmp_path)
     at.run()
-    for page, phase in (("views/developer.py", 9), ("views/how_it_works.py", 13), ("views/limits.py", 13)):
+    for page, phase in (("views/how_it_works.py", 13), ("views/limits.py", 13)):
         at.switch_page(page).run()
         assert f"Coming in phase {phase}" in page_text(at)
 
