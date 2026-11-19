@@ -409,5 +409,5 @@ def test_a_bad_tracing_setting_is_refused_with_the_reason(tmp_path, change, mess
 def test_the_trace_folder_is_ignored_by_git_and_the_env_example_lists_names_only():
     assert "data/traces/" in (ROOT / ".gitignore").read_text().splitlines()
     example = [x for x in (ROOT / ".env.example").read_text().splitlines() if x and not x.startswith("#")]
-    assert example == ["TRACING_ENABLED=", "TRACING_LANGFUSE_ENABLED=", "TRACING_CAPTURE_TEXT=", "LANGFUSE_PUBLIC_KEY=", "LANGFUSE_SECRET_KEY=",
-                       "LANGFUSE_BASE_URL=", "LANGFUSE_HASH_KEY="]       # phase 6b added the four Langfuse names; still names only
+    assert example == ["OPENAI_API_KEY=", "TRACING_ENABLED=", "TRACING_LANGFUSE_ENABLED=", "TRACING_CAPTURE_TEXT=", "LANGFUSE_PUBLIC_KEY=", "LANGFUSE_SECRET_KEY=",
+                       "LANGFUSE_BASE_URL=", "LANGFUSE_HASH_KEY="]       # phase 6b added the four Langfuse names; phase 13 added OPENAI_API_KEY; still names only

@@ -140,12 +140,12 @@ def test_the_sidebar_lists_the_six_pages_by_their_exact_names(tmp_path):
     assert labels == PAGES
 
 
-def test_the_not_yet_built_pages_say_which_phase_builds_them(tmp_path):
+def test_no_sidebar_page_says_coming_soon_any_more(tmp_path):
     at, _, _ = make_app(tmp_path)
     at.run()
-    for page, phase in (("views/how_it_works.py", 13), ("views/limits.py", 13)):
+    for page in PAGE_FILES:
         at.switch_page(page).run()
-        assert f"Coming in phase {phase}" in page_text(at)
+        assert "Coming in phase" not in page_text(at), page
 
 
 def test_the_stylesheet_is_put_on_each_page_once(tmp_path):

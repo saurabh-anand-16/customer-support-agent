@@ -1,0 +1,43 @@
+# The known gaps shown on the Limits and assumptions page (phase 13). At most five entries.
+#
+# Each entry has:
+#   id, title   a short name and one line
+#   text        one or two plain sentences. NEVER type a measured number here.
+#   summary_key optional: a dotted path into data/evals/summary.json that holds a count. "{chosen}" stands for the chosen search profile.
+#   summary_total_key  optional: the path of the total that count is "of".
+#   summary_label      what the count counts (shown beside it)
+# The page reads the count live from the summary. A path that does not resolve shows "not recorded".
+
+[[limit]]
+id = "policy-coverage"
+title = "Policy coverage"
+text = "The agent answers from the Amazon.in policy pages. When a question is close to the policy but not covered, search may still hand back the nearest passages, and the answer may cite them."
+summary_key = "retrieval.profiles.{chosen}.by_category.unanswerable_related.nomatch_ok"
+summary_total_key = "retrieval.profiles.{chosen}.by_category.unanswerable_related.rows"
+summary_label = "Close-but-uncovered questions where search correctly returned nothing"
+
+[[limit]]
+id = "routing"
+title = "Routing"
+text = "The agent sends each message to one of seven lanes. A message that is too short or unclear gets one clarifying question instead of a guess."
+summary_key = "router.after.correct"
+summary_total_key = "router.after.rows"
+summary_label = "Test messages routed as expected"
+
+[[limit]]
+id = "scope"
+title = "Scope"
+text = "The agent handles returns, replacements, refunds and cancellations for orders fulfilled by Amazon. Seller-fulfilled orders, gift flows and A-to-z claims are out of scope, and the agent names the page to look at instead of giving links."
+
+[[limit]]
+id = "manager-side"
+title = "Manager side"
+text = "The demo has no login. Whoever opens the Manager queue acts as the manager."
+
+[[limit]]
+id = "evaluation"
+title = "Evaluation"
+text = "The test sets are our own, reviewed by one person, on synthetic data. Results from the live model vary a little from run to run."
+summary_key = "scenarios.passed"
+summary_total_key = "scenarios.scenarios"
+summary_label = "End-to-end scenarios passed in the last run"

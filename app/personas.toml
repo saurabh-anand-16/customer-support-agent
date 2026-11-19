@@ -29,7 +29,7 @@ item_id = "OI000002"
 label = "Needs a manager"
 title = "Needs a manager"
 hint = "Has a high-value item that needs a manager's approval."
-story = "A high-value replacement, above the approval limit. It goes to the review queue. A manager decides on the Manager queue page, which a later phase builds."
+story = "A high-value replacement, above the approval limit. It goes to the review queue and the chat pauses. On the Manager queue page, a manager can join the chat, talk with the customer, and approve or decline."
 
 [[persona]]
 customer_id = "C0087"

@@ -80,7 +80,7 @@ max_output_tokens = 700
 returns_lookup_orders = 10      # phase 8b: for a refund or return question, the newest this many orders are searched for returns by code before the model answers (0 = off)
 returns_lookup_words = ["refund", "return", "replacement", "exchange", "picked up", "pickup", "pick-up"]   # phase 8b: a conversation that has one of these words gets that search
 format_retries = 1              # phase 10: when the model answers with a bare action (for example a tool name instead of "call_tool"), it is asked once more with the reminder below; 0 = never
-format_reminder = "Your last reply was not in the expected format. Reply with exactly one JSON object: either {{\"action\": \"call_tool\", \"tool\": \"<tool name>\", \"arguments\": {{ ... }}}} to call a tool, or {{\"action\": \"final\", ...}} to finish. The word after \"action\" must be \"call_tool\" or \"final\", never a tool name."
+format_reminder = "Your last reply was not in the expected format, so no tool was run. Reply with exactly one JSON object and nothing else. To use a tool, write {\"action\": \"call_tool\", \"tool\": \"<tool name>\", \"arguments\": {}}. To finish, write {\"action\": \"final\", ...}. The value of \"action\" must be the word call_tool or the word final. A tool name goes in \"tool\", never in \"action\"."
 tool_round_limit = 4             # the most tool calls one branch may make for one message; a further call is refused and the message ends with the tool_limit reply
 history_turns = 3                # past exchanges a branch is shown
 max_message_chars = 2000

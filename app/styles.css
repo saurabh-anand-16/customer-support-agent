@@ -262,3 +262,21 @@
 .tm-customer { background: #E8EEF9; color: #1F3A6B; border-radius: 14px 14px 14px 4px; }
 .tm-manager { background: #EFE8F7; color: #3E2A6B; border-radius: 14px 14px 4px 14px; }
 @media (max-width: 640px) { .tm-bubble { max-width: 94%; } }
+
+/* ---- How it works and Limits and assumptions (phase 13) --------------------------------------------------------- */
+.how-diagram { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 0.6rem; overflow-x: auto; }
+/* On a phone the drawing keeps a readable width and scrolls sideways inside its box. */
+.how-img { display: block; width: 100%; min-width: 40rem; height: auto; }
+.how-text { margin: 0.6rem 0; font-size: 0.9rem; }
+.how-text summary { cursor: pointer; font-weight: 600; }
+.how-steps { display: flex; flex-direction: column; gap: 0.6rem; }
+.how-step { display: flex; gap: 0.8rem; background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 0.7rem 0.95rem; }
+.how-num { flex: 0 0 1.8rem; height: 1.8rem; border-radius: 50%; background: #E3F1EE; color: #074A3F; font-weight: 700; display: flex; align-items: center; justify-content: center; }
+.how-step-title, .how-rule-title { font-weight: 650; }
+.how-step-text { font-size: 0.9rem; line-height: 1.5; color: var(--muted-dark); }
+.how-rules { display: grid; grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr)); gap: 0.6rem; }
+.how-rule { background: #E3F1EE; border-radius: 10px; padding: 0.7rem 0.95rem; }
+.limit-item { border: 1px solid var(--line); border-radius: 10px; background: var(--card); padding: 0.7rem 0.95rem; margin: 0.5rem 0; }
+.limit-title { font-weight: 650; }
+.limit-text { font-size: 0.9rem; line-height: 1.5; margin: 0.2rem 0; }
+.limit-value { font-size: 0.9rem; font-weight: 600; color: #074A3F; }

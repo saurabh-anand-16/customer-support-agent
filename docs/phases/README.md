@@ -38,7 +38,8 @@ Rules for these files:
 | 9 | Developer trace page: turn list, path drawing, model and tool calls, passages, answer check, versions, checks; chat links; `turn_id` in the result | Done, in review ([build report](../builds/phase-09-build.md)); real-model traces and screenshots done | 2 | [phase-09-developer-trace.md](phase-09-developer-trace.md) |
 | 10 | Evaluation and tuning (retrieval, router, known problems, 23 end-to-end scenarios, full mutation run) | Done, in review ([build report](../builds/phase-10-build.md)); real-model runs done | 3 | [phase-10-evaluation-and-tuning.md](phase-10-evaluation-and-tuning.md) |
 | 11 and 12 | Developer tabs: Evaluation, Policy explorer, Assumptions (read-only; a Tests tab was dropped) | Built, in review ([build report](../builds/phase-11-build.md)); real-browser run done, no mutation check run | 2 | [phase-11-developer-tabs.md](phase-11-developer-tabs.md) |
-| 13 | CI, packaging, deployment, demo | Not started | 2 to 3 | |
+| 13 | How it works page, Limits and assumptions page, README with a generated results block, `docs/SOURCES.md`, screenshots | Built, in review ([build report](../builds/phase-13-build.md)); real-browser run with the real model done, no mutation check run | 1 to 2 | [phase-13-explain-and-readme.md](phase-13-explain-and-readme.md) |
+| 14 | CI, packaging, deployment, live demo link | Not started | 2 | |
 | Optional | MCP server around the tools | Not started | 1 | |
 
 Phase files for phases 4 and later are written when the phase before them finishes.

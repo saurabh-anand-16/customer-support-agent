@@ -1,6 +1,6 @@
 # Phase 13: How it works, Limits and assumptions, README
 
-**Status:** to build. **Branch:** `phase-13-explain-and-readme`. **Follows:** phase 8d (merged). **Next:** phase 14 (deployment, its own phase). There is no demo video. Tuning comes after phase 14.
+**Status:** built, in review ([build report](../builds/phase-13-build.md)); not committed. **Branch:** `phase-13-explain-and-readme`. **Follows:** phase 8d (merged). **Next:** phase 14 (deployment, its own phase). There is no demo video. Tuning comes after phase 14.
 
 Read first: `docs/phases/phase-07-streamlit-app.md` (page rules), `docs/phases/phase-11-developer-tabs.md` (how pages read files), `docs/design/reference/HowItWorks.dc.html` and `Limits.dc.html` (visual reference only; where this document and a picture differ, this document wins; the sample text and numbers in the pictures are not the truth).
 
