@@ -83,6 +83,8 @@ class BranchSettings:
     temperature: float
     max_output_tokens: int
     tool_round_limit: int
+    format_retries: int         # phase 10: how many times a bare action (no "call_tool" or "final") is answered with the reminder below
+    format_reminder: str        # the short reminder of the expected format, sent after such an answer
     history_turns: int
     max_message_chars: int
     max_question_chars: int
@@ -297,7 +299,7 @@ _SPEC = {
                                 "generic_clarify": str, "system_prompt": str, "labels": dict, "kinds": dict}),
     "scope": (ScopeSettings, {"statement": str}),
     "branches": (BranchSettings, {"name": str, "temperature": float, "max_output_tokens": int, "tool_round_limit": int,
-                                  "history_turns": int, "max_message_chars": int, "max_question_chars": int,
+                                  "format_retries": int, "format_reminder": str, "history_turns": int, "max_message_chars": int, "max_question_chars": int,
                                   "rewrite_follow_ups": bool, "rewrite_max_chars": int, "policy_top_k": int,
                                   "max_passage_chars": int, "returns_lookup_orders": int, "returns_lookup_words": list, "prompts": dict, "reason_texts": dict,
                                   "resolution_texts": dict, "approval_texts": dict, "replies": dict}),
@@ -596,6 +598,10 @@ def _check_branches(b: BranchSettings, where: str) -> None:
             raise AgentConfigError(f"{where}: [branches].{key} must be 1 or more")
     if b.history_turns < 0:
         raise AgentConfigError(f"{where}: [branches].history_turns must be 0 or more")
+    if b.format_retries < 0:
+        raise AgentConfigError(f"{where}: [branches].format_retries must be 0 or more")
+    if not b.format_reminder.strip():
+        raise AgentConfigError(f"{where}: [branches].format_reminder cannot be empty")
     if b.returns_lookup_orders < 0 or b.returns_lookup_orders > 25:
         raise AgentConfigError(f"{where}: [branches].returns_lookup_orders must be between 0 and 25")
     if not all(isinstance(w, str) and w.strip() for w in b.returns_lookup_words):

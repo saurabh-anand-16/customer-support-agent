@@ -11,7 +11,7 @@ import json
 REASONS = ["damaged", "defective", "wrong_item", "not_as_described", "changed_mind"]
 
 FIXED_BRANCHES = {
-    "name": "branch-test-model", "temperature": 0.3, "max_output_tokens": 222, "tool_round_limit": 3, "history_turns": 2,
+    "name": "branch-test-model", "temperature": 0.3, "max_output_tokens": 222, "tool_round_limit": 3, "format_retries": 1, "format_reminder": "REMINDER-FORMAT", "history_turns": 2,
     "max_message_chars": 300, "max_question_chars": 60, "rewrite_follow_ups": True, "rewrite_max_chars": 80,
     "policy_top_k": 3, "max_passage_chars": 200,
     "returns_lookup_orders": 0, "returns_lookup_words": ["refund", "return"],       # off in the fixed config; the tests of the lookup switch it on

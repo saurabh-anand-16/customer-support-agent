@@ -1,0 +1,421 @@
+{
+  "date": "2026-11-19",
+  "git_commit": "768dff8",
+  "note": "Counts, ids and settings only: no message text, no keys. Cost is not priced (the price table is empty).",
+  "reviewed_rows": {
+    "retrieval_questions": {
+      "reviewed": 106,
+      "not_reviewed": 0
+    },
+    "router_messages": {
+      "reviewed": 83,
+      "not_reviewed": 0
+    }
+  },
+  "retrieval": {
+    "chosen_profile": "vector_only",
+    "thresholds": {
+      "vector_min_score": 0.29,
+      "bm25_min_score": 5.1,
+      "hybrid_require": "any"
+    },
+    "embedding_model": "text-embedding-3-small",
+    "chunk_max_chars": 1200,
+    "profiles": {
+      "baseline_bm25": {
+        "answerable_rows": 76,
+        "hit_at_1": 38,
+        "hit_at_3": 54,
+        "hit_at_5": 56,
+        "mrr": 0.661,
+        "no_match_ok": 84,
+        "rows": 106,
+        "forbidden_file_shown": 0,
+        "by_category": {
+          "exact_wording": {
+            "rows": 10,
+            "answerable": 10,
+            "hit1": 9,
+            "hit3": 10,
+            "hit5": 10,
+            "nomatch_ok": 10
+          },
+          "multi_page": {
+            "rows": 10,
+            "answerable": 10,
+            "hit1": 0,
+            "hit3": 2,
+            "hit5": 3,
+            "nomatch_ok": 10
+          },
+          "off_topic": {
+            "rows": 8,
+            "answerable": 0,
+            "hit1": 0,
+            "hit3": 0,
+            "hit5": 0,
+            "nomatch_ok": 7
+          },
+          "paraphrase": {
+            "rows": 50,
+            "answerable": 50,
+            "hit1": 27,
+            "hit3": 37,
+            "hit5": 38,
+            "nomatch_ok": 47
+          },
+          "policy_gap": {
+            "rows": 6,
+            "answerable": 6,
+            "hit1": 2,
+            "hit3": 5,
+            "hit5": 5,
+            "nomatch_ok": 6
+          },
+          "scope_guard": {
+            "rows": 8,
+            "answerable": 0,
+            "hit1": 0,
+            "hit3": 0,
+            "hit5": 0,
+            "nomatch_ok": 0
+          },
+          "unanswerable_related": {
+            "rows": 14,
+            "answerable": 0,
+            "hit1": 0,
+            "hit3": 0,
+            "hit5": 0,
+            "nomatch_ok": 4
+          }
+        }
+      },
+      "vector_only": {
+        "answerable_rows": 76,
+        "hit_at_1": 46,
+        "hit_at_3": 65,
+        "hit_at_5": 68,
+        "mrr": 0.796,
+        "no_match_ok": 84,
+        "rows": 106,
+        "forbidden_file_shown": 0,
+        "by_category": {
+          "exact_wording": {
+            "rows": 10,
+            "answerable": 10,
+            "hit1": 10,
+            "hit3": 10,
+            "hit5": 10,
+            "nomatch_ok": 10
+          },
+          "multi_page": {
+            "rows": 10,
+            "answerable": 10,
+            "hit1": 1,
+            "hit3": 6,
+            "hit5": 7,
+            "nomatch_ok": 10
+          },
+          "off_topic": {
+            "rows": 8,
+            "answerable": 0,
+            "hit1": 0,
+            "hit3": 0,
+            "hit5": 0,
+            "nomatch_ok": 8
+          },
+          "paraphrase": {
+            "rows": 50,
+            "answerable": 50,
+            "hit1": 32,
+            "hit3": 44,
+            "hit5": 45,
+            "nomatch_ok": 50
+          },
+          "policy_gap": {
+            "rows": 6,
+            "answerable": 6,
+            "hit1": 3,
+            "hit3": 5,
+            "hit5": 6,
+            "nomatch_ok": 6
+          },
+          "scope_guard": {
+            "rows": 8,
+            "answerable": 0,
+            "hit1": 0,
+            "hit3": 0,
+            "hit5": 0,
+            "nomatch_ok": 0
+          },
+          "unanswerable_related": {
+            "rows": 14,
+            "answerable": 0,
+            "hit1": 0,
+            "hit3": 0,
+            "hit5": 0,
+            "nomatch_ok": 0
+          }
+        }
+      },
+      "hybrid": {
+        "answerable_rows": 76,
+        "hit_at_1": 44,
+        "hit_at_3": 58,
+        "hit_at_5": 63,
+        "mrr": 0.761,
+        "no_match_ok": 83,
+        "rows": 106,
+        "forbidden_file_shown": 0,
+        "by_category": {
+          "exact_wording": {
+            "rows": 10,
+            "answerable": 10,
+            "hit1": 10,
+            "hit3": 10,
+            "hit5": 10,
+            "nomatch_ok": 10
+          },
+          "multi_page": {
+            "rows": 10,
+            "answerable": 10,
+            "hit1": 1,
+            "hit3": 4,
+            "hit5": 4,
+            "nomatch_ok": 10
+          },
+          "off_topic": {
+            "rows": 8,
+            "answerable": 0,
+            "hit1": 0,
+            "hit3": 0,
+            "hit5": 0,
+            "nomatch_ok": 7
+          },
+          "paraphrase": {
+            "rows": 50,
+            "answerable": 50,
+            "hit1": 29,
+            "hit3": 39,
+            "hit5": 43,
+            "nomatch_ok": 50
+          },
+          "policy_gap": {
+            "rows": 6,
+            "answerable": 6,
+            "hit1": 4,
+            "hit3": 5,
+            "hit5": 6,
+            "nomatch_ok": 6
+          },
+          "scope_guard": {
+            "rows": 8,
+            "answerable": 0,
+            "hit1": 0,
+            "hit3": 0,
+            "hit5": 0,
+            "nomatch_ok": 0
+          },
+          "unanswerable_related": {
+            "rows": 14,
+            "answerable": 0,
+            "hit1": 0,
+            "hit3": 0,
+            "hit5": 0,
+            "nomatch_ok": 0
+          }
+        }
+      },
+      "hybrid_llm_rerank": {
+        "answerable_rows": 76,
+        "hit_at_1": 58,
+        "hit_at_3": 68,
+        "hit_at_5": 69,
+        "mrr": 0.903,
+        "no_match_ok": 83,
+        "rows": 106,
+        "forbidden_file_shown": 0,
+        "by_category": {
+          "exact_wording": {
+            "rows": 10,
+            "answerable": 10,
+            "hit1": 10,
+            "hit3": 10,
+            "hit5": 10,
+            "nomatch_ok": 10
+          },
+          "multi_page": {
+            "rows": 10,
+            "answerable": 10,
+            "hit1": 1,
+            "hit3": 5,
+            "hit5": 5,
+            "nomatch_ok": 10
+          },
+          "off_topic": {
+            "rows": 8,
+            "answerable": 0,
+            "hit1": 0,
+            "hit3": 0,
+            "hit5": 0,
+            "nomatch_ok": 7
+          },
+          "paraphrase": {
+            "rows": 50,
+            "answerable": 50,
+            "hit1": 42,
+            "hit3": 48,
+            "hit5": 48,
+            "nomatch_ok": 50
+          },
+          "policy_gap": {
+            "rows": 6,
+            "answerable": 6,
+            "hit1": 5,
+            "hit3": 5,
+            "hit5": 6,
+            "nomatch_ok": 6
+          },
+          "scope_guard": {
+            "rows": 8,
+            "answerable": 0,
+            "hit1": 0,
+            "hit3": 0,
+            "hit5": 0,
+            "nomatch_ok": 0
+          },
+          "unanswerable_related": {
+            "rows": 14,
+            "answerable": 0,
+            "hit1": 0,
+            "hit3": 0,
+            "hit5": 0,
+            "nomatch_ok": 0
+          }
+        }
+      }
+    },
+    "skipped": {
+      "hybrid_cross_encoder": "sentence-transformers is not installed in the project environment"
+    }
+  },
+  "router": {
+    "before": {
+      "correct": 73,
+      "rows": 83,
+      "by_category": {
+        "ambiguous": {
+          "correct": 8,
+          "total": 10
+        },
+        "chat": {
+          "correct": 9,
+          "total": 10
+        },
+        "clear": {
+          "correct": 46,
+          "total": 52
+        },
+        "follow_up": {
+          "correct": 2,
+          "total": 3
+        },
+        "injection": {
+          "correct": 2,
+          "total": 2
+        },
+        "pending_action": {
+          "correct": 4,
+          "total": 4
+        },
+        "topic_change": {
+          "correct": 2,
+          "total": 2
+        }
+      },
+      "wrong_ids": [
+        "RT012",
+        "RT021",
+        "RT029",
+        "RT058",
+        "RT059",
+        "RT075",
+        "RT076",
+        "RT077",
+        "RT079",
+        "RT083"
+      ]
+    },
+    "after": {
+      "correct": 76,
+      "rows": 83,
+      "by_category": {
+        "ambiguous": {
+          "correct": 10,
+          "total": 10
+        },
+        "chat": {
+          "correct": 9,
+          "total": 10
+        },
+        "clear": {
+          "correct": 48,
+          "total": 52
+        },
+        "follow_up": {
+          "correct": 1,
+          "total": 3
+        },
+        "injection": {
+          "correct": 2,
+          "total": 2
+        },
+        "pending_action": {
+          "correct": 4,
+          "total": 4
+        },
+        "topic_change": {
+          "correct": 2,
+          "total": 2
+        }
+      },
+      "wrong_ids": [
+        "RT012",
+        "RT021",
+        "RT029",
+        "RT031",
+        "RT058",
+        "RT071",
+        "RT075"
+      ]
+    },
+    "model": "gpt-4o-mini",
+    "got_better": [
+      "RT059",
+      "RT076",
+      "RT077",
+      "RT079",
+      "RT083"
+    ],
+    "got_worse": [
+      "RT031",
+      "RT071"
+    ]
+  },
+  "scenarios": {
+    "scenarios": 25,
+    "passed": 25,
+    "failed_ids": [],
+    "model_calls": 80,
+    "input_tokens": 78561,
+    "output_tokens": 2305,
+    "real_database_unchanged": true
+  },
+  "mutations": {
+    "finished": true,
+    "mutations": 165,
+    "killed": 165,
+    "survived": [],
+    "seconds": 6948
+  }
+}

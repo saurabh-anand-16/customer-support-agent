@@ -158,6 +158,13 @@ def tool_loop(ctx: BranchContext, run: Run, system: str, first_user: str, allowe
         if raw is None:
             return None
         data, error = parse_object(raw)
+        if not error and data.get("action") not in ("call_tool", "final") and run.notes.get("format_retries", 0) < b.format_retries:
+            # Phase 10: the model wrote a bare action (for example a tool name where "call_tool" belongs). Ask again with a short reminder of the
+            # format. The reminder holds no facts and decides nothing; the retry count goes to the trace through run.notes.
+            run.notes["format_retries"] = run.notes.get("format_retries", 0) + 1
+            messages.append({"role": "assistant", "content": raw})
+            messages.append({"role": "user", "content": b.format_reminder})
+            continue
         if error or data.get("action") not in ("call_tool", "final"):
             run.error = error or f"unknown action {data.get('action')!r}"
             return None

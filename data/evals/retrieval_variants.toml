@@ -1,0 +1,18 @@
+# The variations phase 10 Part A tries on the chosen retrieval profile (scripts/07_eval_retrieval.py --variants).
+# Each one changes one setting of the profile. Model names live here and in config/rag.toml, never in code.
+# The first row, with nothing changed, is the current setting for comparison.
+
+[[variant]]
+label = "current settings"
+
+[[variant]]
+label = "embedding model text-embedding-3-large"
+embedding_model = "text-embedding-3-large"
+
+[[variant]]
+label = "chunk size 600"
+max_chars = 600
+
+[[variant]]
+label = "chunk size 2000"
+max_chars = 2000

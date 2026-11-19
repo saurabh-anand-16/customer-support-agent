@@ -11,6 +11,10 @@ values count, never its keys. Dates are taken out of a text before its numbers a
 2026, 11 or 17 acceptable as plain numbers. A word with letters and digits ("OI000001", "R000012") is an id, not a number.
 Formats are compared by value: INR 1,099 and 1099.00 are the same amount; 17 Nov, 17 November 2026 and 2026-11-17 are
 the same date (a date without a year matches on day and month). Number words ("five") are not read: a known gap.
+
+Phase 10: a web address (starting http://, https:// or www.) in a reply must appear in the tool results or the retrieved passages
+(compared without the scheme, case and trailing punctuation). The policy pages hold none, so in practice any address is invented.
+It is reported like any other unsupported value and goes through the same retry and template fallback.
 """
 import re
 from dataclasses import dataclass, field
@@ -27,6 +31,7 @@ _NUMERIC_DATE = re.compile(r"\b(\d{1,2})[/-](\d{1,2})[/-](\d{4})\b")            
 _NUMBER = re.compile(r"(?<![\w.])((?:₹|Rs\.?|INR)\s*)?(\d{1,3}(?:,\d{2,3})+(?:\.\d+)?|\d+(?:\.\d+)?)(?:st|nd|rd|th)?(?!\w)", re.I)
 _LIST_MARKER = re.compile(r"(?m)^\s*\d+[.)]\s+")
 _SOURCE_FILE = re.compile(r"\b[\w\-]+\.md\b")
+_URL = re.compile(r"""(?:https?://|www\.)[^\s<>"')\]]+""", re.I)               # a web address: http, https or www; it ends at a space, a quote or a closing bracket
 
 
 @dataclass(frozen=True)
@@ -44,6 +49,7 @@ class Facts:
     numbers: set = field(default_factory=set)        # Decimal values
     dates: set = field(default_factory=set)          # datetime.date (a date written without a year is kept in year 2000)
     sources: set = field(default_factory=set)        # policy files named by a search result of the turn
+    urls: set = field(default_factory=set)           # web addresses found in the successful tool results (see normalise_url)
 
 
 # --- reading a text ------------------------------------------------------------------------------------------
@@ -107,7 +113,14 @@ def _walk(value, texts: list, numbers: set):
             _walk(v, texts, numbers)
 
 
+def normalise_url(written: str) -> str:
+    """A web address as compared: lower case, without http:// or https://, without trailing punctuation."""
+    text = written.strip().lower().rstrip(".,;:!?")
+    return re.sub(r"^https?://", "", text)
+
+
 def _add_text(facts: Facts, text: str) -> None:
+    facts.urls |= {normalise_url(u) for u in _URL.findall(text)}
     dates, rest = read_dates(text)
     for year, month, day, _, valid in dates:
         if valid:
@@ -159,6 +172,9 @@ def find_problems(text: str, facts: Facts) -> list:
     for name in _SOURCE_FILE.findall(text):
         if name not in facts.sources:
             problems.append(Problem("citation", name, "not a page the policy search returned"))
+    for address in _URL.findall(text):
+        if normalise_url(address) not in facts.urls:
+            problems.append(Problem("web address", address.rstrip(".,;:!?"), "not in the tool results or the policy passages"))
     return problems
 
 
@@ -172,7 +188,8 @@ def inspect_text(text: str, facts: Facts) -> dict:
     dates = [{"text": written, "supported": bool(valid and _date_supported(year, month, day, facts))} for year, month, day, written, valid in dates_found]
     numbers = [{"text": written, "money": money, "supported": value in facts.numbers} for value, written, money in read_numbers(rest)]
     files = [{"text": name, "supported": name in facts.sources} for name in _SOURCE_FILE.findall(text)]
-    return {"numbers": numbers, "dates": dates, "files": files}
+    urls = [{"text": address.rstrip(".,;:!?"), "supported": normalise_url(address) in facts.urls} for address in _URL.findall(text)]
+    return {"numbers": numbers, "dates": dates, "files": files, "urls": urls}
 
 
 def describe_problems(problems: list) -> str:

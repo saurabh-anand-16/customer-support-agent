@@ -1,5 +1,5 @@
 """
-09_mutation_check.py - break each safety rule on purpose and check that a test notices (phases 4c, 5a, 4d, 5b, 6, 6b, 7, 8, 8b and 6c).
+09_mutation_check.py - break each safety rule on purpose and check that a test notices (phases 4c, 5a, 4d, 5b, 6, 6b, 7, 8, 8b, 6c and 10).
 
     python scripts/09_mutation_check.py              # all mutations
     python scripts/09_mutation_check.py M07 M11      # only these
@@ -31,7 +31,8 @@ TESTS = ["tests/test_confirm_step.py", "tests/test_answer_check.py", "tests/test
          "tests/test_review_queue.py", "tests/test_escalation.py", "tests/test_review_safety.py", "tests/test_branch_human_help.py",
          "tests/test_refund_method.py", "tests/test_build_script.py", "tests/test_router.py", "tests/test_review_decision.py",
          "tests/test_tracing.py", "tests/test_langfuse_export.py", "tests/test_app.py", "tests/app_helpers.py", "tests/test_manager_page.py",
-         "tests/test_followups_agent.py", "tests/test_followups_app.py", "tests/test_followups_notices.py", "tests/test_trace_detail.py"]
+         "tests/test_followups_agent.py", "tests/test_followups_app.py", "tests/test_followups_notices.py", "tests/test_trace_detail.py",
+         "tests/test_unknown_action_recovery.py", "tests/test_answer_check_urls.py"]
 
 # (id, the rule that is broken, file, text to replace, replacement)
 MUTATIONS = [
@@ -61,7 +62,7 @@ MUTATIONS = [
     ("M12", "a request that needs approval goes to the review seam", "agent/actions.py",
      'if code == "staff_approval_required":', "if False:"),
     ("M13", "no agent module reads the test-only column", "agent/actions.py",
-     "from .checks import check\n", "from .checks import check  # reads test_scenario\n"),
+     "from .checks import blocked_by_design, check\n", "from .checks import blocked_by_design, check  # reads test_scenario\n"),
     ("M14", "a made-up number, amount or date in a reply is caught", "agent/branches/base.py",
      "    problems = find_problems(text, facts)\n", "    problems = []\n"),
     ("M15", "a retried answer is checked again", "agent/branches/base.py",
@@ -99,7 +100,7 @@ MUTATIONS = [
     ("M30", "the same case: a different customer is a different case", "agent/review_queue.py",
      "WHERE customer_id = ? AND order_item_id", "WHERE (customer_id = ? OR 1) AND order_item_id"),
     ("M31", "the same case: an item that is no longer open does not block a new one", "agent/review_queue.py",
-     'AND status = ?",\n', 'AND (status = ? OR 1)",\n'),
+     'AND kind = ? AND status = ?",', 'AND kind = ? AND (status = ? OR 1)",'),
     ("M32", "the queue module cannot import the writers", "agent/review_queue.py",
      "import json\nimport re\n", "import json\nimport re\nfrom .tools import ReturnsTools\n"),
     ("M33", "the queue module has no function that touches returns", "agent/review_queue.py",
@@ -128,11 +129,12 @@ MUTATIONS = [
     ("M44", "a late-return case adds its entry to the checks", "agent/branches/return_or_replace.py",
      '        run.checks.append(sent["check"])', "        pass"),
     ("M45", "a needs-approval case adds its entry to the checks", "agent/actions.py",
-     'check("write", False, "the tool refused: staff_approval_required"), sent["check"]])', 'check("write", False, "the tool refused: staff_approval_required")])'),
+     'blocked_by_design("write", "not written: this request needs a reviewer\'s approval first (staff_approval_required)"), sent["check"]])',
+     'blocked_by_design("write", "not written: this request needs a reviewer\'s approval first (staff_approval_required)")])'),
     ("M46", "the needs-approval case is queued under its own kind", "agent/actions.py",
      'escalate_fn(session, "approval_required", details,', 'escalate_fn(session, "late_request", details,'),
     ("M47", "a new item is always open", "agent/review_queue.py",
-     'OPEN = "open" ', 'OPEN = "approved" '),
+     'OPEN = "open"', 'OPEN = "approved"'),
     ("M48", "the real config reply carries the reference", "config/agent.toml",
      'reply_template = "I have asked a person to review this. Your reference is {reference}.', 'reply_template = "I have asked a person to review this. Your reference is REV.'),
     ("M49", "no module but the seam uses the queue", "agent/branches/base.py",
@@ -235,9 +237,9 @@ MUTATIONS = [
     ("M93", "a notice is added only for a case that was marked as told", "agent/review_notice.py",
      'elif queue.mark_notified(item["id"]):', "elif True:"),
     ("M94", "the manager's note is not shown to the customer by default", "agent/review_notice.py",
-     'if cfg.review.show_note_to_customer and item.get("decision_note"):', 'if item.get("decision_note"):'),
+     'if item.get("decision_note") and (r.show_note_to_customer or', 'if item.get("decision_note") and (True or r.show_note_to_customer or'),
     ("M95", "a shown note is cut to the length limit", "agent/review_notice.py",
-     'item["decision_note"][:cfg.review.note_max_chars]', 'item["decision_note"]'),
+     'item["decision_note"][:r.note_max_chars]', 'item["decision_note"]'),
     ("M96", "an approval whose return cannot be read is not announced", "agent/review_notice.py",
      "        if not row:\n", "        if False:\n"),
     ("M97", "the cheque case has its own reason sentence", "agent/escalation.py",
@@ -260,8 +262,8 @@ MUTATIONS = [
      'reply = notice + "\\n\\n" + state["reply"] if notice else state["reply"]', 'reply = state["reply"]'),
     # --- phase 6: the local trace file and its reader ---
     ("M106", "any error inside tracing is caught (both guards, the tracer's and the agent's)", ["agent/tracing.py", "agent/agent.py"],
-     ["        except BaseException as err:", "        except Exception:\n            pass\n        return result"],
-     ["        except ZeroDivisionError as err:", "        except ZeroDivisionError:\n            pass\n        return result"]),
+     ["        except BaseException as err:", "        except Exception:\n            pass\n        result[\"turn_id\"]"],
+     ["        except ZeroDivisionError as err:", "        except ZeroDivisionError:\n            pass\n        result[\"turn_id\"]"]),
     ("M107", "a trace line is written under a lock", "agent/tracing.py", "    with _lock_for(path):\n", "    if True:\n"),
     ("M108", "a key-like text is removed from the record", "agent/tracing.py", "        return KEY_PATTERN.sub(REDACTED, value)", "        return value"),
     ("M109", "hidden keys (staff_approved, confirmed, nested customer_id) are dropped from the record", "agent/tracing.py",
@@ -284,10 +286,12 @@ MUTATIONS = [
     ("M119", "the environment overrides the three tracing switches", "agent/llm.py",
      "    return dataclasses.replace(settings, **changes) if changes else settings", "    return settings"),
     ("M120", "an unreadable override value is an error, not ignored", "agent/llm.py",
-     '            raise AgentConfigError(f"The environment variable {name} must be true or false, got {raw!r}")', "            continue"),
+     '            raise AgentConfigError(f"The variable {name} (environment or env file) must be true or false, got {raw!r}")', '            continue'),
     ("M121", "tracing never changes the result of a turn", "agent/tracing.py",
      "            append_line(self.path, record, self.settings.max_lines)\n", '            append_line(self.path, record, self.settings.max_lines)\n            result["reply"] = result["reply"] + " "\n'),
-    ("M122", "tracing off writes nothing", "agent/tracing.py", "        if not self.settings.enabled:\n            return\n", ""),
+    ("M122", "tracing off writes nothing (the early return and the write guard are both broken)", ["agent/tracing.py", "agent/tracing.py"],
+     ["        if not self.settings.enabled and self.exporter is None:\n            return None\n", "            if self.settings.enabled:\n                append_line("],
+     ["", "            if True:\n                append_line("]),
     # Phase 6b: the Langfuse copy.
     ("M123", "the Langfuse user id is a hash, not the customer id", "agent/langfuse_export.py",
      '    return hmac.new(key.encode("utf-8"), str(customer_id).encode("utf-8"), hashlib.sha256).hexdigest()[:32]', "    return str(customer_id)"),
@@ -304,7 +308,7 @@ MUTATIONS = [
      "    return CUSTOMER_ID.sub(MASKED_ID, PHONE.sub(MASKED_PHONE, EMAIL.sub(MASKED_EMAIL, text)))",
      "    return CUSTOMER_ID.sub(MASKED_ID, PHONE.sub(MASKED_PHONE, text))"),
     ("M128", "the mask function is given to the Langfuse client", "agent/langfuse_export.py",
-     "                                    mask=mask, **self._client_args)", "                                    **self._client_args)"),
+     "mask=mask, **args)", "**args)"),
     ("M129", "a short timeout is given to the Langfuse client", "agent/langfuse_export.py",
      "base_url=self._secret(BASE_URL_NAME), timeout=self.settings.langfuse_timeout,", "base_url=self._secret(BASE_URL_NAME),"),
     ("M130", "Langfuse is off by default in the shipped config", "config/agent.toml",
@@ -339,7 +343,7 @@ MUTATIONS = [
      "for n in (PUBLIC_KEY_NAME, SECRET_KEY_NAME, BASE_URL_NAME, hash_name) if not self._secret(n)]",
      "for n in (PUBLIC_KEY_NAME, SECRET_KEY_NAME, BASE_URL_NAME) if not self._secret(n)]"),
     ("M142", "the agent gives the exporter the env file of the model section", "agent/agent.py",
-     "llm_settings._env_file_for(self.cfg.model)))", "None))"),
+     "llm_settings._env_file_for(self.cfg.model)),", "None),"),
     ("M143", "the raw customer id is never sent as the user id", "agent/langfuse_export.py",
      '            user = hash_customer(record.get("customer_id") or "", self._hash_key)', '            user = record.get("customer_id") or ""'),
     ("M144", "a policy search is a retriever observation", "agent/langfuse_export.py",
@@ -392,6 +396,11 @@ MUTATIONS = [
      '    if price is None or price.input_per_million is None or price.output_per_million is None:\n        return None, None, "no_price"\n',
      '    if price is None or price.input_per_million is None or price.output_per_million is None:\n'
      '        price = type("Guess", (), {"input_per_million": 1.0, "output_per_million": 1.0, "cached_input_per_million": None})()\n'),
+    # phase 10: the two rules added in Part C
+    ("M164", "a web address in a reply that no tool result or passage holds is caught (the web-address rule)", "agent/answer_check.py",
+     "        if normalise_url(address) not in facts.urls:", "        if False:"),
+    ("M165", "a bare action from the model gets one reminder and a retry (the unknown-action recovery)", "agent/branches/base.py",
+     'if not error and data.get("action") not in ("call_tool", "final") and run.notes.get("format_retries", 0) < b.format_retries:', "if False:"),
 ]
 
 

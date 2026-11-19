@@ -25,7 +25,9 @@ python scripts/05_chunk_policy.py   # policy pages -> data/clean/policy_chunks.c
 pip install -r requirements-rag.txt # extra packages for policy search (phase 3b)
 python scripts/06_build_policy_index.py   # embed the chunks into the vector index (needs OPENAI_API_KEY in .env)
 pip install -r requirements-agent.txt     # langgraph, for the agent (phases 4a to 4c)
-python scripts/08_eval_router.py          # try the router on the labelled messages (needs OPENAI_API_KEY in .env)
+python scripts/07_eval_retrieval.py       # score policy search on the 106 reviewed questions (phase 10 Part A)
+python scripts/08_eval_router.py --label run  # score the router on the 83 reviewed messages, real model (phase 10 Part B)
+python scripts/19_run_scenarios.py        # 25 end-to-end scenarios with the real model, on a copy of the database (phase 10 Part D)
 ```
 
 `python -m pytest` leaves out the tests marked `live` (they call real services such as OpenAI). `python -m pytest -m live` runs only those.
@@ -55,7 +57,7 @@ On Windows use `py` instead of `python` if `python` is not found. Every script p
 | `data/rag/` | The vector index and embedding cache (generated; not committed) |
 | `config/rag.toml` | Every tunable value for policy search: chunking, metadata, embedding, retrieval, profiles |
 | `docs/phases/` | One document per build phase: what it is for, files touched, how it was checked |
-| `tests/` | 1697 tests run by default (67 for the tools, 409 for policy search, 187 for the session and router, 227 for the branch flows, 170 for the confirm step, answer check and guardrails, 97 for the review queue, 73 for the refund-method question, 1 for the database build script, 65 for the manager's decision and the outcome notice, 43 for the trace file and its reader, 40 for the Langfuse copy, 68 for the app, 36 for the Manager page, 83 for the phase 8b follow-ups, 15 for the phase 8c polish, 69 for the richer trace of phase 6c, 47 for the Developer trace page of phase 9), plus 34 `live` tests; run with `python -m pytest` (`-m live` for the live ones) |
+| `tests/` | 1759 tests run by default (14 for the retrieval answer key and script, 7 for the unknown-action recovery, 20 for the web-address rule, 12 for the scenario runner, 67 for the tools, 409 for policy search, 187 for the session and router, 227 for the branch flows, 170 for the confirm step, answer check and guardrails, 97 for the review queue, 73 for the refund-method question, 1 for the database build script, 65 for the manager's decision and the outcome notice, 43 for the trace file and its reader, 40 for the Langfuse copy, 68 for the app, 36 for the Manager page, 83 for the phase 8b follow-ups, 15 for the phase 8c polish, 69 for the richer trace of phase 6c, 47 for the Developer trace page of phase 9), plus 34 `live` tests; run with `python -m pytest` (`-m live` for the live ones) |
 
 ## What each script does
 
@@ -132,7 +134,7 @@ The result has one fixed shape: `ok`, `query`, `profile`, `index_fingerprint` an
 
 Scope is decided per page (`[sources].out_of_scope_files`) and, since phase 3c.1, per section: each `[[scope.rules]]` entry in `config/rag.toml` names one page, one exact section heading and a reason. A chunk that matches is stored with `in_scope = false` and the reason, so it is hidden by default and shown (marked out of scope, with the reason in `provenance.scope_reason`) when `include_out_of_scope=True`. A rule that matches no chunk, or a repeated rule, is an error when the config loads, and the rules are part of the index fingerprint (changing them means rebuilding the index; the embedding cache makes that free). These rules are our decision, not Amazon's.
 
-The no-match thresholds in `config/rag.toml` are placeholders; phase 3d calibrates them. Nothing in policy search computes eligibility, windows or refund times.
+The default profile is `vector_only` and the no-match thresholds are measured values (phase 10 Part A: vector 0.29, keyword 5.1; the reasons and the results of every profile are in `docs/phases/phase-03d-retrieval-evals-and-tuning.md`). Off-topic questions are refused cleanly; questions that only share words with the policy still get passages, so the branch has to say what the pages do not state. Nothing in policy search computes eligibility, windows or refund times.
 
 ## The agent: session, router and out-of-scope reply (phase 4a)
 
@@ -140,7 +142,7 @@ The no-match thresholds in `config/rag.toml` are placeholders; phase 3d calibrat
 
 The reply for greetings, thanks, general questions, unsupported requests (gifts, marketplace sellers, A-to-z claims, international orders, address or payment changes, product advice), prompt injection and requests for another customer's data is fixed text from `config/agent.toml`; the model only picks the kind. After three off-topic messages in a row the reply offers a person. If the router's output is not valid, the agent asks a generic clarifying question and the error is recorded. `respond` returns the reply, the route, the kind and a trace (the router's input summary, raw output, label, kind, reason, latency and any error) for the Developer page.
 
-The model name, temperature, prompt wording, scope statement and every reply text are in `config/agent.toml`; the API key is read from `.env` in the same way as for the embeddings. `scripts/08_eval_router.py` scores the router on `data/evals/router_messages.csv` (the labels there are unreviewed drafts, so the numbers are a first look, not a result). The graph needs `langgraph` (`requirements-agent.txt`); tests that need it skip with a message when it is missing.
+The model name, temperature, prompt wording, scope statement and every reply text are in `config/agent.toml`; the API key is read from `.env` in the same way as for the embeddings. `scripts/08_eval_router.py` scores the router on `data/evals/router_messages.csv` (83 reviewed rows; the phase 10 results are in `docs/phases/phase-10-evaluation-and-tuning.md` and `data/evals/summary.json`). The graph needs `langgraph` (`requirements-agent.txt`); tests that need it skip with a message when it is missing.
 
 ## The agent: the five branches (phase 4b)
 

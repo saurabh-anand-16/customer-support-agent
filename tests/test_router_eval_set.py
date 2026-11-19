@@ -207,28 +207,65 @@ def test_the_report_shows_the_counts_next_to_the_percentages_and_every_miss(tmp_
     assert "T2 [chat] expected out_of_scope, got order_status" in text and "message: hi" in text
 
 
-def test_a_run_of_the_script_writes_results_and_the_final_run_cannot_be_repeated_by_accident(tmp_path, monkeypatch):
-    csv_path = tmp_path / "rows.csv"
-    with open(csv_path, "w", newline="", encoding="utf-8") as f:
+def _write_rows(path, rows):
+    with open(path, "w", newline="", encoding="utf-8") as f:
         writer = csv.DictWriter(f, fieldnames=["id", "message", "context", "expected_route", "category", "notes", "reviewed"])
         writer.writeheader()
-        for row in ROWS:
+        for row in rows:
             writer.writerow({k: v for k, v in row.items() if k != "split"} | {"notes": ""})
-    cfg_path = tmp_path / "agent.toml"
-    agent_config(tmp_path)                               # writes tmp_path/agent.toml
-    monkeypatch.setattr(script, "OpenAIChat", lambda root: FakeChat(reply_json("order_status")))
-    monkeypatch.setattr(script, "read_secret", lambda *a, **k: "present")
-    output = tmp_path / "out" / "final.json"
-    argv = ["08_eval_router.py", "--csv", str(csv_path), "--config", str(cfg_path), "--final", "--output", str(output)]
-    monkeypatch.setattr(sys, "argv", argv)
-    assert script.main() == 0
-    written = json.loads(output.read_text(encoding="utf-8"))
-    assert written["split"] == "test" and all(r["split"] == "test" for r in written["records"]) and written["records"]
-    first = output.read_bytes()
-    assert script.main() == 2 and output.read_bytes() == first             # refused, and the file is untouched
-    monkeypatch.setattr(sys, "argv", argv + ["--force"])
-    assert script.main() == 0
 
+
+def test_only_reviewed_rows_count_and_the_others_are_counted_apart(tmp_path):
+    path = tmp_path / "rows.csv"
+    _write_rows(path, [dict(ROWS[0], reviewed="yes"), dict(ROWS[1], reviewed="no"), dict(ROWS[2], reviewed="yes")])
+    kept, left_out = script.load_rows(path)
+    assert [r["id"] for r in kept] == ["T1", "T3"] and left_out == 1
+
+
+def test_a_run_writes_results_leaves_the_csv_alone_and_scores_the_same_on_a_rerun(tmp_path, monkeypatch):
+    csv_path = tmp_path / "rows.csv"
+    _write_rows(csv_path, [dict(r, reviewed="yes") for r in ROWS if not r["context"].startswith("pending")])
+    before = csv_path.read_bytes()
+    agent_config(tmp_path)                               # writes tmp_path/agent.toml
+    monkeypatch.setattr(script, "TalliedChat", lambda root: FakeChat(reply_json("order_status")))
+    monkeypatch.setattr(script, "read_secret", lambda *a, **k: "present")
+    scores = []
+    for name in ("a", "b"):
+        output = tmp_path / "out" / f"{name}.json"
+        monkeypatch.setattr(sys, "argv", ["08_eval_router.py", "--csv", str(csv_path), "--config", str(tmp_path / "agent.toml"),
+                                          "--output", str(output), "--db", str(csv_path)])
+        assert script.main() == 0
+        written = json.loads(output.read_text(encoding="utf-8"))
+        scores.append((written["summary"]["correct"], written["summary"]["by_category"], [r["got"] for r in written["records"]]))
+        assert written["reviewed_rows"] == 4 and written["usage"]["cost"] == "not priced"
+    assert scores[0] == scores[1] and csv_path.read_bytes() == before
+
+
+def test_pending_rows_go_to_the_agent_runner_and_never_to_the_router(tmp_path):
+    router, chat = fake_router(tmp_path, reply_json("order_status"))
+    seen = []
+    runner = lambda row: seen.append(row["id"]) or script._record(row, "confirm_step", called=False, via="agent")     # noqa: E731
+    records = script.evaluate([ROWS[3]], router, pending_runner=runner)
+    assert seen == ["T4"] and chat.calls == [] and records[0]["via"] == "agent"
+
+
+def test_the_price_rows_score_as_decided_when_the_router_returns_the_expected_label(tmp_path, rows):
+    price = [r for r in rows if r["id"] in {f"RT{n:03d}" for n in range(76, 84)}]
+    assert [r["expected_route"] for r in price] == ["order_status"] * 4 + ["out_of_scope"] * 3 + ["return_or_replace"]
+    replies = [reply_json(r["expected_route"], kind="general_question") if r["expected_route"] == "out_of_scope" else reply_json(r["expected_route"]) for r in price]
+    router, _ = fake_router(tmp_path, replies)
+    summary = script.summarize(script.evaluate(price, router))
+    assert (summary["correct"], summary["rows"]) == (8, 8)
+
+
+def test_compare_lists_rows_that_got_better_and_rows_that_got_worse():
+    rec = lambda i, exp, got: {"id": i, "message": "m", "category": "clear", "expected": exp, "got": got}      # noqa: E731
+    before = {"records": [rec("A", "x", "y"), rec("B", "x", "x"), rec("C", "x", "y")]}
+    after = {"records": [rec("A", "x", "x"), rec("B", "x", "z"), rec("C", "x", "w")]}
+    text = script.compare(before, after)
+    assert "before: 1 of 3   after: 1 of 3" in text
+    assert "rows that got better (1):" in text and "rows that got WORSE (1):" in text
+    assert "A [clear]" in text and "B [clear]" in text and "C y -> w" in text
 
 def test_the_script_stops_before_any_call_when_there_is_no_key(tmp_path, monkeypatch, capsys):
     agent_config(tmp_path)

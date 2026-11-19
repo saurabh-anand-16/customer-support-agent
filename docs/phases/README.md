@@ -18,7 +18,7 @@ Rules for these files:
 | 3b | Embeddings, ChromaDB, index build | Done, in review ([build report](../builds/phase-03b-build.md)) | 1 to 1.5 | [phase-03b-embeddings-and-vector-store.md](phase-03b-embeddings-and-vector-store.md) |
 | 3c | Retrievers, fusion, reranking, `search_policy` | Done, in review ([build report](../builds/phase-03c-build.md)) | 1.5 | [phase-03c-retrieval-pipeline.md](phase-03c-retrieval-pipeline.md) |
 | 3c.1 | Scope rules for single sections | Done, in review ([build report](../builds/phase-03c1-build.md)) | 0.5 | [phase-03c1-section-scope.md](phase-03c1-section-scope.md) |
-| 3d | Retrieval eval set and tuning | Not started | 1 to 1.5 | [phase-03d-retrieval-evals-and-tuning.md](phase-03d-retrieval-evals-and-tuning.md) |
+| 3d | Retrieval eval set and tuning | Built as Part A of phase 10, in review ([build report](../builds/phase-10-build.md)); default `vector_only`, thresholds measured | 1 to 1.5 | [phase-03d-retrieval-evals-and-tuning.md](phase-03d-retrieval-evals-and-tuning.md) |
 | 4a | Session, router and out-of-scope reply | Done, in review ([build report](../builds/phase-04a-build.md)) | | [phase-04a-router-and-session.md](phase-04a-router-and-session.md) |
 | 4b | The five branch flows (tools, pending actions, evidence) | Done, in review ([build report](../builds/phase-04b-build.md)) | | [phase-04b-branch-flows.md](phase-04b-branch-flows.md) |
 | 4c | Confirm step, writes, answer check, guardrail tests | Done, in review ([build report](../builds/phase-04c-build.md)) | | [phase-04c-confirm-and-answer-check.md](phase-04c-confirm-and-answer-check.md) |
@@ -35,7 +35,7 @@ Rules for these files:
 | 8c | Polish: solid corner tag, replacement wording and short product names in notices and cards, a "try" message per scenario, two replaced suggested chips | Done, in review ([build report](../builds/phase-08c-build.md)); real-model run and screenshots done | | [phase-08c-polish.md](phase-08c-polish.md) |
 | 6c | Richer trace: tokens, cost from a price table, timing and order, search and answer-check detail, versions, errors; fingerprint out of the prompt | Done, in review ([build report](../builds/phase-06c-build.md)); real-model and real-Langfuse run done | | [phase-06c-richer-trace.md](phase-06c-richer-trace.md) |
 | 9 | Developer trace page: turn list, path drawing, model and tool calls, passages, answer check, versions, checks; chat links; `turn_id` in the result | Done, in review ([build report](../builds/phase-09-build.md)); real-model traces and screenshots done | 2 | [phase-09-developer-trace.md](phase-09-developer-trace.md) |
-| 10 | Evaluation suite | Not started | 3 | |
+| 10 | Evaluation and tuning (retrieval, router, known problems, 23 end-to-end scenarios, full mutation run) | Done, in review ([build report](../builds/phase-10-build.md)); real-model runs done | 3 | [phase-10-evaluation-and-tuning.md](phase-10-evaluation-and-tuning.md) |
 | 11 | Evaluation results page | Not started | 1 | |
 | 12 | Policy explorer and assumptions pages | Not started | 1 | |
 | 13 | CI, packaging, deployment, demo | Not started | 2 to 3 | |

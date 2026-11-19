@@ -1,6 +1,6 @@
 # Phase 3d: retrieval eval set, profile comparison, tuning
 
-**Status:** folded into [phase 10](phase-10-evaluation-and-tuning.md) (Part A); built on the phase 10 branch, not on its own branch. **Follows:** 8b (merged); 3c (the pipeline and its profiles) is merged. **Next:** the rest of phase 10.
+**Status:** built as Part A of [phase 10](phase-10-evaluation-and-tuning.md), on the phase 10 branch (results below). **Follows:** 8b (merged); 3c (the pipeline and its profiles) is merged. **Next:** the rest of phase 10.
 
 ## Why now
 
@@ -55,3 +55,56 @@ Run the script on all profiles that can run, write the results table into this f
 ## Not in 3d
 
 Any router change (including price questions), the manual review of the 106 and 75 rows (phase 10), the Developer page.
+
+## Results (built in phase 10 Part A)
+
+All 106 rows of `data/evals/retrieval_questions.csv` are marked `reviewed = yes`, so these results are on the reviewed answer key (0 rows left out). 76 rows have an answer in the policy; 30 do not (14 `unanswerable_related`, 8 `scope_guard`, 8 `off_topic`). A question counts for hit@k when every page it needs is among the first k passages (for `multi_page` rows that means all of them). The script: `scripts/07_eval_retrieval.py`; the app check: `scripts/17_live_search_app_check.py`.
+
+### Profiles (ranking does not depend on the no-match thresholds)
+
+| Profile | hit@1 | hit@3 | hit@5 | MRR | Cost per question |
+| --- | --- | --- | --- | --- | --- |
+| `baseline_bm25` | 38 of 76 | 54 of 76 | 56 of 76 | 0.661 | none, 0.2 ms, offline |
+| `vector_only` | 46 of 76 | 65 of 76 | 68 of 76 | 0.796 | 1 embedding call (0.48 s); none when cached |
+| `hybrid` (rrf) | 44 of 76 | 58 of 76 | 63 of 76 | 0.761 | 1 embedding call |
+| `hybrid_cross_encoder` | not run | | | | `sentence-transformers` is not installed in `.venv` (it is in the system Python); the profile failed on every question, so the script reports it as skipped and gives no numbers |
+| `hybrid_llm_rerank` | 58 of 76 | 68 of 76 | 69 of 76 | 0.903 | 1 embedding call + 1 chat-model call, 3.9 s |
+
+The local embedding model (`all-MiniLM-L6-v2`) needs the same missing package and was skipped for the same reason.
+
+By category, `vector_only` (hit@1 / hit@3 / hit@5): exact_wording 10/10/10 of 10; paraphrase 32/44/45 of 50; multi_page 1/6/7 of 10; policy_gap 3/5/6 of 6. BM25 finds only 3 of 10 `multi_page` questions in its first five passages; vector search finds 7 of 10.
+
+### Variations of `vector_only` (in-memory index, the real index untouched)
+
+| Variation | hit@1 | hit@3 | hit@5 | MRR | Chunks |
+| --- | --- | --- | --- | --- | --- |
+| current (`text-embedding-3-small`, 1200 characters) | 46 of 76 | 65 of 76 | 68 of 76 | 0.796 | 138 |
+| `text-embedding-3-large` | 51 of 76 | 67 of 76 | 67 of 76 | 0.826 | 138 |
+| chunk size 600 | 49 of 76 | 62 of 76 | 69 of 76 | 0.810 | 208 |
+| chunk size 2000 | 42 of 76 | 61 of 76 | 68 of 76 | 0.755 | 127 |
+
+None clearly earns its cost: the larger model gains 5 at hit@1 and loses 1 at hit@5, and costs more per question; chunk size 600 gains 1 at hit@5 and loses 3 at hit@3, and needs a new index. The variations are listed in `data/evals/retrieval_variants.toml`.
+
+### Decision
+
+- **Default profile: `vector_only`.** It is the best profile that does not add a model call per question. `hybrid` is worse than vector alone here (68 against 63 at hit@5): the keyword half pulls in passages that share common words. `hybrid_llm_rerank` is better at hit@1 (58 against 46 of 76) but only 1 better at hit@5 (69 against 68), and the policy branch gives the model the top 4 passages, so the order inside them matters little. That does not earn 3.9 s and a model call on every policy question, so the reranker stays off. The cross-encoder could not be run.
+- **No-match thresholds** (`[no_match]` in `config/rag.toml`): `vector_min_score = 0.29`, `bm25_min_score = 5.1`. Best vector score by group (lowest / middle / highest): answerable 0.307 / 0.577 / 0.827; `policy_gap` 0.421 / 0.515 / 0.594; `unanswerable_related` 0.321 / 0.494 / 0.551; `scope_guard` 0.329 / 0.500 / 0.608; `off_topic` 0.147 / 0.217 / 0.265. So **off-topic questions separate cleanly** (all 8 are at or below 0.265, all 76 answerable ones at or above 0.307, and 0.29 is in the gap: 76 of 76 kept, 8 of 8 off-topic refused). **There is no clean separation for the other two groups.** The 14 `unanswerable_related` questions and the 8 `scope_guard` ones score inside the range of the answerable ones, so any higher cut-off refuses real questions first: at 0.4184 it refuses 4 of 76 answerable ones to refuse 6 more of 30; at 0.4944 it refuses 14 of 76 to refuse 13 more of 30. The cut-off therefore only removes what has nothing to do with returns. For `unanswerable_related` and `scope_guard` questions the passages come back and the policy branch has to say what the pages do not state.
+- At the final thresholds, no-match accuracy is 84 of 106 for `vector_only` (all 76 answerable rows get passages, all 8 off-topic rows get none, 0 of 14 `unanswerable_related` and 0 of 8 `scope_guard` rows get none) and also 84 of 106 for `baseline_bm25` (3 of 76 answerable rows refused, 4 of 14 `unanswerable_related` refused); the two tie here and differ in ranking, in the table above.
+- **The six `policy_gap` questions** (the page exists but does not give the answer) all get passages: 6 of 6.
+- **Out-of-scope pages stay hidden.** No forbidden file appeared in the results of any profile on the 8 `scope_guard` rows or any other row (0 breaks in every profile). A test checks it on the real pages.
+
+### Calls and time
+
+Embedding: 105 question vectors for `vector_only` (first run; later runs read them from the on-disk cache), 106 for the large model, 120 and 16 chunk vectors for the two chunk sizes. Chat-model calls: 106 for `hybrid_llm_rerank` (409.7 s). The whole first run of the five profiles took 465 s. Re-running `baseline_bm25` gives identical numbers every time. `vector_only` gave identical numbers on repeated runs against the cached vectors; `hybrid_llm_rerank` uses a real model at temperature 0 and is not guaranteed identical.
+
+### App check (real model, through `Agent`, customer C0117, a fresh chat per question)
+
+34 questions: the 32 of the phase 8b table (read from that report) and the two other chips of the time. Before = keyword search with the old thresholds (5.0 and 0.35); after = the new default. The real database hash was the same before and after both runs; the tools ran on a copy.
+
+| | Before | After |
+| --- | --- | --- |
+| Questions that reached policy search | 18 of 34 | 18 of 34 |
+| Replies that cited a policy passage | 14 of 18 | 17 of 18 |
+| Search said "no match" | 3 of 18 | 0 of 18 |
+
+The three that changed from no match to answered, with passages: "What is the return policy for phones?", "What items can't be returned at all?" and the chip **"What can I not return?"**, which now answers in a fresh chat with a cited passage. The remaining reply with no cited passage is "Why is my return one day late not accepted?": it reached search and found passages in both runs, but the model cited none (a branch matter, not changed here). The 16 questions that did not reach search were handled by the router (out of scope, cancel, order status, human help) and are unchanged: the new thresholds are not exercised by them.
