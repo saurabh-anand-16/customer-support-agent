@@ -8,6 +8,7 @@ through `esc` before it is put inside HTML.
 """
 import base64
 import html
+import re
 
 from . import router_path
 
@@ -40,6 +41,11 @@ def fmt_score(score) -> str:
 
 def fmt_int(n) -> str:
     return f"{n:,}" if isinstance(n, int) and not isinstance(n, bool) else NOT_RECORDED
+
+
+def fmt_cached(n) -> str:
+    """Cached input tokens as the record holds them; "-" when the record holds none. Never worked out here."""
+    return fmt_int(n) if isinstance(n, int) and not isinstance(n, bool) else "-"
 
 
 def fmt_cost(cost) -> str:
@@ -120,20 +126,34 @@ def model_calls_html(rec: dict) -> str:
     for c in calls:
         status = "" if c.get("status") == "ok" else f' <span class="badge badge-declined">{esc(c.get("status"))}</span>'
         rows.append([f'<span class="nw">{esc(pretty(c.get("kind")))}</span>{status}', esc(c.get("model") or NOT_RECORDED), esc(fmt_int(c.get("input_tokens"))),
-                     esc(fmt_int(c.get("output_tokens"))), esc(fmt_ms(c.get("latency_ms"))), esc(fmt_cost(c.get("cost_usd")))])
-    rows.append(["<b>Total</b>", "", f'<b>{esc(fmt_int(rec.get("total_input_tokens")))}</b>', f'<b>{esc(fmt_int(rec.get("total_output_tokens")))}</b>', "",
+                     esc(fmt_int(c.get("output_tokens"))), esc(fmt_cached(c.get("cached_tokens"))), esc(fmt_ms(c.get("latency_ms"))), esc(fmt_cost(c.get("cost_usd")))])
+    rows.append(["<b>Total</b>", "", f'<b>{esc(fmt_int(rec.get("total_input_tokens")))}</b>', f'<b>{esc(fmt_int(rec.get("total_output_tokens")))}</b>', "", "",
                  f'<b>{esc(fmt_cost(rec.get("total_cost_usd")))}</b>'])
     note = ""
     if not rec.get("cost_complete", True):
         note = '<div class="muted">Prices are set in config/agent.toml, under [pricing]. A call with no price (or no usage) has no cost, and so has the total.</div>'
     if rec.get("usage_complete") is False:
         note += '<div class="muted">Some calls reported no token counts, so the token totals may be low.</div>'
-    return _table(["Call", "Model used", "Tokens in", "Tokens out", "Time", "Cost"], rows) + note
+    return _table(["Call", "Model used", "Tokens in", "Tokens out", "Cached", "Time", "Cost"], rows) + note
 
 
 def _ordered_tool_steps(rec: dict) -> list:
     steps = [(i, s) for i, s in enumerate(rec.get("steps") or []) if s.get("kind") in TOOL_KINDS]
     return [s for _, s in sorted(steps, key=lambda p: (p[1].get("seq") is None, p[1].get("seq") or 0, p[0]))]
+
+
+NOT_FOUND_RE = re.compile(r'"error_code":[ ]*"not_found"')
+
+
+def step_status_text(step: dict) -> str:
+    """The status shown for a tool step. A tool that answered "not_found" found no record: that is "no result", not a failure."""
+    if step.get("status") == "failed" and NOT_FOUND_RE.search(str(step.get("output") or "")):
+        return "no result"
+    return pretty(step.get("status"))
+
+
+def error_type_text(code) -> str:
+    return "no result" if code == "not_found" else pretty(code)
 
 
 def tool_calls_html(rec: dict) -> str:
@@ -142,16 +162,16 @@ def tool_calls_html(rec: dict) -> str:
         return '<div class="muted">No tool was called in this turn.</div>'
     hide_text = not text_captured(rec)
     rows = []
-    for s in steps:
+    for number, s in enumerate(steps, 1):                       # numbered in the order the calls ran (not the shared step number)
         out = s.get("output")
         if hide_text and s.get("kind") == "retrieval":         # a search result repeats the customer's words
             out = "not shown (message text is not captured)"
         time_text = fmt_ms(s.get("duration_ms")) if has_detail(rec) else NOT_RECORDED
         if s.get("kind") == "write":
             time_text = fmt_ms(s.get("duration_ms")) if s.get("duration_ms") is not None else "not timed"
-        order = esc(s.get("seq")) if s.get("seq") is not None else ""
+        order = esc(number)
         rows.append([f'<span class="nw">{order}</span>', f'<span class="nw"><code>{esc(s.get("name"))}</code></span>' + (' <span class="badge">writes</span>' if s.get("kind") == "write" else ""),
-                     esc(s.get("input") or ""), esc(out or ""), esc(time_text), esc(pretty(s.get("status")))])
+                     esc(s.get("input") or ""), esc(out or ""), esc(time_text), esc(step_status_text(s))])
     return _table(["#", "Tool", "Input", "Result", "Time", "Status"], rows,
                   "In the order the calls ran. The customer id is added by the app from the session; it is never one of the model's inputs.")
 
@@ -231,6 +251,16 @@ def answer_check_html(rec: dict) -> str:
 
 
 # -- versions and checks ------------------------------------------------------------------------------------------------------
+def _error_lines(errors: list) -> list:
+    """One line per kind of error, with a count ("x 8") when it happened more than once. A not_found is "no result" and says no more."""
+    counts: dict = {}
+    for e in errors:
+        e = e if isinstance(e, dict) else {}
+        line = f"{e.get('where')}: {error_type_text(e.get('type'))}" + ("" if e.get("type") == "not_found" else f", {e.get('message')}")
+        counts[line] = counts.get(line, 0) + 1
+    return [line + (f" x {n}" if n > 1 else "") for line, n in counts.items()]
+
+
 def versions_html(rec: dict) -> str:
     v = rec.get("versions") if isinstance(rec.get("versions"), dict) else None
     if v is None:
@@ -239,7 +269,7 @@ def versions_html(rec: dict) -> str:
             ("Prompt version", f"prompt hash {v.get('prompt_hash')}" if v.get("prompt_hash") else None), ("Policy index", v.get("index_fingerprint") or "no policy search in this turn"),
             ("Retries", rec.get("retry_count"))]
     errors = rec.get("errors") or []
-    rows.append(("Errors", "none" if not errors else "; ".join(f"{e.get('where')}: {pretty(e.get('type'))}, {e.get('message')}" for e in errors)))
+    rows.append(("Errors", "none" if not errors else "; ".join(_error_lines(errors))))
     return "".join(f'<div class="kv"><span class="k">{esc(k)}</span><span class="v">{esc(val if val not in (None, "") else NOT_RECORDED)}</span></div>' for k, val in rows)
 
 
@@ -258,10 +288,17 @@ def checks_html(rec: dict) -> str:
     checks = [c for c in rec.get("checks") or [] if isinstance(c, dict)]
     if not checks:
         return '<div class="muted">No safety check ran in this turn.</div>'
-    rows = []
+    groups: list = []                                           # identical consecutive lines are shown once, with a count
     for c in checks:
-        s = check_status(c)
-        rows.append(f'<div class="check-row"><span class="badge {STATUS_CLASS[s]}">{STATUS_WORD[s]}</span> <b>{esc(pretty(c.get("name")))}</b> <span class="muted">{esc(c.get("reason"))}</span></div>')
+        key = (check_status(c), c.get("name"), c.get("reason"))
+        if groups and groups[-1][0] == key:
+            groups[-1][1] += 1
+        else:
+            groups.append([key, 1])
+    rows = []
+    for (s, name, reason), n in groups:
+        count = f' <span class="muted">x {n}</span>' if n > 1 else ""
+        rows.append(f'<div class="check-row"><span class="badge {STATUS_CLASS[s]}">{STATUS_WORD[s]}</span> <b>{esc(pretty(name))}</b> <span class="muted">{esc(reason)}</span>{count}</div>')
     return "".join(rows)
 
 

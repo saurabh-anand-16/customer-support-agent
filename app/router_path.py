@@ -28,12 +28,12 @@ def taken(route: str | None) -> str | None:
     return next((name for label, name in LANES if label == route), None)
 
 
-def _box(x, y, w, h, text, on, dashed=False, sub=None) -> str:
+def _box(x, y, w, h, text, on, dashed=False, sub=None, size=13.5) -> str:
     stroke = GREEN if on else GREY
     fill = "#E3F1EE" if on else "#FFFFFF"
     dash = ' stroke-dasharray="5 4"' if dashed else ""
     weight = "700" if on else "400"
-    label = f'<text x="{x + w / 2}" y="{y + h / 2 + 4}" text-anchor="middle" font-size="13.5" font-weight="{weight}" fill="{INK}">{html.escape(text)}</text>'
+    label = f'<text x="{x + w / 2}" y="{y + h / 2 + 4}" text-anchor="middle" font-size="{size}" font-weight="{weight}" fill="{INK}">{html.escape(text)}</text>'
     small = f'<text x="{x + w / 2}" y="{y + h + 12}" text-anchor="middle" font-size="11" fill="{MUTED}">{html.escape(sub)}</text>' if sub else ""
     return f'<rect x="{x}" y="{y}" width="{w}" height="{h}" rx="8" fill="{fill}" stroke="{stroke}" stroke-width="{2 if on else 1}"{dash}/>{label}{small}'
 
@@ -52,7 +52,7 @@ def path_svg(route: str | None) -> str:
     rows = len(LANES) + 1
     height = TOP * 2 + rows * ROW
     mid_y = TOP + (len(LANES) * ROW) / 2 - 14
-    sx, sw, rx, rw, lx, lw, ax, aw, ex, ew = 4, 62, 84, 60, 160, 196, 380, 92, 494, 68
+    sx, sw, rx, rw, lx, lw, ax, aw, ex, ew = 4, 62, 84, 60, 160, 196, 372, 108, 494, 68
     parts = []
     ok_router = lane is not None
     parts.append(_box(sx, mid_y, sw, 28, "Session", True))
@@ -64,7 +64,7 @@ def path_svg(route: str | None) -> str:
         parts.append(_line(rx + rw, mid_y + 14, lx, y + 14, on))
         parts.append(_line(lx + lw, y + 14, ax, mid_y + 14, on))
         parts.append(_box(lx, y, lw, 28, name + (" · taken" if on else ""), on, dashed=not on))
-    parts.append(_box(ax, mid_y, aw, 28, "Answer check", ok_router, dashed=not ok_router))
+    parts.append(_box(ax, mid_y, aw, 28, "Answer check", ok_router, dashed=not ok_router, size=12.5))
     parts.append(_line(ax + aw, mid_y + 14, ex, mid_y + 14, ok_router))
     parts.append(_box(ex, mid_y, ew, 28, "Reply", ok_router or confirm, dashed=not (ok_router or confirm)))
     cy = TOP + len(LANES) * ROW

@@ -12,14 +12,13 @@ State keys of this page all start with "dev_".
 import streamlit as st
 
 from app import data, state, trace_view as tv
+from app.views import developer_tabs
 from app.trace_view import esc
 
 settings = state.get_settings()
 PAGE_SIZE = 8
 CURRENT, ALL = "__current__", "__all__"
-TAB_NAMES = ["Traces", "Evaluation", "Tests", "Policy explorer", "Assumptions"]
-LATER = {"Evaluation": (11, "Evaluation results."), "Tests": (11, "The test results."), "Policy explorer": (12, "A way to look through the policy pages."),
-         "Assumptions": (12, "The decisions this project made that Amazon's pages do not.")}
+TAB_NAMES = ["Traces", "Evaluation", "Policy explorer", "Assumptions"]
 PRIVACY = ("This page shows every message from this demo, including other visitors' text if the demo is shared. "
            "A real system would restrict it.")
 
@@ -176,7 +175,8 @@ st.html('<div class="amber-box"><b>Shared view.</b>' + esc(PRIVACY) + "</div>")
 tabs = st.tabs(TAB_NAMES)
 with tabs[0]:
     draw_traces()
+DRAWERS = {"Evaluation": developer_tabs.draw_evaluation, "Policy explorer": developer_tabs.draw_policy,
+           "Assumptions": developer_tabs.draw_assumptions}
 for tab, name in zip(tabs[1:], TAB_NAMES[1:]):
     with tab:
-        phase, what = LATER[name]
-        st.info(f"Coming in phase {phase}. {what}")
+        DRAWERS[name]()

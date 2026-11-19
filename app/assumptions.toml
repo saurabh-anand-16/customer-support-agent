@@ -1,0 +1,139 @@
+# The decisions of this project that are not Amazon's, in one list (phase 11).
+#
+# Each entry has:
+#   id       a short unique name
+#   title    one line
+#   text     plain words. NEVER put a value in the text (a limit, a day count, a model name): the page reads the value live from `source`.
+#   kind     one of: "our decision", "policy gap", "data", "evaluation"
+#   source   where the value lives, as "path" or "path#key", relative to the project folder. A list of these is allowed.
+#              path#key  for a .toml file: the key (dotted, for example model.name); for data/clean/policy_facts.csv: the fact_key.
+#              path      alone: the file must exist; a .csv file also shows its row count.
+#            An entry whose source cannot be found shows "source not found" on the page, and a test fails.
+#
+# This file may be reused by the Limits page of phase 13.
+
+[[assumption]]
+id = "category-policy-map"
+title = "Which return rule an item gets"
+text = "Each product category is mapped to one of Amazon's return policy types. Amazon's pages do not publish this mapping. It is our inference from the pages, and it is not official."
+kind = "our decision"
+source = "data/clean/category_policy_map.csv"
+
+[[assumption]]
+id = "approval-value-limit"
+title = "High-value returns need a person"
+text = "A return or replacement for an item line above this amount is not decided by the agent. It goes to a person for approval. Amazon's pages state no such limit."
+kind = "our decision"
+source = "data/clean/policy_facts.csv#approval_value_limit_inr"
+
+[[assumption]]
+id = "repeat-returner"
+title = "Many returns in a year need a person"
+text = "A customer with more returns than this in the last year has the next request reviewed by a person."
+kind = "our decision"
+source = "data/clean/policy_facts.csv#repeat_returner_review_threshold"
+
+[[assumption]]
+id = "restricted-accounts"
+title = "Restricted accounts need a person"
+text = "A return for a customer whose account is restricted is never written by the agent alone. A person must approve it. The rule is in the tool code, not in a setting."
+kind = "our decision"
+source = "agent/tools.py"
+
+[[assumption]]
+id = "cancellation-rule"
+title = "Which items can be cancelled"
+text = "Only an item that is still being processed can be cancelled. An item that has shipped goes through the return flow after it is delivered. The policy pages have no such rule."
+kind = "our decision"
+source = "data/clean/policy_facts.csv#cancellable_item_status"
+
+[[assumption]]
+id = "day-one"
+title = "The delivery day is day 1 of a return window"
+text = "The day an item is delivered counts as the first day of its return window. Amazon's pages do not say how days are counted."
+kind = "our decision"
+source = "data/clean/policy_facts.csv#delivery_day_counts_as_day_one"
+
+[[assumption]]
+id = "late-requests"
+title = "Requests past the window go to a person"
+text = "The agent never grants an exception. A request made after the window closed is passed to a person, who decides."
+kind = "our decision"
+source = "data/clean/policy_facts.csv#exceptions_always_reviewed"
+
+[[assumption]]
+id = "no-web-addresses"
+title = "The agent gives no web addresses it was not shown"
+text = "A web address in a reply must come from a tool result or a policy passage of that turn. Otherwise the reply is checked and replaced. The rule is in the answer check."
+kind = "our decision"
+source = "agent/answer_check.py"
+
+[[assumption]]
+id = "out-of-scope-pages"
+title = "Gift, seller and A-to-z topics are out of scope"
+text = "These policy pages are in the repository but hidden from the agent's search, because it handles Amazon-fulfilled orders only. Single sections can also be hidden; those are listed on the Policy explorer tab."
+kind = "our decision"
+source = "config/rag.toml#sources.out_of_scope_files"
+
+[[assumption]]
+id = "refund-methods-not-offered"
+title = "Some refund methods go to a person"
+text = "When a Pay on Delivery refund asks where the money should go, the agent does not offer these methods. A person decides if a customer asks for one."
+kind = "our decision"
+source = "config/agent.toml#refund_method.not_offered"
+
+[[assumption]]
+id = "chat-model"
+title = "The chat model and its settings"
+text = "One chat model runs the router and the branches. Its name and settings are set in one file. A different model may behave differently, and the evaluation numbers belong to this one."
+kind = "our decision"
+source = ["config/agent.toml#model.name", "config/agent.toml#model.temperature", "config/agent.toml#model.max_output_tokens"]
+
+[[assumption]]
+id = "search-profile"
+title = "How policy search is set up"
+text = "Policy search uses one retrieval profile and one embedding model, chosen from measured results on a small reviewed set."
+kind = "our decision"
+source = ["config/rag.toml#default_profile", "config/rag.toml#embedding.model", "config/rag.toml#chunking.max_chars"]
+
+[[assumption]]
+id = "retrieval-thresholds"
+title = "When search says there is no match"
+text = "The cut-offs below which search returns nothing were set on a small reviewed set of questions. They may not hold for other wording or for more pages."
+kind = "evaluation"
+source = ["config/rag.toml#no_match.vector_min_score", "config/rag.toml#no_match.bm25_min_score"]
+
+[[assumption]]
+id = "answer-keys"
+title = "The answer keys were reviewed by one person"
+text = "The expected answers for the search and router tests were checked by a single reviewer. Another reviewer might mark some rows differently."
+kind = "evaluation"
+source = "data/evals/README.md"
+
+[[assumption]]
+id = "account-history"
+title = "Account history affects eligibility, with no stated threshold"
+text = "Amazon's pages say that returns can depend on account history, but give no number. The agent cannot state one and sends such cases to a person."
+kind = "policy gap"
+source = "data/clean/policy_facts.csv#eligibility_depends_on_account_history"
+
+[[assumption]]
+id = "processing-fee"
+title = "A fee for excessive returns exists, with no stated amount"
+text = "Amazon's pages say a fee can apply for excessive returns, but do not give the amount. The agent does not quote one."
+kind = "policy gap"
+source = "data/clean/policy_facts.csv#return_processing_fee_inr"
+
+[[assumption]]
+id = "synthetic-data"
+title = "All customers and orders are synthetic"
+text = "The products come from a public product list. The customers, orders and returns were generated for this demo. Nothing here is a real person's data, and this project is not affiliated with Amazon."
+kind = "data"
+source = "data/clean/orders.csv"
+
+[[assumption]]
+id = "fixed-today"
+title = "Today is a fixed date"
+text = "The agent never reads the computer's clock. A fixed date is used so every answer can be repeated and tested."
+kind = "data"
+source = "scripts/config.py"

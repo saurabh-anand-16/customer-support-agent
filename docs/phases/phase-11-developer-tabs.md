@@ -1,6 +1,6 @@
 # Phases 11 and 12: the Developer tabs (Evaluation, Tests, Policy explorer, Assumptions)
 
-**Status:** to build as one phase. **Branch:** `phase-11-developer-tabs`. **Follows:** phase 10 (merged) and the price config (merged). **Next:** phase 13 (How it works, Limits, deployment, README, demo video). Tuning and improving the numbers comes after phase 13.
+**Status:** built, in review ([build report](../builds/phase-11-build.md)); not committed. **Branch:** `phase-11-developer-tabs`. **Follows:** phase 10 (merged) and the price config (merged). **Next:** phase 13 (How it works, Limits, deployment, README, demo video). Tuning and improving the numbers comes after phase 13.
 
 Read first: `docs/phases/phase-09-developer-trace.md` (this phase follows its rules and look), `docs/phases/phase-10-evaluation-and-tuning.md`, `data/evals/README.md`.
 
@@ -10,7 +10,7 @@ Phase 9 built the Traces tab. The other four tabs still say "coming soon". They 
 
 ## What the Developer page looks like after this phase
 
-Tabs, in this order and with exactly these names: **Traces**, **Evaluation**, **Tests**, **Policy explorer**, **Assumptions**. The Traces tab is unchanged. Same page name "Developer trace", same corner tag, same look as phase 9. No tab says "coming soon" any more.
+Tabs, in this order and with exactly these names: **Traces**, **Evaluation**, **Policy explorer**, **Assumptions** (the Tests tab was dropped in the fix round). The Traces tab is unchanged. Same page name "Developer trace", same corner tag, same look as phase 9. No tab says "coming soon" any more.
 
 ## Parts (one branch, one build report)
 
@@ -23,17 +23,13 @@ Source: `data/evals/summary.json` (written by `scripts/20_write_summary.py`; thi
 3. **Search:** a table of the profiles (rows, hit@1, hit@3, hit@5, MRR, no-match correct), with the chosen default marked, the embedding model, the chunk size and the thresholds. A second table by category for the chosen profile. Always counts first ("46 of 76"), then a percentage. Show the skipped profiles with their reason.
 4. **Router:** correct before and after, by category, and the lists of rows that got better, got worse and are still wrong. For each listed id show the message and expected route from `data/evals/router_messages.csv` (repo data, not customer data). Show the model name.
 5. **Scenarios:** passed of total, failed ids, model calls, tokens in and out, and "real database unchanged".
-6. **Mutations:** finished or not, killed of total, survivors, time taken.
+6. ~~Mutations~~ **Dropped in the fix round**: the Evaluation tab no longer shows mutations. The data stays in `summary.json`.
 7. **Known weak spots** (a short fixed list, written in the page code from facts in the summary where possible): related-but-unanswerable and scope-guard questions still get passages; the numbers come from small sets; real-model runs are not exactly repeatable.
 8. **Cost:** if the summary holds a cost, show it; otherwise "not recorded". Never compute a cost in the page.
 9. Missing or unreadable `summary.json`: a short empty state saying how to create it (`python scripts/20_write_summary.py`), never a traceback. A field missing from the file shows "not recorded".
 
 ### Part B: Tests tab
-The page must not run tests or import the test suite. It reads a small committed file.
-1. Create `scripts/21_write_tests_summary.py`. It collects the tests without running them (`pytest --collect-only -q`), counts tests per file, reads the first docstring or comment line of each test file for "what it protects" (a fallback "not described" if none), reads the mutation list from `scripts/09_mutation_check.py` (id, target file, one-line rule) without running any mutation, and writes `data/evals/tests_summary.json` with the date and git commit. It prints a short summary. It never prints keys.
-2. The tab shows: total tests, tests per file with what each protects, the mutation list with a column for the rule each guards, and the latest full mutation result from `summary.json`. A line shows when the file was generated and from which commit.
-3. If the file is missing, show an empty state with the command. Do not generate it from the page.
-4. Do not run any mutation check in this phase, including to build this list.
+**Dropped in the fix round.** The Tests tab, `scripts/21_write_tests_summary.py`, `data/evals/tests_summary.json` and the tab's tests were removed. The page shows no test count, mutation count or mutation list. The tabs are now Traces, Evaluation, Policy explorer and Assumptions.
 
 ### Part C: Policy explorer
 Source: the policy pages and the chunk export (`data/clean/policy_chunks.csv` or whatever `[chunking].export_path` in `config/rag.toml` says) plus the scope settings in `config/rag.toml`. Report which of these files exist in the repo; do not regenerate the export from the page.
@@ -62,7 +58,7 @@ The decisions that are ours, not Amazon's, in one list that cannot drift from th
 
 ## Files
 
-**Created:** `app/dev_eval.py`, `app/dev_tests.py`, `app/dev_policy.py`, `app/dev_assumptions.py` (pure helpers), `app/views/developer_tabs.py` (drawing), `app/assumptions.toml`, `scripts/21_write_tests_summary.py`, `data/evals/tests_summary.json` (generated, committed), tests for each tab, `docs/builds/phase-11-build.md`.
+**Created:** `app/dev_eval.py`, `app/dev_policy.py`, `app/dev_assumptions.py` (pure helpers), `app/views/developer_tabs.py` (drawing), `app/assumptions.toml`, tests for each tab, `docs/builds/phase-11-build.md`.
 
 **Changed:** `app/views/developer.py` (the tabs), `app/styles.css`, `app/data.py` (read-only reads), `docs/phases/README.md`, `docs/phases/phase-09-developer-trace.md` (status line only), and the test counts in `README.md` and `CLAUDE.md`.
 
@@ -72,7 +68,6 @@ The decisions that are ours, not Amazon's, in one list that cannot drift from th
 
 - Each tab renders with fixture files: full data, a missing file, an empty file, a broken file, and a field missing from the data.
 - Evaluation: the numbers equal `summary.json`; counts come before percentages; the chosen profile is marked; skipped profiles show their reason; "not reviewed" rows are shown when present.
-- Tests tab: the summary script collects tests without running them and without running any mutation; the page shows counts from the file.
 - Policy explorer: out-of-scope pages and hidden sections are labelled with their reason; every page in the export appears.
 - Assumptions: every entry's source resolves; a changed config value shows on the page; an unresolved source fails a test.
 - Read-only: a test fails if any tab writes, calls the agent, a model or an embedding service, touches the database, or runs a subprocess. No key pattern or secret on any tab.
@@ -93,3 +88,23 @@ Run `scripts/21_write_tests_summary.py` once. Start the app and open each tab th
 ## Not in this phase
 
 A search box or any model call on these tabs, running tests or scripts from the page, editing any data, the How it works and Limits pages and deployment (phase 13), tuning the numbers.
+
+## What was built (added at the end of the phase)
+
+- Three tabs, as pure helpers (`app/dev_eval.py`, `dev_policy.py`, `dev_assumptions.py`, plus `dev_common.py` for tables and number formats) and one drawing file, `app/views/developer_tabs.py`. File reads go through `read_file` in `app/data.py` (json, toml and csv, cached per file state; "missing", "empty" or "broken" gives an empty state).
+- `app/assumptions.toml`: 18 entries (the 12 asked for plus restricted accounts, refund methods not offered, the search profile, two policy gaps and the fixed date). The source of each is `path` or `path#key`; the page shows the value read live.
+- Tests: `tests/test_developer_tabs_eval.py`, `_policy.py`, `_assumptions.py`, `_readonly.py`.
+- Changed existing tests: one phase 9 assertion (no "Coming in phase" text now); the phase 9 secrets test and Langfuse label test look at the Traces tab or the label itself; the corner-tag test counts the phrase "demo with synthetic data".
+
+### Fix round (Tests tab and mutations dropped, trace display fixes)
+
+- Removed: the Tests tab, `app/dev_tests.py`, `scripts/21_write_tests_summary.py`, `data/evals/tests_summary.json`, `tests/test_developer_tabs_tests.py`, and the Mutations section and "How to read" line of the Evaluation tab. The mutation data in `summary.json` is untouched.
+- Traces tab, display only (no change to the trace writer, agent, tools or config): a tool result with `error_code` `not_found` shows "no result", not "failed"; identical errors in "Versions and settings" are grouped with a count ("x 8") and `not_found` reads "no result"; identical consecutive "Safety checks" lines are grouped with a count; tool calls are numbered 1, 2, 3 in the order they ran; the "Answer check" label in the path drawing fits its box; the model calls table has a "Cached" column from the record ("-" when none is recorded).
+
+## Known gaps
+
+- `[chunking].export_path` named in the plan is really `[metadata].export_path` in `config/rag.toml`; the page reads it from there.
+- The out-of-scope pages have an empty `scope_reason` in the export; the page shows the config key that lists them.
+- The "#" column of the chunk table wraps its digits at 390 px for two-digit numbers.
+- Cost: `summary.json` holds none, so the Evaluation tab says "not recorded".
+- The confirm text says "INR 599" while other replies use the rupee sign, and "upi" is lowercase. Both come from the text templates in `config/agent.toml`; not changed.

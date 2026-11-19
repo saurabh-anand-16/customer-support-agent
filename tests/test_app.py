@@ -119,7 +119,7 @@ def test_the_corner_tag_is_on_every_page_exactly_once_and_nothing_else_repeats_i
         tags = [h for h in at.get("html") if 'class="corner-tag"' in str(h.value)]
         assert len(tags) == 1 and "TEST-TAG" in str(tags[0].value), page
         assert page_text(at).count("TEST-TAG") == 1, page
-        assert page_text(at).lower().count("synthetic") == 1, f"{page}: the demo notice appears more than once"
+        assert page_text(at).lower().count("demo with synthetic data") == 1, f"{page}: the demo notice appears more than once"   # phase 11: the Developer tabs say "synthetic data" in their own words
         assert "demo-banner" not in page_text(at), page
 
 

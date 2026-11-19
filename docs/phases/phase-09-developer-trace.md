@@ -1,6 +1,6 @@
 # Phase 9: the Developer trace page
 
-**Status:** built, in review ([build report](../builds/phase-09-build.md)); not committed. **Branch:** `phase-9-developer-trace`. **Follows:** phase 6c (richer trace). **Next:** phase 10 (evaluation and tuning), then phases 11 and 12 (the other Developer tabs).
+**Status:** built, in review ([build report](../builds/phase-09-build.md)); not committed. **Branch:** `phase-9-developer-trace`. **Follows:** phase 6c (richer trace). **Next:** phase 10 (evaluation and tuning), then phases 11 and 12 (the other Developer tabs). Update: the other tabs were built in phase 11 (see [phase-11-developer-tabs.md](phase-11-developer-tabs.md)).
 
 Look at `docs/design/reference/Developer.dc.html` (visual reference only; do not copy the markup). Where this document and the picture differ, this document wins. The sample numbers in the picture (timings, tokens, costs, the version block) are made up: the page shows only what the trace file holds.
 

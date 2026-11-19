@@ -36,8 +36,7 @@ Rules for these files:
 | 6c | Richer trace: tokens, cost from a price table, timing and order, search and answer-check detail, versions, errors; fingerprint out of the prompt | Done, in review ([build report](../builds/phase-06c-build.md)); real-model and real-Langfuse run done | | [phase-06c-richer-trace.md](phase-06c-richer-trace.md) |
 | 9 | Developer trace page: turn list, path drawing, model and tool calls, passages, answer check, versions, checks; chat links; `turn_id` in the result | Done, in review ([build report](../builds/phase-09-build.md)); real-model traces and screenshots done | 2 | [phase-09-developer-trace.md](phase-09-developer-trace.md) |
 | 10 | Evaluation and tuning (retrieval, router, known problems, 23 end-to-end scenarios, full mutation run) | Done, in review ([build report](../builds/phase-10-build.md)); real-model runs done | 3 | [phase-10-evaluation-and-tuning.md](phase-10-evaluation-and-tuning.md) |
-| 11 | Evaluation results page | Not started | 1 | |
-| 12 | Policy explorer and assumptions pages | Not started | 1 | |
+| 11 and 12 | Developer tabs: Evaluation, Policy explorer, Assumptions (read-only; a Tests tab was dropped) | Built, in review ([build report](../builds/phase-11-build.md)); real-browser run done, no mutation check run | 2 | [phase-11-developer-tabs.md](phase-11-developer-tabs.md) |
 | 13 | CI, packaging, deployment, demo | Not started | 2 to 3 | |
 | Optional | MCP server around the tools | Not started | 1 | |
 

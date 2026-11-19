@@ -270,3 +270,49 @@ def read_turn(path, turn_id: str):
     """One turn record by id through the agent's reader, or None."""
     from agent.tracing import get_turn
     return get_turn(path, turn_id)
+
+
+# -- the other Developer tabs (phase 11): read-only reads of small files -------------------------------------------------
+def project_root() -> Path:
+    """The project folder (the parent of app/). Tests give another one through st.session_state["_dev_sources"]["root"]."""
+    return Path(__file__).resolve().parent.parent
+
+
+@functools.lru_cache(maxsize=32)
+def _read_file_cached(path_text: str, mtime_ns, size, kind: str):
+    path = Path(path_text)
+    if mtime_ns is None:
+        return None, "missing"
+    try:
+        text = path.read_text(encoding="utf-8-sig")
+    except (OSError, UnicodeError):
+        return None, "broken"
+    if not text.strip():
+        return None, "empty"
+    try:
+        if kind == "json":
+            import json
+            return json.loads(text), "ok"
+        if kind == "toml":
+            import tomllib
+            return tomllib.loads(text), "ok"
+        import csv
+        import io
+        csv.field_size_limit(10_000_000)
+        rows = list(csv.DictReader(io.StringIO(text, newline="")))
+        return rows, "ok"
+    except Exception:                                       # a broken file is an empty state, never a traceback
+        return None, "broken"
+
+
+def read_file(path, kind: str):
+    """
+    (content, state) of a json, toml or csv file. state is "ok", "missing", "empty" or "broken". The result is kept per file state (modified
+    time and size), so a big file is read once and read again only when it changed. The caller must not change what it gets back.
+    """
+    try:
+        stat = Path(path).stat()
+        key = (stat.st_mtime_ns, stat.st_size)
+    except OSError:
+        key = (None, None)
+    return _read_file_cached(str(path), *key, kind)

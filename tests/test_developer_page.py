@@ -98,6 +98,13 @@ def dev_page(tmp_path, records, extra=(), agent=None, customer=None):
     return at, agent, path
 
 
+def traces_tab_text(at) -> str:
+    """The text of the Traces tab only (the first tab)."""
+    tab = at.tabs[0]
+    parts = [str(getattr(e, "value", "")) for kind in ("html", "markdown", "caption", "text", "info", "error", "warning") for e in tab.get(kind)]
+    return "\n".join(parts + [b.label for b in tab.button])
+
+
 def sha(path) -> str:
     return hashlib.sha256(Path(path).read_bytes()).hexdigest()
 
@@ -121,9 +128,9 @@ def test_the_page_is_named_developer_trace_with_its_five_tabs_and_the_privacy_no
     at, _, _ = dev_page(tmp_path, [rec(1)])
     text = page_text(at)
     assert "# Developer trace" in text
-    assert [t.label for t in at.tabs] == ["Traces", "Evaluation", "Tests", "Policy explorer", "Assumptions"]
+    assert [t.label for t in at.tabs] == ["Traces", "Evaluation", "Policy explorer", "Assumptions"]
     assert "including other visitors" in text and "text if the demo is shared" in text and "A real system would restrict it." in text
-    assert "Coming in phase 11" in text and "Coming in phase 12" in text and "Coming in phase 9" not in text
+    assert "Coming in phase" not in text                      # phase 11: the four tabs have their content
 
 
 def test_the_list_shows_turns_newest_first_with_route_duration_and_message_numbers(tmp_path):
@@ -340,7 +347,8 @@ def test_langfuse_off_has_a_quiet_label_and_on_says_how_to_find_the_turn(tmp_pat
     monkeypatch.setattr(data, "trace_switches", lambda: {"langfuse_enabled": True, "capture_text": True})
     at.run()
     text = page_text(at)
-    assert "Langfuse is on" in text and "T0001" in text and "Langfuse is off" not in text
+    assert "Langfuse is on" in text and "T0001" in text
+    assert not any("badge-off" in str(h.value) for h in at.get("html"))                  # phase 11: other tabs may mention the words in their own text
 
 
 def test_the_page_is_read_only_the_trace_file_and_the_database_are_unchanged_and_the_agent_is_never_called(tmp_path):
@@ -376,7 +384,7 @@ def test_the_source_of_the_page_cannot_write_call_the_agent_or_decide():
 
 def test_no_key_pattern_env_content_or_hidden_field_is_on_the_page(tmp_path):
     at, _, _ = dev_page(tmp_path, [rec(1), old_rec(2), rec(3, capture_text=False)])
-    text = page_text(at)
+    text = traces_tab_text(at)                                  # phase 11: the other tabs are checked in tests/test_developer_tabs_readonly.py
     for pattern in (r"sk-[A-Za-z0-9_\-]{8,}", r"pk-lf-", r"sk-lf-", r"Bearer\s", r"OPENAI_API_KEY", r"LANGFUSE_", r"\.env", r"staff_approved", r"\"confirmed\"", r"api_key"):
         assert not re.search(pattern, text), pattern
 

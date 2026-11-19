@@ -228,3 +228,16 @@
 [class*="st-key-dev_pick_"] button { min-height: 0; font-size: 0.8rem; padding: 0.15rem 0.7rem; }
 /* Phone: the tables keep a readable width and scroll sideways inside their box, so no column breaks letter by letter. */
 @media (max-width: 640px) { .dev-table { min-width: 34rem; } }
+
+/* ---- Developer tabs: Evaluation, Tests, Policy explorer, Assumptions (phase 11) -------------------------------- */
+.note-box { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 0.8rem 1rem; font-size: 0.9rem; line-height: 1.5; margin: 0.6rem 0; }
+.note-box > b { display: block; margin-bottom: 0.3rem; }
+.dev-list { margin: 0.2rem 0 0.4rem 1.1rem; padding: 0; }
+.dev-list li { margin: 0.15rem 0; }
+.empty-title { font-weight: 650; margin-bottom: 0.3rem; }
+.dev-text { white-space: pre-wrap; overflow-wrap: anywhere; font-size: 0.85rem; background: #F3F3EF; border-radius: 8px; padding: 0.6rem 0.8rem; }
+.assumption { border: 1px solid var(--line); border-radius: 10px; background: var(--card); padding: 0.7rem 0.95rem; margin: 0.5rem 0; }
+.assumption-title { font-weight: 650; }
+.assumption-text { font-size: 0.9rem; line-height: 1.5; margin: 0.2rem 0 0.4rem 0; }
+/* The source of an assumption is a long path; inside an assumption card it may break anywhere, so a phone screen does not scroll sideways. */
+.assumption .nw, .assumption .kv .v { white-space: normal; overflow-wrap: anywhere; min-width: 0; }
