@@ -69,11 +69,22 @@ def one_record(tmp_path):
 
 
 # === config: the price table ===================================================================================
-def test_the_shipped_config_has_an_entry_for_every_model_it_uses_and_no_price_in_any():
+def test_the_shipped_config_has_a_price_entry_for_every_model_it_uses_with_valid_numbers():
     cfg = load_agent_config(DEFAULT_CONFIG)
     used = {cfg.model.name, cfg.branches.name, cfg.confirm.name, cfg.refund_method.name}
     assert used <= set(cfg.pricing)
-    assert all(price == ModelPrice() for price in cfg.pricing.values())     # left empty for the owner to fill in
+    for name in used:                                  # the numbers themselves are the owner's to change; only their shape is checked
+        price = cfg.pricing[name]
+        for value in (price.input_per_million, price.output_per_million):
+            assert isinstance(value, (int, float)) and not isinstance(value, bool) and value >= 0, (name, value)
+        assert price.cached_input_per_million is None or (isinstance(price.cached_input_per_million, (int, float)) and price.cached_input_per_million >= 0), name
+
+
+def test_a_model_with_no_price_entry_gives_a_null_cost():
+    cfg = load_agent_config(DEFAULT_CONFIG)
+    call = {"input_tokens": 100, "output_tokens": 50, "cached_tokens": 0}
+    assert "a-model-that-is-not-in-the-table" not in cfg.pricing
+    assert cost_of(call, cfg.pricing.get("a-model-that-is-not-in-the-table")) == (None, None, "no_price")
 
 
 def test_a_price_table_loads_with_the_optional_cached_price(tmp_path):

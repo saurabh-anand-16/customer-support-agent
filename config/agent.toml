@@ -205,9 +205,9 @@ hash_key_env_name = "LANGFUSE_HASH_KEY"   # the variable that holds the key for 
 # Keys: input_per_million, output_per_million, cached_input_per_million. A negative or non-number value is a config error.
 # Fill in all three: the API reports cached input tokens for a repeated prompt start (seen in the real run), and a call with cached tokens
 # but no cached price gets cost_usd = null (cost_missing = no_cached_price) rather than a price we made up.
-# input_per_million =
-# output_per_million =
-# cached_input_per_million =
+input_per_million = 0.15
+output_per_million = 0.60
+cached_input_per_million = 0.075
 
 [eval]
 # Used by scripts/eval_split.py (shared with phase 3d): the share of rows that go to the test split.
