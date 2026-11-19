@@ -1,6 +1,6 @@
 # Phase 8d: manager live chat
 
-**Status:** to build. **Branch:** `phase-8d-manager-live-chat`. **Follows:** phase 11 (merged). **Next:** phase 13 (How it works, Limits, README); deployment is its own phase after it.
+**Status:** built, in review (see [the build report](../builds/phase-08d-build.md)). **Branch:** `phase-8d-manager-live-chat`. **Follows:** phase 11 (merged). **Next:** phase 13 (How it works, Limits, README); deployment is its own phase after it.
 
 Read first: `docs/phases/phase-08-manager-page.md`, `docs/phases/phase-08b-review-followups.md` (how notices reach the customer chat by polling), `docs/phases/phase-08c-polish.md`.
 
@@ -84,3 +84,7 @@ In a real browser, with two pages open (the customer chat and the Manager page) 
 ## Not in this phase
 
 Manager login or names, typing indicators, read receipts, attachments, push notifications, exporting a conversation, scoring a conversation.
+
+## What was built (added at the end of the phase)
+
+Built as described, with three differences, all in the build report: the table is created by the first chat write (not when the queue is opened), so a reset demo copy is byte for byte the real database; "joined" and "closed" are system rows with an `event` (a unique index makes them once), not a column on `review_items`; and "Customer is waiting" also marks a queued case nobody has written in yet. A person case with a thread gets no notice (the thread holds the reply and the closing line). Tests: 44 new, 1870 in all. Real-browser run done with the real model for the first message of each flow. The build report also records an incident: an early draft changed the real database file (an empty table) and it was restored from a byte-identical copy.
