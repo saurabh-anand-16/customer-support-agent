@@ -12,7 +12,7 @@ from datetime import datetime, timezone
 
 import streamlit as st
 
-from app import components, data, manager_flow, manager_parts as mp, state
+from app import chat_thread, components, data, manager_flow, manager_parts as mp, state
 from app.components import esc
 
 settings = state.get_settings()
@@ -25,6 +25,8 @@ REFUSAL_FALLBACK = "The decision could not be completed. Nothing was changed on 
 FINAL_REFUSALS = ("already_decided", "decision_in_progress", "record_failed")
 
 _live: dict = {}          # item lookups made during this run
+CHAT = chat_thread.texts()          # [review.chat]: the lines, the label and the length limit
+overview: dict = {"_newest": 0}      # data.thread_overview(): every thread at a glance, read once per run
 
 
 def now() -> datetime:
@@ -48,6 +50,22 @@ def live_item(case: dict) -> dict | None:
 def pick(tab: str, case_id: str) -> None:
     st.session_state[f"mgr_sel_{tab}"] = case_id
     st.session_state.pop("mgr_refusal", None)
+
+
+def join(case_id: str) -> None:
+    """The manager presses Join chat. The joined line is written once, however many managers press it."""
+    result = manager_flow.join_case(backend, case_id)
+    if not result.get("ok"):
+        st.session_state["mgr_chat_error"] = {"id": case_id, "message": result.get("message", REFUSAL_FALLBACK)}
+
+
+def send_message(case_id: str, text: str) -> None:
+    """The manager sends one chat message. The sender is the manager: the flow function has no sender argument."""
+    result = manager_flow.send_to_customer(backend, case_id, text)
+    if not result.get("ok"):
+        st.session_state["mgr_chat_error"] = {"id": case_id, "message": result.get("message", REFUSAL_FALLBACK)}
+    else:
+        st.session_state.pop("mgr_chat_error", None)
 
 
 def refresh() -> None:
@@ -120,10 +138,44 @@ def draw_detail(case: dict, state_info: dict, tab: str) -> None:
         convo = mp.conversation_html(case)
         if convo:
             st.html(f'<div class="detail-h">Conversation</div><div class="convo">{convo}</div>')
+        draw_chat(case, state_info)
         if case["status"] == "open":
             draw_decision_form(case, state_info, late, person)
         else:
             draw_decision_record(case)
+
+
+def draw_chat(case: dict, state_info: dict) -> None:
+    """
+    Phase 8d: the live chat of the case, under the case information. The customer's messages are on the left (blue) and the manager's on the right
+    (purple). Join chat first; then a box to write. No model reads or writes any message. A decided case shows its chat as a record.
+    """
+    cid = case["id"]
+    messages = data.review_thread(DB, cid)
+    is_open = case["status"] == "open"
+    if not is_open and not messages:
+        return
+    st.html('<div class="detail-h">Chat with the customer</div>')
+    if messages:
+        st.html(components.thread_html(messages, CHAT["manager_label"]))
+    elif is_open:
+        st.html('<div class="muted">Nothing has been written yet. What the customer types appears here.</div>')
+    if not is_open:
+        return
+    locked = state_info["being_decided"] or cid in st.session_state.get("mgr_pressed", set())
+    joined = overview.get(cid, {}).get("joined", False)
+    if not joined:
+        st.button("Join chat", key=f"mgr_join_{cid}", type="primary", disabled=locked, on_click=join, args=(cid,))
+    else:
+        with st.form(key=f"mgr_chatform_{cid}", clear_on_submit=True, border=False):
+            text = st.text_area("Message to the customer", key=f"mgr_chattext_{cid}", height=80, disabled=locked)
+            sent = st.form_submit_button("Send message", key=f"mgr_send_{cid}", disabled=locked)
+        if sent:
+            send_message(cid, text)
+            st.rerun()
+    problem = st.session_state.get("mgr_chat_error")
+    if problem and problem["id"] == cid:
+        st.html(f'<div class="amber-box">{esc(problem["message"])}</div>')
 
 
 def draw_decision_form(case: dict, state_info: dict, late: bool, person: bool) -> None:
@@ -176,7 +228,8 @@ def draw_tab(tab: str, cases: list, states: dict) -> None:
     with listing:
         for case in cases:
             with st.container(key=f"mgr_case_{tab}_{case['id']}"):
-                st.html(mp.card_html(case, mp.title_for(case, live_item(case)), mp.kind_badge(case, live_item(case)), states[case["id"]], case["id"] == selected))
+                st.html(mp.card_html(case, mp.title_for(case, live_item(case)), mp.kind_badge(case, live_item(case)), states[case["id"]], case["id"] == selected,
+                                    CHAT["customer_waiting_badge"] if mp.customer_waiting(case, overview.get(case["id"])) else None))
                 st.button("Viewing" if case["id"] == selected else "View this case", key=f"mgr_pick_{tab}_{case['id']}", disabled=case["id"] == selected,
                           on_click=pick, args=(tab, case["id"]))
     with detail:
@@ -186,10 +239,12 @@ def draw_tab(tab: str, cases: list, states: dict) -> None:
 
 @st.fragment(run_every=settings.poll_seconds)       # no JavaScript: Streamlit reruns just this function. A new or decided case changes the count, and the page is drawn again
 def watch_the_queue() -> None:
-    if state.open_count_changed():
+    if state.open_count_changed() | state.thread_changed():          # a new or decided case, or a new chat message: the page is drawn again
         st.rerun()
 
 
+overview = data.thread_overview(DB)
+st.session_state["thread_newest_shown"] = overview["_newest"]          # what this run draws; the watcher below compares against it
 watch_the_queue()
 st.markdown("# Manager queue")
 st.caption("Requests the agent was not allowed to decide: exceptions, high-value returns and restricted accounts. Each one shows the evidence the agent had.")

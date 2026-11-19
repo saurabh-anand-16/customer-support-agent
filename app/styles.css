@@ -241,3 +241,24 @@
 .assumption-text { font-size: 0.9rem; line-height: 1.5; margin: 0.2rem 0 0.4rem 0; }
 /* The source of an assumption is a long path; inside an assumption card it may break anywhere, so a phone screen does not scroll sideways. */
 .assumption .nw, .assumption .kv .v { white-space: normal; overflow-wrap: anywhere; min-width: 0; }
+
+/* ---- Live chat of a case (phase 8d) ---------------------------------------------------------------------------- */
+/* Colours: customer blue #E8EEF9 / #1F3A6B, agent green #E3F1EE / #074A3F, manager purple #EFE8F7 / #3E2A6B. Contrast of the text on its background is above 7:1. */
+.badge-waiting { background: #EFE8F7; color: #3E2A6B; }
+.sys-line { text-align: center; font-size: 0.8rem; color: var(--muted-dark); margin: 0.5rem 0; overflow-wrap: anywhere; }
+.sys-waiting { text-align: center; font-size: 0.9rem; font-weight: 600; color: #3E2A6B; background: #EFE8F7; border-radius: 10px; padding: 0.5rem 0.8rem; margin: 0.6rem 0; }
+/* Streamlit's own class: the manager's bubble in the customer chat (purple, on the left like the agent, always with the label from config). */
+[class*="st-key-bubble-manager"] { background: #EFE8F7; border-radius: 16px 16px 16px 4px; padding: 0.55rem 0.9rem; width: fit-content; max-width: 100%; }
+/* Streamlit's own markup: the text inside the manager's bubble takes the bubble's text colour. */
+[class*="st-key-bubble-manager"], [class*="st-key-bubble-manager"] p { color: #3E2A6B; }
+/* The chat window on the Manager page: customer on the left, manager on the right. */
+/* column-reverse makes the window open scrolled to the newest message, with no JavaScript; the messages sit in one inner box so their order is normal. */
+.tm-window { display: flex; flex-direction: column-reverse; max-height: 26rem; overflow-y: auto; border: 1px solid var(--line); border-radius: 12px; padding: 0.7rem 0.8rem; background: #FBFBF9; }
+.tm-inner { display: flex; flex-direction: column; gap: 0.45rem; }
+.tm-row { display: flex; min-width: 0; }
+.tm-left { justify-content: flex-start; }
+.tm-right { justify-content: flex-end; }
+.tm-bubble { box-sizing: border-box; max-width: 85%; padding: 0.45rem 0.85rem; font-size: 0.9rem; line-height: 1.45; overflow-wrap: anywhere; }
+.tm-customer { background: #E8EEF9; color: #1F3A6B; border-radius: 14px 14px 14px 4px; }
+.tm-manager { background: #EFE8F7; color: #3E2A6B; border-radius: 14px 14px 4px 14px; }
+@media (max-width: 640px) { .tm-bubble { max-width: 94%; } }

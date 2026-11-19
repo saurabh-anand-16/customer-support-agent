@@ -273,10 +273,11 @@ def test_a_real_reply_sent_from_the_manager_page_reaches_the_customers_chat_once
     sign_in(at, "C0076")                                                            # the customer of the person case in add_cases
     at.switch_page("views/chat.py").run()
     page = html_of(at)
-    assert f"A person replied to {ref}: Your refund was sent on the 16th." in page
+    # Phase 8d: the reply is the manager's last chat message (not a notice with a template around it), and the closing line follows it.
+    assert "Your refund was sent on the 16th." in page and "A person replied to" not in page and "The manager has closed this conversation." in page
     for _ in range(3):
         at.run()
-    assert notice_count(at, "Your refund was sent on the 16th.") == 1 and agent.calls == []
+    assert notice_count(at, "Your refund was sent on the 16th.") == 1 and notice_count(at, "The manager has closed this conversation.") == 1 and agent.calls == []
 
 
 def test_a_real_close_without_a_reply_tells_the_customer_it_is_closed_and_not_the_note(tmp_path):

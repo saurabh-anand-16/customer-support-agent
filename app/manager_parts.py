@@ -202,8 +202,19 @@ def conversation_html(case: dict) -> str:
     return "".join(f'<div class="turn"><b>{"Customer" if m.get("role") == "customer" else "Agent"}:</b> {esc(m.get("text"))}</div>' for m in case.get("excerpt") or [])
 
 
-def card_html(case: dict, title: str, badge: str, state: dict, selected: bool) -> str:
-    """One case in the list."""
+def customer_waiting(case: dict, info: dict | None) -> bool:
+    """
+    Phase 8d: True for an open case whose customer is waiting for the manager: the newest message that is not a system line is the customer's, or nobody has
+    written yet and no manager has joined (a queued case). `info` is this case's entry of `data.thread_overview`, or None when it has no messages.
+    """
+    if case["status"] != "open":
+        return False
+    info = info or {"joined": False, "last_sender": None}
+    return info["last_sender"] == "customer" or (info["last_sender"] is None and not info["joined"])
+
+
+def card_html(case: dict, title: str, badge: str, state: dict, selected: bool, waiting_text: str | None = None) -> str:
+    """One case in the list. `waiting_text` ("Customer is waiting", from config) marks a case whose customer is waiting for the manager."""
     status_badge = ""
     if state["being_decided"]:
         status_badge = f'<span class="badge badge-busy">Being decided · started {esc(state["started"])}</span>'
@@ -211,6 +222,8 @@ def card_html(case: dict, title: str, badge: str, state: dict, selected: bool) -
         word = "Closed" if case["kind"] == "customer_asked_for_person" else case["status"].capitalize()
         told = f"Customer notified {esc(clock(case.get('customer_notified_at')))}" if case.get("customer_notified_at") else "Customer not notified yet"
         status_badge = f'<span class="badge badge-{case["status"]}">{word}</span><span class="muted">{told}</span>'
+    if waiting_text and not state["being_decided"]:
+        status_badge += f'<span class="badge badge-waiting">{esc(waiting_text)}</span>'
     classes = "case-card" + (" case-selected" if selected else "") + (" case-busy" if state["being_decided"] else "")
     return (f'<div class="{classes}"><div class="case-top"><span>{esc(case["id"])} · {esc(case["customer_id"])}</span><span>{esc(short_time(case["created_at"]))}</span></div>'
             f'<div class="case-title">{esc(title)}</div><div class="case-badges"><span class="badge">{esc(badge)}</span>{status_badge}</div></div>')

@@ -160,6 +160,7 @@ class ReviewSettings:
     default_decided_by: str      # the label scripts use when they give no decided_by
     notices: dict                # the fixed texts of the outcome notice: approved, refund_line, declined, closed, note_line
     decision_replies: dict       # the fixed texts a decision gives back to the caller (the manager side)
+    chat: dict                   # phase 8d: [review.chat], the live chat of a case: its fixed lines, the label "Manager", the length limit and the refusal texts
 
 
 @dataclass(frozen=True)
@@ -311,7 +312,7 @@ _SPEC = {
                                 "reply_template": str, "error_reply": str, "reasons": dict,
                                 "reasons_by_requested_method": dict, "show_note_to_customer": bool, "note_max_chars": int,
                                 "product_name_max_chars": int, "recent_decision_days": int, "note_to_customer": dict, "existing_case": dict,
-                                "default_decided_by": str, "notices": dict, "decision_replies": dict}),
+                                "default_decided_by": str, "notices": dict, "decision_replies": dict, "chat": dict}),
     "refund_method": (RefundMethodSettings, {"name": str, "temperature": float, "max_output_tokens": int, "max_message_chars": int,
                                              "not_offered": list, "escalation_kind": str, "prompt": str, "option_texts": dict,
                                              "notes": dict, "replies": dict}),
@@ -514,7 +515,31 @@ def _check_refund_method(m: RefundMethodSettings, where: str) -> None:
             raise AgentConfigError(f"{where}: [refund_method.replies].{key} must contain {{{field_name}}}")
 
 
+REVIEW_CHAT_TEXTS = ("waiting_line", "joined_line", "closed_line", "manager_label", "customer_waiting_badge", "empty_error", "too_long_error",
+                     "no_open_case_error", "not_open_error", "not_joined_error")
+
+
+def _check_review_chat(r: ReviewSettings, where: str) -> None:
+    """[review.chat] (phase 8d): non-empty texts and a whole-number limit of 1 or more. Anything else is refused."""
+    c = r.chat
+    extra = set(c) - set(REVIEW_CHAT_TEXTS) - {"max_chars"}
+    if extra:
+        raise AgentConfigError(f"{where}: [review.chat] has {sorted(extra)}, which are not allowed")
+    for key in REVIEW_CHAT_TEXTS:
+        if not isinstance(c.get(key), str) or not c[key].strip():
+            raise AgentConfigError(f"{where}: [review.chat].{key} must be non-empty text")
+    limit = c.get("max_chars")
+    if not isinstance(limit, int) or isinstance(limit, bool) or limit < 1:
+        raise AgentConfigError(f"{where}: [review.chat].max_chars must be a whole number, 1 or more")
+    try:
+        if _fields_of(c["too_long_error"]) - {"limit"}:
+            raise AgentConfigError(f"{where}: [review.chat].too_long_error may use only {{limit}}")
+    except ValueError as err:
+        raise AgentConfigError(f"{where}: [review.chat].too_long_error cannot be filled in ({err!r})") from err
+
+
 def _check_review(r: ReviewSettings, where: str) -> None:
+    _check_review_chat(r, where)
     if r.excerpt_messages < 0:
         raise AgentConfigError(f"{where}: [review].excerpt_messages must be 0 or more")
     if r.excerpt_message_chars < 1:

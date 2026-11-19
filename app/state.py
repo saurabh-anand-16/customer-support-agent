@@ -8,6 +8,8 @@ Keys:
   turns         the chat so far: one dict per message (see chat_flow.run_turn).
   outbox        a message waiting to be sent (set by the input box, a chip or a confirm button), else None.
   show_details  whether the "Behind the scenes" panel is shown.
+  thread_seen   phase 8d: the newest chat message id already in `turns` (None until the first look of this chat).
+  thread_info   phase 8d: {"open_case", "joined"} as last seen: drives the "Waiting for a manager" line and the agent pause.
 """
 import streamlit as st
 
@@ -15,7 +17,7 @@ from .backend import Backend
 from .config import load_app_settings
 from .demo_db import ensure_demo_db
 
-_CHAT_KEYS = ("customer_id", "session_id", "scenario", "turns", "outbox", "show_details")
+_CHAT_KEYS = ("customer_id", "session_id", "scenario", "turns", "outbox", "show_details", "thread_seen", "thread_info")
 
 
 @st.cache_resource
@@ -43,6 +45,15 @@ def open_count_changed() -> bool:
         return False
 
 
+def thread_changed() -> bool:
+    """True when a chat message has been written since the Manager page last drew its threads (key `thread_newest_shown`). Read-only."""
+    from . import data
+    try:
+        return data.thread_overview(get_settings().demo_db)["_newest"] != st.session_state.get("thread_newest_shown", 0)
+    except Exception:
+        return False
+
+
 def customer_id() -> str | None:
     return st.session_state.get("customer_id")
 
@@ -50,7 +61,7 @@ def customer_id() -> str | None:
 def sign_in(new_customer_id: str, scenario: str | None = None) -> None:
     """Choose a customer: a fresh agent session for that customer and an empty chat."""
     session_id = get_backend().start_session(new_customer_id)
-    st.session_state.update(customer_id=new_customer_id, session_id=session_id, scenario=scenario, turns=[], outbox=None, show_details=True)
+    st.session_state.update(customer_id=new_customer_id, session_id=session_id, scenario=scenario, turns=[], outbox=None, show_details=True, thread_seen=None, thread_info={})
 
 
 def sign_out() -> None:

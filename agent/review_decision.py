@@ -35,6 +35,7 @@ from .branches.base import fill
 from .checks import blocked_by_design, check
 from .llm import AgentConfig
 from .refund_method import ORDER_TYPE, read_options
+from .review_chat import ReviewChat
 from .review_queue import APPROVED, DECLINED, OPEN, ReviewQueue
 
 APPROVE, DECLINE = "approve", "decline"
@@ -79,6 +80,25 @@ def _write_inputs(item: dict, tools, cfg: AgentConfig):
             return None, "refund_method_not_offered"
         method = stored
     return {"customer_id": item["customer_id"], "item_id": order_item_id, "reason": reason, "resolution": resolution, "refund_method": method}, None
+
+
+def _close_thread(queue: ReviewQueue, cfg: AgentConfig, item: dict, decision: str, note: str, checks: list) -> None:
+    """
+    Phase 8d: closing a case closes its chat. Only a case that has a thread is touched (somebody joined or wrote); any other case is closed exactly as before.
+    For a "customer asked for a person" case answered with Send reply and close (approve, when [review.note_to_customer] allows it) the note becomes the
+    manager's last message, and no separate notice is sent (agent/review_notice.py leaves it out; the customer is marked as told when their chat has shown the closing line).
+    Every other note stays private. A failure here never undoes the decision: it is a failed check.
+    """
+    try:
+        chat = ReviewChat(queue.con, cfg.review.chat)
+        if not chat.has_thread(item["id"]):
+            return
+        person = item["kind"] == "customer_asked_for_person"
+        reply = note if person and decision == APPROVE and cfg.review.note_to_customer.get(item["kind"], False) else None
+        chat.finish_thread(item["id"], reply)
+        checks.append(check("review_chat", True, f"the chat of {item['id']} was closed" + ("; the reply is its last message" if reply else "")))
+    except Exception as err:
+        checks.append(check("review_chat", False, f"the chat of {item['id']} could not be closed ({type(err).__name__}); the decision stands"))
 
 
 def decide(item_id: str, decision: str, note: str, decided_by: str | None = None, *, queue: ReviewQueue, tools, cfg: AgentConfig) -> dict:
@@ -151,6 +171,7 @@ def decide(item_id: str, decision: str, note: str, decided_by: str | None = None
             checks.append(check("review_decision", False, "the decision could not be recorded; the claim is kept so no second return can follow"))
             return _result(cfg, False, "record_failed", item_id, checks, error_code="record_failed", return_id=return_id)
 
+    _close_thread(queue, cfg, item, decision, note, checks)
     key = ("closed" if kind == "customer_asked_for_person" else "approved" if decision == APPROVE else "declined")
     checks.append(check("review_decision", True, f"{item_id} {status} by {decided_by}" + (f"; return {return_id} written" if return_id else "; nothing was written")))
     return _result(cfg, True, key, item_id, checks, status=status, return_id=return_id)

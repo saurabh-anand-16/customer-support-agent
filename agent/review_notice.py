@@ -26,6 +26,9 @@ close" (status approved), as the fixed text [review.notices].person_reply, cut t
 keeps the note private, and so does every other kind unless [review.note_to_customer] says true for that kind. The global switch
 [review].show_note_to_customer (false) still adds the note to every notice when it is true.
 
+Phase 8d: a "customer asked for a person" case that has a chat thread gets no notice (the thread shows the reply and the closing line once); it is left out
+(the customer's chat marks it as told when it has shown the closing line). Decisions on late-request and approval cases keep their notices.
+
 This module only reads and marks. It does not import the decision code or a writer.
 """
 from .branches.base import fill
@@ -33,6 +36,7 @@ from .branches.return_or_replace import money
 from .checks import check
 from .llm import AgentConfig
 from .names import short_product_name
+from .review_chat import ReviewChat
 from .review_queue import APPROVED, ReviewQueue
 
 
@@ -91,8 +95,12 @@ def pending_notices(queue: ReviewQueue, tools, cfg: AgentConfig, customer_id: st
         pending = queue.unnotified(customer_id)
     except Exception as err:
         return [], [check("review_notice", False, f"the review queue could not be read ({type(err).__name__}); no notice was added")]
+    chat = ReviewChat(queue.con, cfg.review.chat)
     for item in pending:
         try:
+            if item["kind"] == PERSON_CASE and chat.has_thread(item["id"]):
+                # Phase 8d: the chat of this case already holds the manager's reply and the closing line, so a notice would say it a second time.
+                continue                                        # not marked here: the chat marks it when it has shown the closing line (app/chat_thread.py)
             text, why = _text_for(item, tools, cfg)
             if text is None:
                 checks.append(check("review_notice", False, f"{item['id']}: {why}; not announced, will be tried again"))

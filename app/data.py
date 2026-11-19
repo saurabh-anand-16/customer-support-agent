@@ -90,6 +90,42 @@ def review_row(db: Path, reference: str, customer_id: str) -> dict | None:
     return dict(zip(("id", "status", "kind", "order_item_id"), row)) if row else None
 
 
+def review_thread(db: Path, item_id: str) -> list[dict]:
+    """The chat messages of one case, oldest first: [{"id", "sender", "text", "created_at", "event"}]. Read-only; a database without the table gives []."""
+    con = _read_only(db)
+    con.row_factory = sqlite3.Row
+    try:
+        rows = con.execute("SELECT id, sender, text, created_at, event FROM review_messages WHERE review_item_id = ? ORDER BY id", (item_id,)).fetchall()
+    except sqlite3.Error:
+        return []
+    finally:
+        con.close()
+    return [dict(r) for r in rows]
+
+
+def thread_overview(db: Path) -> dict:
+    """
+    One look at every thread, for the Manager page: {item_id: {"joined": bool, "last_sender": sender of the newest customer or manager message or None,
+    "last_id": newest message id}}, plus the key "_newest" (the newest message id of all, 0 when none). Read-only; no table gives {"_newest": 0}.
+    """
+    con = _read_only(db)
+    try:
+        rows = con.execute("SELECT id, review_item_id, sender, event FROM review_messages ORDER BY id").fetchall()
+    except sqlite3.Error:
+        return {"_newest": 0}
+    finally:
+        con.close()
+    out: dict = {"_newest": rows[-1][0] if rows else 0}
+    for mid, item_id, sender, event in rows:
+        info = out.setdefault(item_id, {"joined": False, "last_sender": None, "last_id": 0})
+        info["last_id"] = mid
+        if event == "joined":
+            info["joined"] = True
+        if sender != "system":
+            info["last_sender"] = sender
+    return out
+
+
 def open_case_count(db: Path) -> int:
     """How many review cases are open (status open, claimed ones included). Read-only; a database without the table gives 0."""
     con = _read_only(db)

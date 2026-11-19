@@ -360,10 +360,14 @@ def test_the_receipt_reads_status_and_item_name_from_the_database(tmp_path):
     item_id, customer = row
     at, backend, agent = make_app(tmp_path)
     demo = backend.settings.demo_db
-    con = sqlite3.connect(demo)
-    con.execute("INSERT INTO review_items (id, created_at, customer_id, order_item_id, kind, reason, status) VALUES ('REV-9001','2026-11-17','C0076',?, 'late_request','x','open')", (item_id,))
-    con.commit(); con.close()
-    agent.script = lambda m, c: result("Sent.", route="return_or_replace", escalation=_escalation("REV-9001", item_id))
+
+    def script(message, customer):
+        # The case is made DURING the turn, like the real agent does. (A case that is open before the message pauses the agent: phase 8d.)
+        con = sqlite3.connect(demo)
+        con.execute("INSERT INTO review_items (id, created_at, customer_id, order_item_id, kind, reason, status) VALUES ('REV-9001','2026-11-17','C0076',?, 'late_request','x','open')", (item_id,))
+        con.commit(); con.close()
+        return result("Sent.", route="return_or_replace", escalation=_escalation("REV-9001", item_id))
+    agent.script = script
     sign_in(at)
     send(at, "yes please")
     html = " ".join(str(h.value) for h in at.get("html"))

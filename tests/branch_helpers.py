@@ -155,6 +155,11 @@ FIXED_REVIEW = {
         "person_reply": "PERSON-REPLY {reference} [{note}]",
         "note_line": " NOTE[{note}]",
     },
+    "chat": {
+        "waiting_line": "CHAT-WAITING", "joined_line": "CHAT-JOINED", "closed_line": "CHAT-CLOSED", "manager_label": "CHAT-MANAGER",
+        "customer_waiting_badge": "CHAT-CUSTOMER-WAITING", "max_chars": 50, "empty_error": "CHAT-EMPTY", "too_long_error": "CHAT-TOO-LONG {limit}",
+        "no_open_case_error": "CHAT-NO-CASE", "not_open_error": "CHAT-NOT-OPEN", "not_joined_error": "CHAT-NOT-JOINED",
+    },
     "decision_replies": {
         "approved": "DONE-APPROVED {reference} {return_id}", "declined": "DONE-DECLINED {reference}", "closed": "DONE-CLOSED {reference}",
         "bad_decision": "BAD-DECISION", "bad_note": "BAD-NOTE", "note_too_long": "NOTE-TOO-LONG {limit}", "not_found": "NO-ITEM {reference}",

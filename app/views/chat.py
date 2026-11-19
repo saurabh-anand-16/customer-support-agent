@@ -6,7 +6,7 @@ button or a suggested message is queued as an ordinary message and goes through 
 """
 import streamlit as st
 
-from app import chat_flow, components, data, notice_flow, state
+from app import chat_flow, chat_thread, components, data, notice_flow, state
 from app.config import load_personas
 
 settings = state.get_settings()
@@ -15,6 +15,29 @@ settings = state.get_settings()
 def notice_turn(notice: dict) -> dict:
     """A decision notice that arrived by itself, kept in the transcript as an agent message with no customer message before it."""
     return {"notice": True, "reference": notice["reference"], "user": None, "reply": notice["text"], "status": "ok", "result": None, "review": None, "answered": None}
+
+
+def thread_turn(message: dict) -> dict:
+    """One message of a case's live chat (phase 8d), kept in the transcript in the order it arrived. `sender` is what the database says, never the text."""
+    return {"thread": True, "id": message["id"], "sender": message["sender"], "text": message["text"], "item_id": message["review_item_id"]}
+
+
+def look_at_thread() -> bool:
+    """
+    Phase 8d: add the new chat messages of this customer's cases to the transcript and remember whether a case is open and joined. No model is called.
+    True when something changed: a message arrived, or the case was opened, joined or closed (the waiting line and the agent pause follow it).
+    """
+    seen = st.session_state.get("thread_seen")
+    found = chat_thread.look(state.get_backend(), customer_id, seen)
+    if found.get("failed"):
+        return False
+    for message in found["messages"]:
+        st.session_state["turns"].append(thread_turn(message))
+    info = {"open_case": found["open_case"], "joined": found["joined"]}
+    changed = bool(found["messages"]) or info != st.session_state.get("thread_info")
+    st.session_state["thread_seen"] = found["seen"]
+    st.session_state["thread_info"] = info
+    return changed and (seen is not None)       # the very first look of a chat only fills the page in; it needs no second run
 
 
 def look_for_notices() -> bool:
@@ -81,7 +104,26 @@ def draw_receipt(turn: dict, index: int, customer_id: str) -> None:
             st.page_link("views/manager.py", label="Demo tip: open Manager queue to decide this.")
 
 
+def draw_thread_message(turn: dict, index: int) -> None:
+    """A message of the live chat. The customer's own is on the right in blue; the manager's is on the left in purple with the label from config; a system line is centred."""
+    if turn["sender"] == "system":
+        st.html(components.system_line_html(turn["text"]))
+    elif turn["sender"] == "manager":
+        with st.chat_message("assistant"):
+            with st.container(key=f"bubble-manager-{index}"):
+                st.html(components.who_label_html(manager_label))
+                st.html(components.plain_text_html(turn["text"]))
+    else:
+        with st.chat_message("user"):
+            with st.container(key=f"bubble-user-thread-{index}"):
+                st.html(components.who_label_html("You"))
+                st.html(components.plain_text_html(turn["text"]))
+
+
 def draw_turn(turn: dict, index: int, busy: bool, customer_id: str) -> None:
+    if turn.get("thread"):
+        draw_thread_message(turn, index)
+        return
     if turn.get("notice"):                                  # a decision notice that arrived by itself: an agent bubble, no customer message
         with st.chat_message("assistant"):
             with st.container(key=f"bubble-agent-{index}"):
@@ -119,7 +161,7 @@ def draw_turn(turn: dict, index: int, busy: bool, customer_id: str) -> None:
 
 
 def draw_panel(all_turns: list) -> None:
-    turns = [t for t in all_turns if not t.get("notice")]      # the panel explains agent turns; a notice has no model call behind it
+    turns = [t for t in all_turns if not t.get("notice") and not t.get("thread")]      # the panel explains agent turns; a notice or a chat message has no model call behind it
     with st.container(key="behind-panel"):
         st.markdown("### Behind the scenes")
         st.html('<div class="behind-intro">For visitors: how the agent decided. A real customer would not see this panel.</div>')
@@ -161,26 +203,44 @@ if fresh.button("New chat", key="new-chat", width="stretch"):
     state.new_chat()
     st.rerun()
 
+manager_label = chat_thread.manager_label()
 message = st.session_state.pop("outbox", None)        # taken out first, so no later run can send it twice
+if message is not None:
+    # Phase 8d: BEFORE the agent is called, look for an open case. If there is one the message goes to its chat and the agent is not called, and no model reads it.
+    posted = chat_thread.paused_post(state.get_backend(), customer_id, message)
+    if posted is not None:
+        message = None
+        if not posted.get("ok"):
+            st.session_state["thread_error"] = posted["message"]
 busy = message is not None
 
 
 @st.fragment(run_every=None if busy else settings.poll_seconds)      # no JavaScript: Streamlit reruns just this function; stopped while a turn runs
 def poll_for_notices() -> None:
     """Look for decision notices now (a page change runs this at once) and every `poll_seconds`. No model is called. A new notice redraws the page."""
-    if not busy and (look_for_notices() or state.open_count_changed()):      # the second: the sidebar dot is out of date, so the page is drawn again
+    if not busy and (look_at_thread() | look_for_notices() | state.open_count_changed()):      # `|` so every look is made; the third: the sidebar dot is out of date, so the page is drawn again
         st.rerun()
 
 
 poll_for_notices()
 turns = st.session_state["turns"]
+thread_info = st.session_state.get("thread_info") or {}
+paused = bool(thread_info.get("open_case"))                       # an open case: the agent is paused and what is typed goes to the case's chat
+waiting = paused and not thread_info.get("joined")
+locked = busy or paused                                           # chips and confirm buttons would go to the agent, so they are off while paused
+chat_texts = chat_thread.texts()
 
 chat_col, panel_col = st.columns([3, 2]) if show_details else (st.container(), None)
 with chat_col:
     if not turns and not busy:
         st.caption("Say what you need, for example: I want to return an item.")
     for i, turn in enumerate(turns):
-        draw_turn(turn, i, busy, customer_id)
+        draw_turn(turn, i, locked, customer_id)
+    if waiting:
+        st.html(components.waiting_line_html(chat_texts["waiting_line"]))
+    problem = st.session_state.pop("thread_error", None)
+    if problem:
+        st.html(components.error_html(problem))
     if busy:
         with st.chat_message("user"):
             with st.container(key="bubble-user-now"):
@@ -189,12 +249,12 @@ with chat_col:
         waiting_slot = st.empty()         # the agent's bubble is drawn here, after the (disabled) input box exists
     with st.container(key="chips", horizontal=True):
         for text in chip_texts(customer_id):
-            st.button(text, key=f"chip-{text}", disabled=busy, on_click=queue, args=(text,))
+            st.button(text, key=f"chip-{text}", disabled=locked, on_click=queue, args=(text,))
 if panel_col is not None:
     with panel_col:
         draw_panel(turns)
 
-typed = st.chat_input("Type a message", disabled=busy, key="chat-input")
+typed = st.chat_input("Write to the manager" if paused else "Type a message", disabled=busy, key="chat-input")
 if typed and typed.strip():
     st.session_state["outbox"] = typed
     st.rerun()

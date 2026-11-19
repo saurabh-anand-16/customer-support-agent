@@ -41,7 +41,7 @@ def test_the_sides_css_is_loaded_once_per_page(tmp_path):
     sign_in(at)
     send(at, "hello")
     assert sum("<style>" in str(m.value) for m in at.markdown) == 1
-    assert sum(str(m.value).count("#E8EEF9") for m in at.markdown) == 1
+    assert sum(str(m.value).count("Chat sides and the red dot (phase 8b)") for m in at.markdown) == 1
 
 
 def test_a_message_and_its_reply_each_have_a_label(tmp_path):
@@ -145,7 +145,18 @@ def receipt_page(tmp_path, kind, status):
     if status != "open":
         assert queue.claim(ref, "t") and queue.finish(ref, status, "n", "t")
     queue.close()
-    agent.script = lambda m, c: result("Sent.", route="human_help", escalation=_escalation(ref))
+    if status == "open":                 # an open case pauses the agent (phase 8d), so the case is made during the turn, as the real agent does
+        queue = ReviewQueue(backend.settings.demo_db)
+        queue.con.execute("DELETE FROM review_items WHERE id = ?", (ref,))
+        queue.close()
+        def script(message, customer):
+            q = ReviewQueue(backend.settings.demo_db)
+            q.con.execute("INSERT INTO review_items (id, created_at, customer_id, kind, reason, status) VALUES (?, '2026-11-17', 'C0076', ?, 'x', 'open')", (ref, kind))
+            q.close()
+            return result("Sent.", route="human_help", escalation=_escalation(ref))
+        agent.script = script
+    else:
+        agent.script = lambda m, c: result("Sent.", route="human_help", escalation=_escalation(ref))
     sign_in(at)
     send(at, "a person please")
     return at, ref

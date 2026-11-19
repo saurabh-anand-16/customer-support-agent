@@ -352,6 +352,21 @@ closed = "Update on {reference}: a person has looked at your request and closed 
 person_reply = "A person replied to {reference}: {note}"
 note_line = " Their note: {note}"
 
+[review.chat]
+# Phase 8d: the live chat of a case. Once a case is queued the agent is paused for that customer; a manager joins and they talk; closing the case closes the chat.
+# No model reads or writes any of it. The pages show every message as plain text (escaped).
+waiting_line = "Waiting for a manager"
+joined_line = "A manager has joined the chat."
+closed_line = "The manager has closed this conversation."
+manager_label = "Manager"
+customer_waiting_badge = "Customer is waiting"
+max_chars = 1000                                  # a message longer than this is refused
+empty_error = "Write a message first."
+too_long_error = "That message is too long. Please keep it under {limit} characters."
+no_open_case_error = "There is no open request to write in."
+not_open_error = "This conversation is closed."
+not_joined_error = "Join the chat first."
+
 [review.decision_replies]
 # What a decision gives back to the caller (the manager side). {message} is the tool's own message where there is one.
 approved = "{reference} approved. Return {return_id} was created."

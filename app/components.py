@@ -145,6 +145,34 @@ def who_label_html(who: str) -> str:
     return f'<div class="who">{esc(who)}</div>'
 
 
+def system_line_html(text: str) -> str:
+    """A small centred grey line with no bubble: 'A manager has joined the chat.' (phase 8d). Plain text, escaped."""
+    return f'<div class="sys-line">{esc(text)}</div>'
+
+
+def waiting_line_html(text: str) -> str:
+    """The line under a customer's chat while their case waits for a manager (phase 8d)."""
+    return f'<div class="sys-waiting" role="status">{esc(text)}</div>'
+
+
+def thread_html(messages: list, manager_label: str) -> str:
+    """
+    The chat window of a case on the Manager page (phase 8d). The customer's messages are on the LEFT in the customer blue, the manager's on the RIGHT in the
+    manager purple, system lines centred. Every text is escaped, so markup in a message is shown as text and nothing runs.
+    """
+    rows = []
+    for m in messages:
+        if m["sender"] == "system":
+            rows.append(system_line_html(m["text"]))
+        elif m["sender"] == "manager":
+            rows.append(f'<div class="tm-row tm-right"><div class="tm-bubble tm-manager"><div class="who">{esc(manager_label)}</div>'
+                        f'<div class="plain-text">{esc(m["text"])}</div></div></div>')
+        else:
+            rows.append(f'<div class="tm-row tm-left"><div class="tm-bubble tm-customer"><div class="who">Customer</div>'
+                        f'<div class="plain-text">{esc(m["text"])}</div></div></div>')
+    return f'<div class="tm-window"><div class="tm-inner">{"".join(rows)}</div></div>'
+
+
 def nav_dot_html(count: int) -> str:
     """The red dot on the Manager queue link. The number is in the dot and in its label, so colour is not the only sign. Nothing at zero."""
     if not isinstance(count, int) or count <= 0:

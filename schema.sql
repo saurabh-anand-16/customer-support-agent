@@ -179,3 +179,20 @@ CREATE TABLE IF NOT EXISTS review_items (
 );
 CREATE INDEX IF NOT EXISTS ix_review_items_case ON review_items(customer_id, order_item_id, kind, status);
 -- review_items:end
+
+-- Phase 8d: the messages of a review case (the live chat between the customer and a manager). One row per message.
+-- sender is decided by the code that writes it (customer page, manager page, or the system), never by the text.
+-- `event` is set only on the two system lines that happen once per case ('joined', 'closed'); the unique index makes "once" a database rule.
+-- No foreign keys on purpose (same reason as review_items). agent/review_queue.py reads the block between the markers to create the table.
+-- review_messages:begin
+CREATE TABLE IF NOT EXISTS review_messages (
+    id             INTEGER PRIMARY KEY AUTOINCREMENT,
+    review_item_id TEXT NOT NULL,                    -- the case, e.g. REV-0001
+    sender         TEXT NOT NULL CHECK (sender IN ('customer','manager','system')),
+    text           TEXT NOT NULL,                    -- plain text; shown escaped, never as markup
+    created_at     TEXT NOT NULL,                    -- ISO time, UTC
+    event          TEXT CHECK (event IS NULL OR event IN ('joined','closed'))
+);
+CREATE INDEX IF NOT EXISTS ix_review_messages_case ON review_messages(review_item_id, id);
+CREATE UNIQUE INDEX IF NOT EXISTS ux_review_messages_event ON review_messages(review_item_id, event) WHERE event IS NOT NULL;
+-- review_messages:end
