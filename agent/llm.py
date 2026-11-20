@@ -107,6 +107,9 @@ class RelevanceSettings:
     prompt: str
 
 
+DEFAULT_FACTS_LABEL = ("Facts from this conversation (read from tools in an earlier turn; the customer may have changed topic):")
+
+
 @dataclass(frozen=True)
 class BranchSettings:
     """[branches]: the five branch flows (phase 4b). `name` is the branch model; nothing else names a model."""
@@ -133,6 +136,8 @@ class BranchSettings:
     approval_texts: dict
     replies: dict
     relevance_check: RelevanceSettings | None = None     # phase 14d: None when the section is not in the file (the same as enabled = false)
+    session_facts: bool = False                          # phase 14k: branches see the order and items found in earlier turns (off = prompts unchanged)
+    facts_label: str = DEFAULT_FACTS_LABEL               # phase 14k: the words that start the facts block
 
 
 @dataclass(frozen=True)
@@ -423,7 +428,8 @@ def load_agent_config(path: str | Path | None = None) -> AgentConfig:
         raw_branches = dict(raw_branches)
         relevance_raw = raw_branches.pop("relevance_check")
     sections = {**raw, "branches": raw_branches}
-    built = {name: _build(name, sections.get(name), cls, spec, where, MODEL_OPTIONS if name in MODEL_OPTION_SECTIONS else None)
+    options = {"branches": {**MODEL_OPTIONS, "session_facts": (bool, False), "facts_label": (str, DEFAULT_FACTS_LABEL)}}   # phase 14k: optional [branches] keys
+    built = {name: _build(name, sections.get(name), cls, spec, where, options.get(name, MODEL_OPTIONS if name in MODEL_OPTION_SECTIONS else None))
              for name, (cls, spec) in _SPEC.items()}
     if relevance_raw is not None:
         relevance = _build("branches.relevance_check", relevance_raw, RelevanceSettings, RELEVANCE_SPEC, where, MODEL_OPTIONS)
@@ -708,6 +714,8 @@ def _check_branches(b: BranchSettings, where: str) -> None:
             raise AgentConfigError(f"{where}: [branches].{key} must be 1 or more")
     if b.history_turns < 0:
         raise AgentConfigError(f"{where}: [branches].history_turns must be 0 or more")
+    if not b.facts_label.strip():
+        raise AgentConfigError(f"{where}: [branches].facts_label cannot be empty")
     if b.format_retries < 0:
         raise AgentConfigError(f"{where}: [branches].format_retries must be 0 or more")
     if not b.format_reminder.strip():

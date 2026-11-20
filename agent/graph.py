@@ -27,6 +27,7 @@ from .llm import AgentConfig, ChatModel
 from .replies import Replies
 from .router import CONFIRM_STEP, Router, RouterDecision
 from .session import Session
+from .session_facts import extract_facts, facts_text, pending_item_id, with_item
 from .tool_adapter import ToolAdapter
 
 NO_EVIDENCE = {"tool_calls": [], "policy_passages": []}
@@ -68,7 +69,10 @@ def build_graph(cfg: AgentConfig, router: Router, replies: Replies, chat: ChatMo
 
     def confirm_node(state: State) -> dict:
         session = state["session"]
+        card_item = pending_item_id(session.pending_action)          # phase 14k: the item on the card, read before the step clears it
         outcome = confirm.handle(session, state["message"])
+        if cfg.branches.session_facts and card_item:
+            session.facts = with_item(session.facts, card_item)
         update = {"steps": [*state["steps"], "confirm_step"], "checks": [*state.get("checks", []), *outcome.checks],
                   "confirm": outcome.info,
                   "evidence": {"tool_calls": outcome.tool_calls, "policy_passages": []},
@@ -107,6 +111,11 @@ def build_graph(cfg: AgentConfig, router: Router, replies: Replies, chat: ChatMo
             run: Run = result.run
             if result.pending_action is not None:
                 session.set_pending(result.pending_action)           # the next message goes to the confirm step
+            if cfg.branches.session_facts:                           # phase 14k: keep the order and items for the next turn (off = nothing is kept or traced)
+                new_facts = extract_facts(run.tool_calls, result.pending_action, cfg.review.product_name_max_chars)
+                session.set_facts(new_facts)
+                if new_facts is not None:
+                    run.notes["session_facts"] = facts_text(new_facts, "").strip()
             info = {"name": name, "stub": False, "error": run.error, "model_calls": run.model_calls,
                     "tool_calls": len(run.tool_calls), "refused_tools": run.refused(), "stopped_by_limit": run.stopped_by_limit,
                     "pending_action": result.pending_action, "notes": run.notes}

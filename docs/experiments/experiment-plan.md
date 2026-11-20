@@ -110,6 +110,10 @@ Every later number is compared with this table, with counts ("68 of 76"), never 
 - **Change:** none; add rows. 30 new adversarial rows: injection, requests to ignore the confirm step, requests for another customer's order, asking for web addresses, mixed requests.
 - **Target metrics:** rows refused or handled correctly, writer calls without confirmation (must be 0), any invented value.
 
+### E11: session facts (phase 14k)
+- **Change:** `[branches].session_facts = true`. The session keeps the order id, item ids and short names from the last successful `get_order`, and the item being discussed; branches see them as one block. Default is off. Config: `experiments/configs/e11-session-facts.toml`. Not run yet.
+- **Target metrics:** scenarios S27, S28, S48, S50; compare with e9-adversarial (56, 55 of 63). No new writer calls without confirmation.
+
 ## Backlog / later improvements
 
 - **S27 (cancel, 3 questions later):** the agent still asks "which item?" when other products were mentioned in between, even with branch memory 8. The behaviour is correct but the scenario fails. A fix would be in the cancel branch prompt or in how the status answer names the item. Not planned yet.

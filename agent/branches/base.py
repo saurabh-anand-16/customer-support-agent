@@ -18,6 +18,7 @@ import time
 from dataclasses import dataclass, field
 from typing import Callable
 
+from ..session_facts import facts_text
 from ..answer_check import describe_facts, describe_problems, facts_from, find_problems, inspect_text
 from ..checks import check
 from ..llm import AgentConfig, ChatModel, LlmError, current_recorder, safely, step_settings
@@ -98,7 +99,9 @@ def conversation_text(ctx: BranchContext) -> str:
     b = ctx.cfg.branches
     history = ctx.session.recent(b.history_turns)
     past = "\n".join(f"Customer: {e['user']}\nAssistant: {e['assistant']}" for e in history) or "(none)"
-    return f"Earlier conversation, oldest first:\n{past}\n\nCustomer message:\n{ctx.message.strip()[:b.max_message_chars]}"
+    block = facts_text(ctx.session.facts, b.facts_label) if b.session_facts else ""     # phase 14k: empty (and nothing added) when off or no facts
+    facts = f"\n\n{block}" if block else ""
+    return f"Earlier conversation, oldest first:\n{past}{facts}\n\nCustomer message:\n{ctx.message.strip()[:b.max_message_chars]}"
 
 
 def ask_model(ctx: BranchContext, run: Run, purpose: str, system: str, messages: list) -> str | None:
@@ -213,7 +216,8 @@ def check_answer(ctx: BranchContext, run: Run, final: dict, field_name: str) -> 
     if not a.enabled:
         run.checks.append(check("answer_check", True, "the answer check is switched off in the config"))
         return Checked(final, text, "model")
-    facts = facts_from(run.tool_calls, ctx.adapter.today, a.allowed_text)
+    shown = facts_text(ctx.session.facts, ctx.cfg.branches.facts_label) if ctx.cfg.branches.session_facts else ""
+    facts = facts_from(run.tool_calls, ctx.adapter.today, [*a.allowed_text, *([shown] if shown else [])])    # phase 14k: ids from the facts block may be repeated
     problems = find_problems(text, facts)
     note_answer_check("first", text, facts, problems)
     run.checks.append(check("answer_check", not problems, "every number, amount, date and citation is in the tool results" if not problems

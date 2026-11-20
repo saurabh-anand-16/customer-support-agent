@@ -12,6 +12,7 @@ A Session holds:
   pending_age      messages the customer has sent while that action waited (the confirm step counts them)
   pending_unclear  how many times an unclear answer was asked about again
   off_topic_count  off-topic messages in a row
+  facts            None, or the facts kept from the last successful get_order (phase 14k; shown to branches only when [branches].session_facts is on)
   current_message  the message being answered now (set by Agent.respond); it is not in `history` until the turn ends, and the
                    review queue keeps it in the excerpt of a case
 """
@@ -33,6 +34,7 @@ class Session:
     pending_unclear: int = 0
     off_topic_count: int = 0
     current_message: str = ""
+    facts: dict | None = None      # phase 14k: order id, items and item being discussed, from the last successful get_order (agent/session_facts.py)
 
     def __post_init__(self):
         if not isinstance(self.customer_id, str) or not self.customer_id.strip():
@@ -50,6 +52,11 @@ class Session:
 
     def clear_pending(self) -> None:
         self.pending_action, self.pending_age, self.pending_unclear = None, 0, 0
+
+    def set_facts(self, facts: dict | None) -> None:
+        """A new set of facts REPLACES the old one completely. None (no successful get_order this turn) changes nothing."""
+        if facts is not None:
+            self.facts = facts
 
     def add_exchange(self, user: str, assistant: str, route: str, keep: int) -> None:
         """Remember one message and its reply, keeping only the newest `keep` exchanges."""
