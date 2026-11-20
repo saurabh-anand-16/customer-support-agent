@@ -65,7 +65,7 @@ def test_every_profile_number_on_the_page_equals_summary_json(tmp_path):
 
 def test_counts_come_before_percentages(tmp_path):
     text = page_text(dev_page(tmp_path, real_summary()))
-    assert "46 of 76 (60.5%)" in text                                    # vector_only hit@1, from the file
+    assert "54 of 76 (71.1%)" in text                                    # vector_only hit@1, from the file
     assert not re.search(r"\d+(\.\d)?% \(\d+ of \d+\)", text)
 
 

@@ -116,3 +116,7 @@ All numbers are on reviewed rows: 106 of 106 retrieval questions and 83 of 83 ro
 - **Scenarios S24 and S25** (no order id, customer C0076): both pass with the real model, tools `list_orders` then `get_order`. Replies: "You paid ₹599.00 for the OFIXO Multi-Purpose Laptop Table." and "The total of your last order (Order ID: 649-1070042-5625200) was ₹349.00."
 - **Re-run:** scenarios 25 of 25 (23 of 23 before, none changed); router 76 of 83 before and after, no row changed in either direction; `python -m pytest` 1759 passed.
 - **RT071:** in a real two-turn chat (a policy question on phone return windows, then "What about for earbuds?") it routed to `policy_question` in 3 of 3 runs; the reply was "The policy pages I have do not cover that". The router-eval miss comes from the one-line synthetic context. Router not changed.
+
+## Note, phase 14c: the default search setup changed
+
+Part A's tuning (small model, 1200 characters, `vector_min_score` 0.29) was replaced in phase 14c by `text-embedding-3-large`, 900 characters and 0.25, chosen from the phase 14 experiments. The retrieval numbers in `data/evals/summary.json` were measured again with the new setup (vector_only: first place 54, top 3 68, top 5 71 of 76, MRR 0.843). The router and scenario results of this phase were not changed. See [the build report](../builds/phase-14c-build.md).

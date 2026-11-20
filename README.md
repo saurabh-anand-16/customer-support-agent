@@ -34,12 +34,12 @@ A router sends each message to one of seven lanes. A lane can only read: look up
 ## Results
 
 <!-- results:start -->
-Measured on 2026-11-19 at commit `768dff8`, from `data/evals/summary.json`.
+Measured on 2026-11-20 at commit `f27cb3c`, from `data/evals/summary.json`.
 
 | What was measured | Result |
 | --- | --- |
 | End-to-end scenarios passed | 25 of 25 (100.0%) |
-| Policy search: right page in the top 5 | 68 of 76 (89.5%) |
+| Policy search: right page in the top 5 | 71 of 76 (93.4%) |
 | Router: messages sent to the expected lane | 76 of 83 (91.6%) |
 
 The test sets are our own, reviewed by one person, on synthetic data. The full tables are in the Evaluation tab of the Developer trace page.

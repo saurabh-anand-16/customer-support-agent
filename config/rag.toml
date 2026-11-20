@@ -27,7 +27,7 @@ out_of_scope_files = [
 
 [chunking]
 strategy = "heading"            # "heading" or "fixed"
-max_chars = 1200
+max_chars = 900
 overlap_chars = 0
 include_heading_in_text = true  # heading: repeat the section heading at the top of later parts
 heading_levels = [1, 2, 3]      # heading: which "#" levels start a new section
@@ -56,7 +56,7 @@ collapse_blank_lines = true     # after removing the contents list, keep at most
 # dimensions: 0 means "the model's own size". A positive number is requested from OpenAI and
 # checked against what the local model returns.
 provider = "openai"
-model = "text-embedding-3-small"
+model = "text-embedding-3-large"
 dimensions = 0
 batch_size = 32
 normalize = true
@@ -105,17 +105,17 @@ llm_model = "gpt-4o-mini"       # an OpenAI chat model; uses the key named in [e
 llm_max_chars = 800             # each passage is cut to this length in the prompt
 
 [no_match]
-# MEASURED in phase 10 Part A on the 106 reviewed questions in data/evals/retrieval_questions.csv
-# (python scripts/07_eval_retrieval.py --calibrate <profile>; the full reasons are in phase-03d-retrieval-evals-and-tuning.md).
-# vector 0.29: the best similarity of all 8 off-topic questions is at most 0.265, and of all 76 questions the policy
-#   answers (or only partly answers) at least 0.307, so 0.29 sits in the one clean gap. It keeps 76 of 76 answerable
-#   questions and refuses 8 of 8 off-topic ones. A higher cut-off starts to refuse real questions: no score separates
-#   the answerable questions from the 14 "unanswerable_related" ones (0.321 to 0.551) or the 8 scope_guard ones.
-# bm25 5.1: the cut-off with the most right answers for keyword search alone (73 of 76 kept, 11 of 30 refused). Keyword
-#   scores overlap more; this profile is not the default.
+# MEASURED in phase 14 (experiments in docs/experiments/results-log.md) on the 106 reviewed questions in
+# data/evals/retrieval_questions.csv, with text-embedding-3-large and chunks of at most 900 characters (159 chunks).
+# Adopted in phase 14c. The earlier note (vector 0.29) was measured for text-embedding-3-small and no longer applies.
+# vector 0.25: 0 answerable questions wrongly refused and 8 of 8 off-topic questions refused. The neighbours are worse:
+#   0.22 lets one off-topic question through; 0.27 and 0.29 each refuse one good question.
+#   No score separates the answerable questions from the "unanswerable_related" or scope_guard ones; that is a known gap.
+# bm25 5.1: measured for the old small-model setup (73 of 76 kept, 11 of 30 refused); not re-measured, and the bm25
+#   profile is not the default.
 # hybrid_require and the pair of values for hybrid profiles were not calibrated together; hybrid is not the default.
 bm25_min_score = 5.1            # bm25: the best score must reach this, or nothing counts as an answer
-vector_min_score = 0.29         # vector: the best similarity must reach this
+vector_min_score = 0.25         # vector: the best similarity must reach this
 hybrid_require = "any"          # hybrid: "any" or "all" of the two rules above must pass
 min_hits = 1                    # fewer results than this counts as no match
 note = "The policy pages do not cover this."

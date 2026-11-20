@@ -83,18 +83,18 @@ Refer to the table below to know about time taken for refund to be processed, af
 | Amazon Pay Later | up to 5 working days |
 | Amazon Voucher | up to 4 working days |
 
-**Pay on Delivery orders**
+**Pay on Delivery orders**",709,2026-11-17,True,Refund pages,
+about-refunds#processing-time-by-payment-method-p1,about-refunds.md,About Refunds,About Refunds > Refund Timelines > Processing Time by Payment Method,3,1,"### Processing Time by Payment Method
 
 | Payment Method for Refund | Time taken for Refund to be processed (For Amazon Fulfilled and Seller Fulfilled orders) |
 | --- | --- |
 | NEFT to Bank Account | 5 Business Days |
 | Amazon Pay Balance\* | 4 hours |
-| Paper Cheque | Up to 10 business days |",965,2026-11-17,True,Refund pages,
-about-refunds#processing-time-by-payment-method-p1,about-refunds.md,About Refunds,About Refunds > Refund Timelines > Processing Time by Payment Method,3,1,"### Processing Time by Payment Method
+| Paper Cheque | Up to 10 business days |
 
 - Please note that the refund is initiated by Amazon only once the item is picked up and reaches our Fulfilment Center. Please read our [Returns Policy](returns-policy.md) for more details.
 - If you haven't received any refund update after 13 days of a successful pickup, please reach out to our Customer Service team for further assistance.
-- If you haven't received your refund within the time frames mentioned above but your order status has been updated as refunded, please reach out to your bank with RRN (Refund Reference Number) displayed in the Refunds section in the Transactions history.",636,2026-11-17,True,Refund pages,
+- If you haven't received your refund within the time frames mentioned above but your order status has been updated as refunded, please reach out to your bank with RRN (Refund Reference Number) displayed in the Refunds section in the Transactions history.",892,2026-11-17,True,Refund pages,
 about-refunds#bank-account-for-refund-p0,about-refunds.md,About Refunds,About Refunds > Bank account for Refund,2,0,"## Bank account for Refund
 
 If you wish to receive the refund in your bank account, make sure to add/update the correct bank account details for refunds to be successfully processed. Follow the steps below to add a bank account for refund:
@@ -153,11 +153,12 @@ To upload an image, follow the steps mentioned below:
 4. You will have the option to ""Add Photos"". Select Add Photos and select the image file/s from your device to be uploaded. Please wait a few seconds for the photos to be uploaded.
 5. Once done, select ""Call me"" to contact us.
 
-**Note:**
+**Note:**",774,2026-11-17,True,How-to pages,
+add-photos-faq#how-do-i-upload-images-p1,add-photos-faq.md,Add Photos: Frequently Asked Questions,Add Photos: Frequently Asked Questions > How do I upload images?,2,1,"## How do I upload images?
 
 - The file format of the image should be .jpg / .jpeg / .png. PDFs are not accepted.
 - Please ensure the images are focused and are not dark, blurry or shaky.
-- Please include serial number and IMEI numbers while sharing the images for damaged cases for Mobiles, Laptops and Tablets.",1059,2026-11-17,True,How-to pages,
+- Please include serial number and IMEI numbers while sharing the images for damaged cases for Mobiles, Laptops and Tablets.",311,2026-11-17,True,How-to pages,
 add-photos-faq#what-s-the-maximum-attachment-size-for-an-image-p0,add-photos-faq.md,Add Photos: Frequently Asked Questions,Add Photos: Frequently Asked Questions > What's the maximum attachment size for an image?,2,0,"## What's the maximum attachment size for an image?
 
 You can upload images of size up to 25 MB.",95,2026-11-17,True,How-to pages,
@@ -182,12 +183,13 @@ To check the status of your refund:
 - Find the returned item in the Last 3 Months section.
 - Select the returned item to view its return status and check the status of your refund.
 
-You can also check the status of your refund by going to Your Orders and selecting View order details next to the relevant order. The refund status is displayed at the bottom of the Order Summary.
-
-> **Note:** There might be instances where you have cancelled the order before delivery or rejected an order at the time of delivery or an order has been cancelled by Amazon. If you have already paid for it, a refund will be initiated to your original payment method by Amazon within 24 hours and processed as per the timelines mentioned below. You will be notified about your refund status through email. To check the status of refund on cancelled/rejected/undelivered orders, go to Amazon Pay and click on Refunds in Your Transactions.",1191,2026-11-17,True,Refund pages,
+You can also check the status of your refund by going to Your Orders and selecting View order details next to the relevant order. The refund status is displayed at the bottom of the Order Summary.",652,2026-11-17,True,Refund pages,
 check-refund-status#check-status-of-your-refund-p1,check-refund-status.md,Check Status of Your Refund,Check Status of Your Refund,1,1,"# Check Status of Your Refund
 
-**Prepaid orders**
+> **Note:** There might be instances where you have cancelled the order before delivery or rejected an order at the time of delivery or an order has been cancelled by Amazon. If you have already paid for it, a refund will be initiated to your original payment method by Amazon within 24 hours and processed as per the timelines mentioned below. You will be notified about your refund status through email. To check the status of refund on cancelled/rejected/undelivered orders, go to Amazon Pay and click on Refunds in Your Transactions.
+
+**Prepaid orders**",588,2026-11-17,True,Refund pages,
+check-refund-status#check-status-of-your-refund-p2,check-refund-status.md,Check Status of Your Refund,Check Status of Your Refund,1,2,"# Check Status of Your Refund
 
 | Available refund method | Amazon Delivered orders (After the return is received by Amazon) | Seller-Fulfilled orders (After seller notifies Amazon of receipt of return) |
 | --- | --- | --- |
@@ -198,7 +200,8 @@ check-refund-status#check-status-of-your-refund-p1,check-refund-status.md,Check 
 | Amazon Pay Later | up to 5 working days | — |
 | Amazon Voucher | up to 4 working days | — |
 
-**Pay on Delivery orders**
+**Pay on Delivery orders**",585,2026-11-17,True,Refund pages,
+check-refund-status#check-status-of-your-refund-p3,check-refund-status.md,Check Status of Your Refund,Check Status of Your Refund,1,3,"# Check Status of Your Refund
 
 | Available refund method | Amazon Delivered orders (After the return is received by Amazon) | Seller-Fulfilled orders (After seller notifies Amazon of receipt of return) |
 | --- | --- | --- |
@@ -208,8 +211,8 @@ check-refund-status#check-status-of-your-refund-p1,check-refund-status.md,Check 
 
 > **Editor's note:** ""—"" marks a cell that is blank in the original table. The [About Refunds](about-refunds.md) page gives one processing time for both Amazon Fulfilled and Seller Fulfilled orders.
 
-**Note:**",1156,2026-11-17,True,Refund pages,
-check-refund-status#check-status-of-your-refund-p2,check-refund-status.md,Check Status of Your Refund,Check Status of Your Refund,1,2,"# Check Status of Your Refund
+**Note:**",580,2026-11-17,True,Refund pages,
+check-refund-status#check-status-of-your-refund-p4,check-refund-status.md,Check Status of Your Refund,Check Status of Your Refund,1,4,"# Check Status of Your Refund
 
 - Please note that the refund is initiated by Amazon only once the item is picked up and reaches our Fulfilment Center. Please read our [Returns Policy](returns-policy.md) for more details.
 - If you haven't received your refund within the time frames mentioned above, please reach out to your bank with RRN (Refund Reference Number) displayed in the Refunds section in the Transactions history.",425,2026-11-17,True,Refund pages,
@@ -236,12 +239,13 @@ damaged-or-defective-item#2-what-to-do-if-you-receive-a-damaged-or-defective-pro
 
 If you have received a damaged, defective or if you are not happy with the product quality, you can return or replace the product.
 
-**Note:**
+**Note:**",206,2026-11-17,True,Question-and-answer pages,
+damaged-or-defective-item#2-what-to-do-if-you-receive-a-damaged-or-defective-product-p1,damaged-or-defective-item.md,Damaged or Defective Item,Damaged or Defective Item > 2. What to do if you receive a damaged or defective product?,2,1,"## 2. What to do if you receive a damaged or defective product?
 
 - Items listed on Amazon.in that are identified as 'returnable' on the product detail page and within the 'return window' period. Products eligible for return will have a logo on the product details page which mentions the return window and return category as per the product. (Example: 10 Days Returnable, 7 Days Return & Exchange, etc.). Visit [Returns Policy](returns-policy.md) to learn more.
 - Replacement or exchange of products is based on the availability of products.
 - There are different processes of return and replacement for products fulfilled by Amazon and products fulfilled by third-party (Marketplace) sellers.
-- To know the seller details, check the product detail page. Visit [Return/Replacement FAQs](returns-and-replacements-faq.md) page to learn more.",982,2026-11-17,True,Question-and-answer pages,
+- To know the seller details, check the product detail page. Visit [Return/Replacement FAQs](returns-and-replacements-faq.md) page to learn more.",839,2026-11-17,True,Question-and-answer pages,
 damaged-or-defective-item#3-how-to-return-a-damaged-product-fulfilled-by-amazon-p0,damaged-or-defective-item.md,Damaged or Defective Item,Damaged or Defective Item > 3. How to return a damaged product Fulfilled by Amazon?,2,0,"## 3. How to return a damaged product Fulfilled by Amazon?
 
 - Go to Your Orders.
@@ -266,14 +270,15 @@ damaged-or-defective-item#4-how-to-return-a-damaged-product-fulfilled-by-a-third
 
 **Note:**
 
-The following items and situations are not covered under the Amazon A-to-Z Guarantee:
+The following items and situations are not covered under the Amazon A-to-Z Guarantee:",529,2026-11-17,False,Question-and-answer pages,seller-fulfilled orders are out of scope for this agent
+damaged-or-defective-item#4-how-to-return-a-damaged-product-fulfilled-by-a-third-party-seller-p1,damaged-or-defective-item.md,Damaged or Defective Item,Damaged or Defective Item > 4. How to return a damaged product fulfilled by a third-party seller?,2,1,"## 4. How to return a damaged product fulfilled by a third-party seller?
 
 - Digital merchandise
 - Credit card payments where the issuing bank has initiated a chargeback
 - If the product you received is a gift order and the outer box is damaged, you can place a request for replacement.
 - Some products may not be eligible for return. Check the returns policy for more details.
-- Returning items with personal data: If you're returning a mobile phone, camera, or any other storage device, remember to remove any passwords and any personal data contained in it before returning it. Don't send personal accessories not originally included with the item when purchased, for example, cases or external memory cards purchased separately.",1188,2026-11-17,False,Question-and-answer pages,seller-fulfilled orders are out of scope for this agent
-damaged-or-defective-item#4-how-to-return-a-damaged-product-fulfilled-by-a-third-party-seller-p1,damaged-or-defective-item.md,Damaged or Defective Item,Damaged or Defective Item > 4. How to return a damaged product fulfilled by a third-party seller?,2,1,"## 4. How to return a damaged product fulfilled by a third-party seller?
+- Returning items with personal data: If you're returning a mobile phone, camera, or any other storage device, remember to remove any passwords and any personal data contained in it before returning it. Don't send personal accessories not originally included with the item when purchased, for example, cases or external memory cards purchased separately.",731,2026-11-17,False,Question-and-answer pages,seller-fulfilled orders are out of scope for this agent
+damaged-or-defective-item#4-how-to-return-a-damaged-product-fulfilled-by-a-third-party-seller-p2,damaged-or-defective-item.md,Damaged or Defective Item,Damaged or Defective Item > 4. How to return a damaged product fulfilled by a third-party seller?,2,2,"## 4. How to return a damaged product fulfilled by a third-party seller?
 
 > **Editor's note:** In the original, all five bullets sit under the A-to-Z exclusions sentence. The last three read as general notes rather than exclusions, but the source grouping is kept. Step 5 above says three business days; the [A-to-z Guarantee](a-to-z-guarantee.md) pages say 48 hours.",367,2026-11-17,False,Question-and-answer pages,seller-fulfilled orders are out of scope for this agent
 damaged-or-defective-item#5-how-to-replace-a-damaged-product-p0,damaged-or-defective-item.md,Damaged or Defective Item,Damaged or Defective Item > 5. How to replace a damaged product?,2,0,"## 5. How to replace a damaged product?
@@ -286,7 +291,8 @@ damaged-or-defective-item#5-how-to-replace-a-damaged-product-p0,damaged-or-defec
 - Replacement will not be possible if the item you selected is out of stock. In such cases you can return the product and a refund will be generated.",376,2026-11-17,True,Question-and-answer pages,
 damaged-or-defective-item#6-how-will-the-refunded-money-be-credited-p0,damaged-or-defective-item.md,Damaged or Defective Item,Damaged or Defective Item > 6. How will the refunded money be credited?,2,0,"## 6. How will the refunded money be credited?
 
-The refund timeline will depend upon the mode of refund chosen by you. You can choose to receive the refund in your Amazon Pay Balance, original payment method or to your bank account.
+The refund timeline will depend upon the mode of refund chosen by you. You can choose to receive the refund in your Amazon Pay Balance, original payment method or to your bank account.",232,2026-11-17,True,Question-and-answer pages,
+damaged-or-defective-item#6-how-will-the-refunded-money-be-credited-p1,damaged-or-defective-item.md,Damaged or Defective Item,Damaged or Defective Item > 6. How will the refunded money be credited?,2,1,"## 6. How will the refunded money be credited?
 
 - If you had chosen ""Pay on delivery"" while placing an order, you can choose refund to Amazon Pay Balance or bank account.
   - For Amazon Pay balance, the refund will be credited to your Amazon Pay-Balance Account.
@@ -299,8 +305,8 @@ The refund timeline will depend upon the mode of refund chosen by you. You can c
   5. Select 'Choose a bank account'.
   6. Select 'Add a new bank account', and enter your bank account details
 
-**Prepaid orders**",1029,2026-11-17,True,Question-and-answer pages,
-damaged-or-defective-item#6-how-will-the-refunded-money-be-credited-p1,damaged-or-defective-item.md,Damaged or Defective Item,Damaged or Defective Item > 6. How will the refunded money be credited?,2,1,"## 6. How will the refunded money be credited?
+**Prepaid orders**",843,2026-11-17,True,Question-and-answer pages,
+damaged-or-defective-item#6-how-will-the-refunded-money-be-credited-p2,damaged-or-defective-item.md,Damaged or Defective Item,Damaged or Defective Item > 6. How will the refunded money be credited?,2,2,"## 6. How will the refunded money be credited?
 
 | Available refund method | Amazon Delivered orders (After the return is received by Amazon) | Seller-Fulfilled orders (After seller notifies Amazon of receipt of return) |
 | --- | --- | --- |
@@ -311,7 +317,8 @@ damaged-or-defective-item#6-how-will-the-refunded-money-be-credited-p1,damaged-o
 | Amazon Pay Later | up to 5 working days | — |
 | Amazon Voucher | up to 4 working days | — |
 
-**Pay on Delivery orders**
+**Pay on Delivery orders**",602,2026-11-17,True,Question-and-answer pages,
+damaged-or-defective-item#6-how-will-the-refunded-money-be-credited-p3,damaged-or-defective-item.md,Damaged or Defective Item,Damaged or Defective Item > 6. How will the refunded money be credited?,2,3,"## 6. How will the refunded money be credited?
 
 | Available refund method | Amazon Delivered orders (After the return is received by Amazon) | Seller-Fulfilled orders (After seller notifies Amazon of receipt of return) |
 | --- | --- | --- |
@@ -319,7 +326,7 @@ damaged-or-defective-item#6-how-will-the-refunded-money-be-credited-p1,damaged-o
 | Amazon Pay Balance\* | 4 hours | — |
 | Paper Cheque | Up to 10 business days | — |
 
-> **Editor's note:** ""—"" marks a cell that is blank in the original table. The [About Refunds](about-refunds.md) page gives one processing time for both Amazon Fulfilled and Seller Fulfilled orders.",1142,2026-11-17,True,Question-and-answer pages,
+> **Editor's note:** ""—"" marks a cell that is blank in the original table. The [About Refunds](about-refunds.md) page gives one processing time for both Amazon Fulfilled and Seller Fulfilled orders.",586,2026-11-17,True,Question-and-answer pages,
 damaged-or-defective-item#7-what-is-the-time-window-for-initiating-a-return-or-replacement-p0,damaged-or-defective-item.md,Damaged or Defective Item,Damaged or Defective Item > 7. What is the time window for initiating a return or replacement?,2,0,"## 7. What is the time window for initiating a return or replacement?
 
 The time window for initiating a replacement is the same as the return window for that product category. For example, if the product has a return window of 30 days, a replacement will also have to be initiated within the same period of 30 days. Visit [Replacement Policy](replacement-policy.md) to learn more.",380,2026-11-17,True,Question-and-answer pages,
@@ -397,25 +404,26 @@ The refund time period for different modes of payments is provided below.
 | Amazon Pay Later | up to 5 working days | — |
 | Amazon Voucher | up to 4 working days | — |
 
-**Pay on Delivery orders**
+**Pay on Delivery orders**",670,2026-11-17,True,Core policies,
+refund-policy#refund-timelines-p1,refund-policy.md,Amazon.in Refund Policy,Amazon.in Refund Policy > Refund Timelines,2,1,"## Refund Timelines
 
 | Available refund method | Amazon Delivered orders (After the return is received by Amazon) | Seller-Fulfilled orders (After seller notifies Amazon of receipt of return) |
 | --- | --- | --- |
 | NEFT to Bank Account | 5 Business Days | 5 Business Days |
 | Amazon Pay Balance\* | 4 hours | — |
-| Paper Cheque | Up to 10 business days | — |",1010,2026-11-17,True,Core policies,
-refund-policy#refund-timelines-p1,refund-policy.md,Amazon.in Refund Policy,Amazon.in Refund Policy > Refund Timelines,2,1,"## Refund Timelines
+| Paper Cheque | Up to 10 business days | — |
 
 > **Editor's note:** ""—"" marks a cell that is blank in the original table. The [About Refunds](about-refunds.md) page gives one processing time for both Amazon Fulfilled and Seller Fulfilled orders.
 
-\*Amazon Pay balance is a sum of all balances associated with Amazon Gift Cards in your Amazon.in account. Amazon Gift Cards are issued by Pine labs Private Limited under the brand name of Qwikcilver and are subject to the Amazon Gift Card Terms and Conditions.
+\*Amazon Pay balance is a sum of all balances associated with Amazon Gift Cards in your Amazon.in account. Amazon Gift Cards are issued by Pine labs Private Limited under the brand name of Qwikcilver and are subject to the Amazon Gift Card Terms and Conditions.",822,2026-11-17,True,Core policies,
+refund-policy#refund-timelines-p2,refund-policy.md,Amazon.in Refund Policy,Amazon.in Refund Policy > Refund Timelines,2,2,"## Refund Timelines
 
 If the standard time-frame as mentioned in the above table has expired and you have still not received the refund, please contact your credit or debit card issuer or your bank for more information. Refunds will not be processed in cash. Refunds can be processed via paper cheque only in exceptional cases.
 
 If Credit/Debit card that was used to place the order is no longer active or is expired, please contact us for assistance.
 
-> **Note:** International customers would need to reach out to our Customer Service team to get refunds for their purchase. The refund would be made to the original payment method/instrument used to make the initial purchase.",1140,2026-11-17,True,Core policies,
-refund-policy#refund-timelines-p2,refund-policy.md,Amazon.in Refund Policy,Amazon.in Refund Policy > Refund Timelines,2,2,"## Refund Timelines
+> **Note:** International customers would need to reach out to our Customer Service team to get refunds for their purchase. The refund would be made to the original payment method/instrument used to make the initial purchase.",677,2026-11-17,True,Core policies,
+refund-policy#refund-timelines-p3,refund-policy.md,Amazon.in Refund Policy,Amazon.in Refund Policy > Refund Timelines,2,3,"## Refund Timelines
 
 - Please note that the refund is initiated by Amazon only once the item is picked up and reaches our Fulfilment Center. Please read our [Returns Policy](returns-policy.md) for more details.
 - If you haven't received your refund within the time frames mentioned above, please reach out to your bank with RRN (Refund Reference Number) displayed in the Refunds section in the Transactions history.
@@ -428,12 +436,13 @@ refund-policy#refund-for-pay-on-delivery-orders-p0,refund-policy.md,Amazon.in Re
 
 For Pay on Delivery orders, refunds will be processed either to your bank account (via National Electronic Funds Transfer (NEFT)) or Amazon account (as Amazon Pay balance).
 
-If you wish to receive the Pay on Delivery order's refund to your bank account, you can update the details of the bank account in Your Account section or from the Returns Centre when you are returning an item.
+If you wish to receive the Pay on Delivery order's refund to your bank account, you can update the details of the bank account in Your Account section or from the Returns Centre when you are returning an item.",421,2026-11-17,True,Core policies,
+refund-policy#refund-for-pay-on-delivery-orders-p1,refund-policy.md,Amazon.in Refund Policy,Amazon.in Refund Policy > Refund for Pay on Delivery Orders,2,1,"## Refund for Pay on Delivery Orders
 
 - To add your bank account through mobile app, Go to Orders > Click on the order you want to return > Select Return or Replace items option > Select 'Refund to your bank account' > Select 'Choose a bank account' > Select 'Add a new bank account', and enter your bank account details.
 - To add your bank account through website, Go to Orders > Click on the order you want to return > Select go to Return or Replacement items option > Select 'Refund to your bank account' > Select 'Choose a bank account' > Select 'Add a new bank account', and enter your bank account details.
 
-> **Note:** Refunds cannot be processed to third-party accounts. The name on your Amazon account should match with the name of the bank account holder.",1150,2026-11-17,True,Core policies,
+> **Note:** Refunds cannot be processed to third-party accounts. The name on your Amazon account should match with the name of the bank account holder.",765,2026-11-17,True,Core policies,
 refund-policy#paper-cheque-clearing-p0,refund-policy.md,Amazon.in Refund Policy,Amazon.in Refund Policy > Refund for Pay on Delivery Orders > Paper cheque clearing,3,0,"### Paper cheque clearing
 
 All cheque refunds will be in form of ""at par"" Deutsche Bank cheques. All Deutsche Bank cheques are cleared locally in the following cities:
@@ -447,9 +456,10 @@ In case you plan to drop your cheque in a clearance box, please note the followi
 - If you are dropping the cheque in a clearance box in any of the above cities, use the box marked Local Cheques.
 - If you are dropping the cheque in a clearance box in any other city, use the box marked Outstation Cheques.
 
-Failing to follow the above instructions might result in the cheque not being processed and a penalty being levied by the bank.
+Failing to follow the above instructions might result in the cheque not being processed and a penalty being levied by the bank.",889,2026-11-17,True,Core policies,
+refund-policy#paper-cheque-clearing-p1,refund-policy.md,Amazon.in Refund Policy,Amazon.in Refund Policy > Refund for Pay on Delivery Orders > Paper cheque clearing,3,1,"### Paper cheque clearing
 
-> **Note:** Once a cheque is issued, Amazon will send you an e-mail with the tracking details of the refund cheque within 4 business days from the date of refund.",1053,2026-11-17,True,Core policies,
+> **Note:** Once a cheque is issued, Amazon will send you an e-mail with the tracking details of the refund cheque within 4 business days from the date of refund.",189,2026-11-17,True,Core policies,
 refund-policy#amazon-pay-later-refunds-p0,refund-policy.md,Amazon.in Refund Policy,Amazon.in Refund Policy > Amazon Pay Later Refunds,2,0,"## Amazon Pay Later Refunds
 
 - If you have not paid any installment for the returned product, then on returning, we will credit your Amazon Pay Later limit with the total order value.
@@ -507,11 +517,12 @@ There are 2 ways in which you can return a gift:
 return-a-gift#to-return-a-gift-using-order-number-p0,return-a-gift.md,Return a Gift,Return a Gift > To return a gift using Order number,2,0,"## To return a gift using Order number
 
 1. Go to the Gift Returns Center. If prompted, sign in to your Amazon account. If you don't have an account, you'll need to create one.
-2. Enter the order number for the item you want to return.
+2. Enter the order number for the item you want to return.",234,2026-11-17,False,Gifts and misdelivered orders,
+return-a-gift#to-return-a-gift-using-order-number-p1,return-a-gift.md,Return a Gift,Return a Gift > To return a gift using Order number,2,1,"## To return a gift using Order number
 
    **Note:** You can find your 17-digit order number or Order ID, for example, 123-1234567-1234567, on the packing slip that came with the item.
 3. Select the item you want to return, choose a return reason, and select Continue. For certain items with replacement only policy (Smartphones, TV, Refrigerators, Washing machine, Laptops etc.), you can get a replacement after verification of the issue.
-4. Choose how you'll return the item. A Return Confirmation with instructions about how to send the item back is displayed. In case of refund on return, we'll initiate the refund to the gift giver when we receive and process the return package. It typically takes five to ten business days for the return item to reach our fulfilment center.",977,2026-11-17,False,Gifts and misdelivered orders,
+4. Choose how you'll return the item. A Return Confirmation with instructions about how to send the item back is displayed. In case of refund on return, we'll initiate the refund to the gift giver when we receive and process the return package. It typically takes five to ten business days for the return item to reach our fulfilment center.",781,2026-11-17,False,Gifts and misdelivered orders,
 return-a-gift#to-return-a-gift-using-a-gift-receipt-p0,return-a-gift.md,Return a Gift,Return a Gift > To return a gift using a gift receipt,2,0,"## To return a gift using a gift receipt
 
 1. Visit the website link on the gift receipt. The gift receipt needs to be shared by the gift giver. Check your email, chat or SMS to find out the link shared by the gift giver.
@@ -547,9 +558,11 @@ return-pickup-and-self-ship#return-pickup-p1,return-pickup-and-self-ship.md,Retu
 - Certain couriers might require a return label which can be generated in the Returns Centre.
 - A return will not be processed if the pick-up is cancelled due to missing or damaged item or its accessories (caused while in your possession).
 - Amazon cannot reschedule pick-up for a Third-party (Marketplace) seller. However, the third-party seller usually will fulfil the return pick-up within the 10 days window. Refer to Contact a Marketplace Seller Help page to contact a Third-party seller
-- Return cannot be picked from a new pick-up address different from the city to which the product was delivered.
+- Return cannot be picked from a new pick-up address different from the city to which the product was delivered.",812,2026-11-17,True,How-to pages,
+return-pickup-and-self-ship#return-pickup-p2,return-pickup-and-self-ship.md,Return Pick-up and Self-Ship Guidelines,Return Pick-up and Self-Ship Guidelines > Return Pickup,2,2,"## Return Pickup
+
 - If you have received a damaged, defective or wrong product, refer to the [Damaged, Defective or Wrong Product FAQs](damaged-or-defective-item.md) for further guidance.
-- If you face any issues while raising a return pick-up request, refer to [Return Pick-up Issues](return-pickup-issues.md) Help page for guidance and next steps.",1144,2026-11-17,True,How-to pages,
+- If you face any issues while raising a return pick-up request, refer to [Return Pick-up Issues](return-pickup-issues.md) Help page for guidance and next steps.",349,2026-11-17,True,How-to pages,
 return-pickup-and-self-ship#return-pickup-issues-p0,return-pickup-and-self-ship.md,Return Pick-up and Self-Ship Guidelines,Return Pick-up and Self-Ship Guidelines > Return Pickup Issues,2,0,"## Return Pickup Issues
 
 A Return pick-up can fail due to various reasons such as:
@@ -561,13 +574,14 @@ A Return pick-up can fail due to various reasons such as:
 3. Return pickup cancelled
    - At times the pick-up attempt may be automatically cancelled or unattempted.
 
-If you still want a Return Pickup, please reinitiate a fresh return once the existing request is cancelled. To do so -
+If you still want a Return Pickup, please reinitiate a fresh return once the existing request is cancelled. To do so -",812,2026-11-17,True,How-to pages,
+return-pickup-and-self-ship#return-pickup-issues-p1,return-pickup-and-self-ship.md,Return Pick-up and Self-Ship Guidelines,Return Pick-up and Self-Ship Guidelines > Return Pickup Issues,2,1,"## Return Pickup Issues
 
 1. Go to Returns Centre.
 2. Select the item that you have scheduled for return.
 3. Select Cancel Return to reschedule your pickup, make changes to your return or choose to no longer want to return the product.
 
-For a more detailed guidance on scheduling a return, visit the Help page: [How to schedule a Return](how-to-schedule-a-return.md).",1155,2026-11-17,True,How-to pages,
+For a more detailed guidance on scheduling a return, visit the Help page: [How to schedule a Return](how-to-schedule-a-return.md).",366,2026-11-17,True,How-to pages,
 return-pickup-and-self-ship#self-ship-guidelines-p0,return-pickup-and-self-ship.md,Return Pick-up and Self-Ship Guidelines,Return Pick-up and Self-Ship Guidelines > Self-Ship Guidelines,2,0,"## Self-Ship Guidelines
 
 In case return pick-up is not available, you can self-ship the item using any courier of your choice that has package tracking capabilities. You will need the following return documentation to initiate return.
@@ -578,11 +592,12 @@ In case return pick-up is not available, you can self-ship the item using any co
 
 **Note:**
 
-1. If you do not have a printer, you can also hand-write the declaration and return address (generated in the Returns Centre) and use the original invoice or a copy, highlighting the items being returned.
+1. If you do not have a printer, you can also hand-write the declaration and return address (generated in the Returns Centre) and use the original invoice or a copy, highlighting the items being returned.",715,2026-11-17,True,How-to pages,
+return-pickup-and-self-ship#self-ship-guidelines-p1,return-pickup-and-self-ship.md,Return Pick-up and Self-Ship Guidelines,Return Pick-up and Self-Ship Guidelines > Self-Ship Guidelines,2,1,"## Self-Ship Guidelines
 
    To ensure we can provide a full refund of your shipping expenses, we encourage to use standard return shipping options. While we want to make returns as convenient as possible, we may not be able to fully reimburse costs for premium or expedited shipping services, as these exceed our standard return cost thresholds.
 
-2. Return shipping charges will be refunded in accordance with Amazon.in [refund policy](refund-policy.md).",1146,2026-11-17,True,How-to pages,
+2. Return shipping charges will be refunded in accordance with Amazon.in [refund policy](refund-policy.md).",454,2026-11-17,True,How-to pages,
 return-pickup-issues#return-pick-up-issues-p0,return-pickup-issues.md,Return Pick-up Issues,Return Pick-up Issues,1,0,"# Return Pick-up Issues
 
 > Navigate Amazon return pickup issues with ease. Learn how to handle failed pickups, cancel returns, and reschedule your pickups.
@@ -594,24 +609,26 @@ return-pickup-issues#return-pick-up-issues-p1,return-pickup-issues.md,Return Pic
 - **Product verification failed:** Delivery Agent will check the product during pick-up. If the verification fails, because the product is not in its original state (has been used, missing price tags etc.,) the delivery agent may cancel the pick-up.
 - **Return pickup cancelled by Amazon:** At times the pick-up may get cancelled or cannot be attempted due to operational reasons.
 - **Area Inaccessible/Not Serviceable:** Pickup could not be completed as the address is currently inaccessible or outside the serviceable area.
-- **Incomplete Address:** Pickup failed due to an incomplete or incorrect address provided.
+- **Incomplete Address:** Pickup failed due to an incomplete or incorrect address provided.",891,2026-11-17,True,How-to pages,
+return-pickup-issues#return-pick-up-issues-p2,return-pickup-issues.md,Return Pick-up Issues,Return Pick-up Issues,1,2,"# Return Pick-up Issues
+
 - **Uninstallation/Packaging Issue:** Pickup could not be completed as the item was not uninstalled or packaged as required.
 
-If your return pick-up has failed - you can follow the steps below to start a new return pick-up request.",1123,2026-11-17,True,How-to pages,
-return-pickup-issues#return-pick-up-issues-p2,return-pickup-issues.md,Return Pick-up Issues,Return Pick-up Issues,1,2,"# Return Pick-up Issues
+If your return pick-up has failed - you can follow the steps below to start a new return pick-up request.
 
 > **NOTE:** Before you place a new request, please ensure: The product is in original condition (with MRP/price tag intact) and you are available during the pick-up slot.
 
 1. Go to Online Returns Center.
 2. Select the item that you have scheduled for return.
 3. If the return request was approved, select View Return/Refund Status.
-4. Select Manage Return.
+4. Select Manage Return.",614,2026-11-17,True,How-to pages,
+return-pickup-issues#return-pick-up-issues-p3,return-pickup-issues.md,Return Pick-up Issues,Return Pick-up Issues,1,3,"# Return Pick-up Issues
 
    **Note:** After you select ""Manage Return"" you'll have options to reschedule your pickup, make changes to your return or choose to no longer return the product.
 5. On the following page, select Cancel Return.
 6. Once the active return request is cancelled, you can create a new pick-up request in Online Returns Centre. To schedule a return, visit [How to Schedule a Return](how-to-schedule-a-return.md) help page.
 
-> **NOTE:** If your order was not eligible for return pick-up and you have already shipped your item to be returned (using Self-Ship option), you will not be able to cancel your return.",987,2026-11-17,True,How-to pages,
+> **NOTE:** If your order was not eligible for return pick-up and you have already shipped your item to be returned (using Self-Ship option), you will not be able to cancel your return.",629,2026-11-17,True,How-to pages,
 returns-and-replacements-faq#returns-and-replacements-faq-p0,returns-and-replacements-faq.md,Returns and Replacements - FAQ,Returns and Replacements - FAQ,1,0,"# Returns and Replacements - FAQ
 
 > Frequently asked questions on returns, refunds and replacements for products purchased on Amazon. Check product eligibility, track returns and more.
@@ -619,10 +636,10 @@ returns-and-replacements-faq#returns-and-replacements-faq-p0,returns-and-replace
 **Contents of this page**",211,2026-11-17,True,Question-and-answer pages,
 returns-and-replacements-faq#1-what-can-i-return-p0,returns-and-replacements-faq.md,Returns and Replacements - FAQ,Returns and Replacements - FAQ > 1. What can I return?,2,0,"## 1. What can I return?
 
-- Items listed on Amazon.in that are identified as 'returnable' on the product detail page and within the 'return window' period. Products eligible for return will have a logo on the product details page which mentions the return window and return category as per the product. (Example: 10 Days Returnable, 7 Days Return & Exchange etc.). To know about the ""non-returnable"" categories and the specific return windows for categories eligible for return, please refer to Amazon.in [Returns policy](returns-policy.md). This page will have more information on what kind of products are returnable within the applicable return window and how to report an issue with Smartphone, Tablet, Laptop, Television, Air Conditioner, Refrigerator, Washing Machine and Microwave.
-- Products that are physically damaged, defective, has missing parts, or are different from their description in the product details page are eligible for return. You may also return products if there is a change of mind and you do not wish to keep the item with you. Refer to the [Damaged or Defective Product - FAQ](damaged-or-defective-item.md) page for more information.",1163,2026-11-17,True,Question-and-answer pages,
+- Items listed on Amazon.in that are identified as 'returnable' on the product detail page and within the 'return window' period. Products eligible for return will have a logo on the product details page which mentions the return window and return category as per the product. (Example: 10 Days Returnable, 7 Days Return & Exchange etc.). To know about the ""non-returnable"" categories and the specific return windows for categories eligible for return, please refer to Amazon.in [Returns policy](returns-policy.md). This page will have more information on what kind of products are returnable within the applicable return window and how to report an issue with Smartphone, Tablet, Laptop, Television, Air Conditioner, Refrigerator, Washing Machine and Microwave.",788,2026-11-17,True,Question-and-answer pages,
 returns-and-replacements-faq#1-what-can-i-return-p1,returns-and-replacements-faq.md,Returns and Replacements - FAQ,Returns and Replacements - FAQ > 1. What can I return?,2,1,"## 1. What can I return?
 
+- Products that are physically damaged, defective, has missing parts, or are different from their description in the product details page are eligible for return. You may also return products if there is a change of mind and you do not wish to keep the item with you. Refer to the [Damaged or Defective Product - FAQ](damaged-or-defective-item.md) page for more information.
 - Items with missing parts. You may request for a refund:
   - If the item is missing and the box is tampered
   - If you have received an empty package
@@ -630,10 +647,11 @@ returns-and-replacements-faq#1-what-can-i-return-p1,returns-and-replacements-faq
 
   To validate your identity for refunds, you may need to share identity proof with us. Please refer to our Privacy Policy to understand how your data will be processed. Please DO NOT share Aadhar data.
 
-**Note:**
+**Note:**",814,2026-11-17,True,Question-and-answer pages,
+returns-and-replacements-faq#1-what-can-i-return-p2,returns-and-replacements-faq.md,Returns and Replacements - FAQ,Returns and Replacements - FAQ > 1. What can I return?,2,2,"## 1. What can I return?
 
 - Sometimes the order is split into multiple shipments. This means you won't get all orders in one go. The packages would be delivered to you according to the date mentioned on Your Orders page.
-- If the bookmark is missing from the book, please be informed that although we try to include bookmarks with several book orders, you may not receive it for every book.",805,2026-11-17,True,Question-and-answer pages,
+- If the bookmark is missing from the book, please be informed that although we try to include bookmarks with several book orders, you may not receive it for every book.",390,2026-11-17,True,Question-and-answer pages,
 returns-and-replacements-faq#2-what-are-non-returnable-items-p0,returns-and-replacements-faq.md,Returns and Replacements - FAQ,Returns and Replacements - FAQ > 2. What are non-returnable items?,2,0,"## 2. What are non-returnable items?
 
 Some items of consumable nature (like wax candles, pet food and grooming products, cleaning products, fertilizers, etc.) are non returnable. For a full list of non-returnable categories and products, and the specific return windows for categories eligible for return, visit Amazon.in [Returns policy](returns-policy.md).",358,2026-11-17,True,Question-and-answer pages,
@@ -650,12 +668,13 @@ Visit [How to schedule a return](how-to-schedule-a-return.md) to learn more.
 
 Products fulfilled by third-party (Marketplace) sellers have the message ""Sold and Shipped by (seller name)"" on the product detail page. Visit the [Return orders placed with a Third-party seller](third-party-seller-returns.md) page to learn more.
 
-Additional return guidelines:
+Additional return guidelines:",594,2026-11-17,True,Question-and-answer pages,
+returns-and-replacements-faq#3-how-to-return-items-p1,returns-and-replacements-faq.md,Returns and Replacements - FAQ,Returns and Replacements - FAQ > 3. How to return items?,2,1,"## 3. How to return items?
 
 - Both your shipping address and the item must meet our return eligibility requirements.
 - If your address is not eligible for Pickup, a Self-Return option will be provided. For more details, visit [Return Pick up and Self Ship Guidelines](return-pickup-and-self-ship.md).
 - Once the return is processed, the refund will be issued in accordance with the Amazon.in [Refund Policy](refund-policy.md).
-- For Pay on Delivery orders, refunds will be processed either to your bank account (via National Electronic Funds Transfer (NEFT)) or to your Amazon account (as Amazon Pay balance).",1177,2026-11-17,True,Question-and-answer pages,
+- For Pay on Delivery orders, refunds will be processed either to your bank account (via National Electronic Funds Transfer (NEFT)) or to your Amazon account (as Amazon Pay balance).",609,2026-11-17,True,Question-and-answer pages,
 returns-and-replacements-faq#4-where-can-i-check-the-status-of-my-return-p0,returns-and-replacements-faq.md,Returns and Replacements - FAQ,Returns and Replacements - FAQ > 4. Where can I check the status of my return?,2,0,"## 4. Where can I check the status of my return?
 
 To check the status of your return/refund:
@@ -709,38 +728,43 @@ In the event customers are found to misuse the return policy by excessively retu
 returns-policy#general-returns-policy-p1,returns-policy.md,Amazon.in Returns Policy,Amazon.in Returns Policy > General Returns Policy,2,1,"## General Returns Policy
 
 1. Applicable products are returnable within the applicable return window if you've received them in a condition that is physically damaged, has missing parts or accessories, defective or different from their description on the product detail page on Amazon.in.
-2. If you report an issue with your Smartphone, Tablet, Laptop, Television, Air Conditioner, Refrigerator, Washing Machine, Microwave, we may facilitate scheduling a technician visit to your location and services availability depends on the location pin code. This visit is scheduled by placing an order with Amazon through Amazon.in Home Services. Subject to Amazon.in Home Services Terms and Conditions, a resolution will be provided based on the technician's evaluation report.
+2. If you report an issue with your Smartphone, Tablet, Laptop, Television, Air Conditioner, Refrigerator, Washing Machine, Microwave, we may facilitate scheduling a technician visit to your location and services availability depends on the location pin code. This visit is scheduled by placing an order with Amazon through Amazon.in Home Services. Subject to Amazon.in Home Services Terms and Conditions, a resolution will be provided based on the technician's evaluation report.",769,2026-11-17,True,Core policies,
+returns-policy#general-returns-policy-p2,returns-policy.md,Amazon.in Returns Policy,Amazon.in Returns Policy > General Returns Policy,2,2,"## General Returns Policy
+
 3. We will carry out verification checks and return will be processed only if:
    - it is determined that the product was not damaged while in your possession;
    - the product is not different from what was shipped to you;
-   - the product is returned in original condition (with brand's/manufacturer's box, MRP tag intact, user manual, warranty card and all the accessories therein).",1155,2026-11-17,True,Core policies,
-returns-policy#general-returns-policy-p2,returns-policy.md,Amazon.in Returns Policy,Amazon.in Returns Policy > General Returns Policy,2,2,"## General Returns Policy
-
-4. If you wish to return an electronic device that stores any personal information, please ensure that you have removed all such personal information from the device prior to returning. Amazon shall not be liable in any manner for any misuse or usage of such information.
-5. Products may not be eligible for return in some cases as covered in detail in the ""Return Policy Types"" table below, including cases of buyer's remorse such as incorrect model or color of product ordered or incorrect product ordered.
-6. Products marked as ""non-returnable"" on the product detail page cannot be returned. However, in an unlikely event of damaged, defective or wrong item delivered to you, we will provide a full refund or replacement, as applicable. We may contact you to ascertain the damage or defect in the product prior to issuing refund/replacement. We reserve the right to pick up the product to ascertain the damage or defect in the product prior to issuing refund/replacement.",1001,2026-11-17,True,Core policies,
+   - the product is returned in original condition (with brand's/manufacturer's box, MRP tag intact, user manual, warranty card and all the accessories therein).
+4. If you wish to return an electronic device that stores any personal information, please ensure that you have removed all such personal information from the device prior to returning. Amazon shall not be liable in any manner for any misuse or usage of such information.",684,2026-11-17,True,Core policies,
 returns-policy#general-returns-policy-p3,returns-policy.md,Amazon.in Returns Policy,Amazon.in Returns Policy > General Returns Policy,2,3,"## General Returns Policy
+
+5. Products may not be eligible for return in some cases as covered in detail in the ""Return Policy Types"" table below, including cases of buyer's remorse such as incorrect model or color of product ordered or incorrect product ordered.
+6. Products marked as ""non-returnable"" on the product detail page cannot be returned. However, in an unlikely event of damaged, defective or wrong item delivered to you, we will provide a full refund or replacement, as applicable. We may contact you to ascertain the damage or defect in the product prior to issuing refund/replacement. We reserve the right to pick up the product to ascertain the damage or defect in the product prior to issuing refund/replacement.",729,2026-11-17,True,Core policies,
+returns-policy#general-returns-policy-p4,returns-policy.md,Amazon.in Returns Policy,Amazon.in Returns Policy > General Returns Policy,2,4,"## General Returns Policy
 
 7. Returns eligibility is based on your account history, including information already associated with your Amazon account such as account standing, shopping and returns activity over the past six to twelve months, and whether your account has any association with returns misuse or fraudulent activity — in accordance with our Privacy Notice
 8. If Inspection Service is provided for the product(s) purchased by you (see Inspection Service Terms and Conditions here) and OTP is shared after verifying that product is not wrong, damaged or missing accessories, you will not be able to return the product claiming that the product is wrong, damaged, or missing accessories.
-9. No additional information is required to return an eligible order unless otherwise noted in the category specific policy.
-10. Products may be eligible for replacement only if the same seller has the exact same item in stock.
-11. On products where return is eligible (basis the policy defined in the Return Policy Types table below), if the seller does not have the exact same product in stock, a refund would be issued to you instead of a Replacement.",1153,2026-11-17,True,Core policies,
-returns-policy#general-returns-policy-p4,returns-policy.md,Amazon.in Returns Policy,Amazon.in Returns Policy > General Returns Policy,2,4,"## General Returns Policy
-
-12. Products purchased by international customers are not eligible for returns. However, orders made by international customers are eligible for refunds and customers will have to contact customer service within 5 business days from delivery date or estimated delivery date to claim refunds. For India based customers please refer to the display page to confirm the days of replacement / return specific to the item before purchase.
-13. To know about the Return window for Amazon Business orders, please visit here.
-14. If products received under the Amazon Vine program are faulty, please reach out via ""Contact Us"" link in the Amazon Vine Portal.",675,2026-11-17,True,Core policies,
+9. No additional information is required to return an eligible order unless otherwise noted in the category specific policy.",823,2026-11-17,True,Core policies,
 returns-policy#general-returns-policy-p5,returns-policy.md,Amazon.in Returns Policy,Amazon.in Returns Policy > General Returns Policy,2,5,"## General Returns Policy
 
-15. Amazon does not allow requests for unlimited returns and/or free returns. In the event customers are found to be excessively returning, or cancelling or not accepting the orders placed, Amazon reserves the right to charge a Return processing fees and /or suspend and/or block and/or terminate such customer accounts, in that order, as necessary. The Return processing fee helps cover the handling and processing costs associated with returns. The Return processing fee will be deducted from the total amount paid by the customer for the returned order, before the refund is issued, subject to satisfaction of Amazon terms and conditions of use. Amazon reserves the right to modify, waive, or update the Return processing fee, at its discretion.
-16. Amazon will not reimburse any withholding tax to customers on Return processing fees.
-17. You may exchange an item for a different size or color (subject to availability on the app/website) or opt for a full refund. To be eligible, items must be returned in their original condition (with the brand outer box, MRP tags attached, warranty cards, and all original accessories in manufacturer packaging).",1181,2026-11-17,True,Core policies,
+10. Products may be eligible for replacement only if the same seller has the exact same item in stock.
+11. On products where return is eligible (basis the policy defined in the Return Policy Types table below), if the seller does not have the exact same product in stock, a refund would be issued to you instead of a Replacement.
+12. Products purchased by international customers are not eligible for returns. However, orders made by international customers are eligible for refunds and customers will have to contact customer service within 5 business days from delivery date or estimated delivery date to claim refunds. For India based customers please refer to the display page to confirm the days of replacement / return specific to the item before purchase.
+13. To know about the Return window for Amazon Business orders, please visit here.",872,2026-11-17,True,Core policies,
 returns-policy#general-returns-policy-p6,returns-policy.md,Amazon.in Returns Policy,Amazon.in Returns Policy > General Returns Policy,2,6,"## General Returns Policy
+
+14. If products received under the Amazon Vine program are faulty, please reach out via ""Contact Us"" link in the Amazon Vine Portal.",159,2026-11-17,True,Core policies,
+returns-policy#general-returns-policy-p7,returns-policy.md,Amazon.in Returns Policy,Amazon.in Returns Policy > General Returns Policy,2,7,"## General Returns Policy
+
+15. Amazon does not allow requests for unlimited returns and/or free returns. In the event customers are found to be excessively returning, or cancelling or not accepting the orders placed, Amazon reserves the right to charge a Return processing fees and /or suspend and/or block and/or terminate such customer accounts, in that order, as necessary. The Return processing fee helps cover the handling and processing costs associated with returns. The Return processing fee will be deducted from the total amount paid by the customer for the returned order, before the refund is issued, subject to satisfaction of Amazon terms and conditions of use. Amazon reserves the right to modify, waive, or update the Return processing fee, at its discretion.
+16. Amazon will not reimburse any withholding tax to customers on Return processing fees.",865,2026-11-17,True,Core policies,
+returns-policy#general-returns-policy-p8,returns-policy.md,Amazon.in Returns Policy,Amazon.in Returns Policy > General Returns Policy,2,8,"## General Returns Policy
+
+17. You may exchange an item for a different size or color (subject to availability on the app/website) or opt for a full refund. To be eligible, items must be returned in their original condition (with the brand outer box, MRP tags attached, warranty cards, and all original accessories in manufacturer packaging).
 
 > **Note:** If you've received a non-returnable product in a damaged/defective condition, you can contact us within 5 days from the delivery of the product.
 
-> **Note:** All product categories are non-returnable for International Customers for Export Orders.",285,2026-11-17,True,Core policies,
+> **Note:** All product categories are non-returnable for International Customers for Export Orders.",602,2026-11-17,True,Core policies,
 returns-policy#return-policy-types-with-descriptions-p0,returns-policy.md,Amazon.in Returns Policy,Amazon.in Returns Policy > Return Policy Types with Descriptions,2,0,"## Return Policy Types with Descriptions
 
 Customers should check the display page for Return / Replacement policy applicable to the specific product before purchase.",165,2026-11-17,True,Core policies,
@@ -914,11 +938,12 @@ A customer is eligible to file an A-to-Z Guarantee claim if:
 - AND in case of any issue, they have contacted the seller through their Amazon account and waited 48 hours for a reply.
 - For more information on the eligibility criteria, visit [A-to-Z Guarantee help page](a-to-z-guarantee.md).
 
-> **Note:** If the seller does not provide enough information to return your items or fails to address your query in 48 hours, you may file an A-to-Z Guarantee claim to seek help with your return.
+> **Note:** If the seller does not provide enough information to return your items or fails to address your query in 48 hours, you may file an A-to-Z Guarantee claim to seek help with your return.",815,2026-11-17,False,Seller-fulfilled orders,
+third-party-seller-returns#what-is-a-to-z-guarantee-claim-p1,third-party-seller-returns.md,Return orders placed with a Third-party (Marketplace) seller,Return orders placed with a Third-party (Marketplace) seller > What is A-to-Z Guarantee claim?,2,1,"## What is A-to-Z Guarantee claim?
 
 For detailed guidance on how to file an A-to-Z Guarantee claim, visit the help page Request an A-to-Z Guarantee Refund
 
-To return orders fulfilled by Amazon, Visit [How to schedule a Return](how-to-schedule-a-return.md)",1036,2026-11-17,False,Seller-fulfilled orders,
+To return orders fulfilled by Amazon, Visit [How to schedule a Return](how-to-schedule-a-return.md)",255,2026-11-17,False,Seller-fulfilled orders,
 wrong-product-delivered#wrong-product-delivered-p0,wrong-product-delivered.md,Wrong Product Delivered,Wrong Product Delivered,1,0,"# Wrong Product Delivered
 
 > Have you received a wrong product? Resolve the issue through the frequently asked questions below.",127,2026-11-17,True,Question-and-answer pages,
@@ -941,11 +966,12 @@ Return/ exchange can only be requested within the return window of the product. 
 - Continue and proceed as per the on-screen instructions.
 - For more details on scheduling a return, refer to the page [How to schedule a Returns](how-to-schedule-a-return.md).
 
-**Note:**
+**Note:**",556,2026-11-17,True,Question-and-answer pages,
+wrong-product-delivered#3-how-do-i-initiate-a-return-replacement-for-the-wrong-item-p1,wrong-product-delivered.md,Wrong Product Delivered,Wrong Product Delivered > 3. How do I initiate a return/ replacement for the wrong item?,2,1,"## 3. How do I initiate a return/ replacement for the wrong item?
 
 1. For non-returnable products, we might require a clear image for verifying that the product is damaged or defective. Visit the [Add Photos: Frequently Asked Questions](add-photos-faq.md) page to learn how to upload images.
 2. Item will be picked up as per the scheduled pickup date and time, which will be communicated via email and visible in Your Orders.
-3. If your address is not covered by our courier partners, you will need to return the item using any courier. Visit [Return Pick-up and Self-Ship Guidelines](return-pickup-and-self-ship.md) to learn more.",1122,2026-11-17,True,Question-and-answer pages,
+3. If your address is not covered by our courier partners, you will need to return the item using any courier. Visit [Return Pick-up and Self-Ship Guidelines](return-pickup-and-self-ship.md) to learn more.",631,2026-11-17,True,Question-and-answer pages,
 wrong-product-delivered#replacement-exchange-p0,wrong-product-delivered.md,Wrong Product Delivered,Wrong Product Delivered > 3. How do I initiate a return/ replacement for the wrong item? > Replacement/ Exchange,3,0,"### Replacement/ Exchange
 
 An exchange can be processed only if the stock is available with the same seller.
@@ -972,10 +998,10 @@ Allow up to 10 days for the returned item to reach our fulfillment center. Upon 
 >
 > Digilocker provides instant verification using One-Time Password. The manual document upload is verified manually and is processed within one business day.
 >
-> Accepted documents include a driving licence, passport, voter ID, and PAN Card.
-
-**Prepaid orders**",914,2026-11-17,True,Question-and-answer pages,
+> Accepted documents include a driving licence, passport, voter ID, and PAN Card.",894,2026-11-17,True,Question-and-answer pages,
 wrong-product-delivered#7-when-will-i-receive-a-refund-for-the-wrong-item-p1,wrong-product-delivered.md,Wrong Product Delivered,Wrong Product Delivered > 7. When will I receive a refund for the wrong item?,2,1,"## 7. When will I receive a refund for the wrong item?
+
+**Prepaid orders**
 
 | Payment Method for Refund | Time taken for Refund to be processed (For Amazon Fulfilled and Seller Fulfilled orders) |
 | --- | --- |
@@ -992,7 +1018,7 @@ wrong-product-delivered#7-when-will-i-receive-a-refund-for-the-wrong-item-p1,wro
 | --- | --- |
 | NEFT to Bank Account | 5 Business Days |
 | Amazon Pay Balance\* | 4 hours |
-| Paper Cheque | Up to 10 business days |",756,2026-11-17,True,Question-and-answer pages,
+| Paper Cheque | Up to 10 business days |",776,2026-11-17,True,Question-and-answer pages,
 wrong-product-delivered#8-what-to-do-when-i-receive-someone-else-s-order-p0,wrong-product-delivered.md,Wrong Product Delivered,Wrong Product Delivered > 8. What to do when I receive someone else's order?,2,0,"## 8. What to do when I receive someone else's order?
 
 If you receive a package or item that you didn't order, first confirm that it was not a gift that was sent to you. Check with friends and family to find out if they ordered the package. If you confirm that the package addressed to you wasn't ordered by you or anyone you know, report the package by contacting us.

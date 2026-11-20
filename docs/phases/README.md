@@ -40,6 +40,7 @@ Rules for these files:
 | 11 and 12 | Developer tabs: Evaluation, Policy explorer, Assumptions (read-only; a Tests tab was dropped) | Built, in review ([build report](../builds/phase-11-build.md)); real-browser run done, no mutation check run | 2 | [phase-11-developer-tabs.md](phase-11-developer-tabs.md) |
 | 13 | How it works page, Limits and assumptions page, README with a generated results block, `docs/SOURCES.md`, screenshots | Built, in review ([build report](../builds/phase-13-build.md)); real-browser run with the real model done, no mutation check run | 1 to 2 | [phase-13-explain-and-readme.md](phase-13-explain-and-readme.md) |
 | 14 | Experiment runner: one script, one small config file per idea, numbers stored and compared with a baseline | Built, in review ([build report](../builds/phase-14-build.md)); the baseline run is waiting for the owner's go-ahead | 2 | [phase-14-experiment-runner.md](phase-14-experiment-runner.md) |
+| 14c | Adopt the winning search setup as the default: `text-embedding-3-large`, chunks of 900 characters, no-match cut-off 0.25; index rebuilt, retrieval results and baseline refreshed | Done, in review ([build report](../builds/phase-14c-build.md)) | 1 | [phase-14c-build.md](../builds/phase-14c-build.md) |
 | 15 | Deployment, live demo link | Not started | 2 | [phase-15-deployment.md](phase-15-deployment.md) |
 | Optional | MCP server around the tools | Not started | 1 | |
 

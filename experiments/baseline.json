@@ -1,23 +1,23 @@
 {
- "run_id": "2026-11-20-baseline-2",
+ "run_id": "2026-11-20-baseline-3",
  "date": "2026-11-20",
  "git": {
-  "commit": "fcfab66",
-  "branch": "phase-14-experiment-runner",
+  "commit": "f27cb3c",
+  "branch": "phase-14c-adopt-search",
   "uncommitted_changes": true
  },
  "note": "Current config, no changes (3 repeats)",
  "checks": {
   "search": {
    "scores": [
-    68
+    71
    ],
    "overall": {
     "answerable": 76,
-    "first_place": 46,
-    "top3": 65,
-    "top5": 68,
-    "mrr": 0.796,
+    "first_place": 54,
+    "top3": 68,
+    "top5": 71,
+    "mrr": 0.843,
     "multi_page_top5": 7,
     "multi_page_rows": 10,
     "unanswerable": 30,
@@ -45,7 +45,7 @@
      "paraphrase": {
       "rows": 50,
       "answerable": 50,
-      "top5": 45
+      "top5": 48
      },
      "policy_gap": {
       "rows": 6,
@@ -66,10 +66,10 @@
    },
    "held_out": {
     "answerable": 18,
-    "first_place": 9,
-    "top3": 14,
-    "top5": 16,
-    "mrr": 0.731,
+    "first_place": 12,
+    "top3": 16,
+    "top5": 17,
+    "mrr": 0.821,
     "multi_page_top5": 1,
     "multi_page_rows": 2,
     "unanswerable": 11,
@@ -97,7 +97,7 @@
      "paraphrase": {
       "rows": 11,
       "answerable": 11,
-      "top5": 10
+      "top5": 11
      },
      "policy_gap": {
       "rows": 1,
@@ -118,15 +118,12 @@
    },
    "top5_missed_ids": [
     "RQ013",
-    "RQ019",
-    "RQ024",
-    "RQ041",
     "RQ043",
     "RQ049",
     "RQ051",
     "RQ085"
    ],
-   "mean_search_ms": 446.7,
+   "mean_search_ms": 507.6,
    "embedding_tokens": 1358
   },
   "router": {
@@ -182,7 +179,7 @@
       "injection": 2,
       "pending_action": 4
      },
-     "seconds": 109.6
+     "seconds": 121.2
     },
     {
      "correct": 76,
@@ -230,7 +227,7 @@
       "injection": 2,
       "pending_action": 4
      },
-     "seconds": 98.9
+     "seconds": 116.0
     },
     {
      "correct": 76,
@@ -278,7 +275,7 @@
       "injection": 2,
       "pending_action": 4
      },
-     "seconds": 97.8
+     "seconds": 116.5
     }
    ],
    "flipped_between_runs": []
@@ -296,7 +293,7 @@
      "failed_ids": [],
      "answer_check_fallbacks": 0,
      "answer_check_retries": 2,
-     "seconds": 100.6
+     "seconds": 103.1
     },
     {
      "passed": 25,
@@ -304,7 +301,7 @@
      "failed_ids": [],
      "answer_check_fallbacks": 0,
      "answer_check_retries": 2,
-     "seconds": 92.6
+     "seconds": 94.5
     },
     {
      "passed": 25,
@@ -312,12 +309,12 @@
      "failed_ids": [],
      "answer_check_fallbacks": 0,
      "answer_check_retries": 2,
-     "seconds": 97.1
+     "seconds": 95.4
     }
    ],
    "flipped_between_runs": []
   }
  },
- "usd": 0.082396,
- "seconds": 652.1
+ "usd": 0.08193,
+ "seconds": 709.2
 }

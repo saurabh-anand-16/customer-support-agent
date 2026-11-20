@@ -108,3 +108,7 @@ Embedding: 105 question vectors for `vector_only` (first run; later runs read th
 | Search said "no match" | 3 of 18 | 0 of 18 |
 
 The three that changed from no match to answered, with passages: "What is the return policy for phones?", "What items can't be returned at all?" and the chip **"What can I not return?"**, which now answers in a fresh chat with a cited passage. The remaining reply with no cited passage is "Why is my return one day late not accepted?": it reached search and found passages in both runs, but the model cited none (a branch matter, not changed here). The 16 questions that did not reach search were handled by the router (out of scope, cancel, order status, human help) and are unchanged: the new thresholds are not exercised by them.
+
+## Note, phase 14c: the default search setup changed
+
+The default is now `text-embedding-3-large`, chunks of at most 900 characters (159 chunks) and `[no_match].vector_min_score = 0.25`. The numbers on this page were measured with the small model, 1200 characters and 0.29, and describe the setup of that time. Why it changed: the experiments of phase 14 (`docs/experiments/results-log.md`) gave, on the 106 questions, first place 54 (was 46), top 3 68 (was 65), top 5 71 of 76 (was 68), MRR 0.843 (was 0.796), with 0 answerable questions wrongly refused and 8 of 8 off-topic questions refused. 0.22 let one off-topic question through; 0.27 and 0.29 each refused one good question. Details: [build report](../builds/phase-14c-build.md).
