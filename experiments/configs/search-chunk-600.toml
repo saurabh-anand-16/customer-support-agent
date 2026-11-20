@@ -1,0 +1,9 @@
+# Search-only experiment: a new index is built in memory; the real index is not touched.
+# Note: the score thresholds were tuned for chunk size 1200, so "unanswerable refused" may move for a reason that is not about quality.
+name = "search-chunk-600"
+note = "Chunk size 600 instead of 1200"
+checks = ["search"]
+cost_limit_usd = 0.10
+
+[override.rag.chunking]
+max_chars = 600

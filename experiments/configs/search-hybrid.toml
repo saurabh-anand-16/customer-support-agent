@@ -1,0 +1,8 @@
+# Reference run for the cross-encoder test: hybrid search (keyword plus vector, fused with rrf), no reranker.
+name = "search-hybrid"
+note = "Profile hybrid (keyword + vector, rrf), no reranker; reference for the cross-encoder"
+checks = ["search"]
+cost_limit_usd = 0.10
+
+[override.rag]
+default_profile = "hybrid"

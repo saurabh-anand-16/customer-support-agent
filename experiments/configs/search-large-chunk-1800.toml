@@ -1,0 +1,12 @@
+# Search-only experiment: larger embedding model, chunk size 1800. A new index is built in memory; the real index is not touched.
+# Note: the score cut-off (0.29) was tuned for the small model, so "unanswerable refused" may move for a reason that is not about quality.
+name = "search-large-chunk-1800"
+note = "text-embedding-3-large, chunk size 1800"
+checks = ["search"]
+cost_limit_usd = 0.10
+
+[override.rag.embedding]
+model = "text-embedding-3-large"
+
+[override.rag.chunking]
+max_chars = 1800

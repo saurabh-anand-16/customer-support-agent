@@ -1,0 +1,9 @@
+# Cross-encoder test: hybrid search reranked by the cross-encoder (ms-marco-MiniLM-L-6-v2).
+# Needs: pip install sentence-transformers (a large download; the reranker model downloads on the first run).
+name = "search-hybrid-cross-encoder"
+note = "Profile hybrid_cross_encoder (hybrid, then cross-encoder rerank)"
+checks = ["search"]
+cost_limit_usd = 0.10
+
+[override.rag]
+default_profile = "hybrid_cross_encoder"

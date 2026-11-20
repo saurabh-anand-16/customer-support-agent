@@ -1,0 +1,15 @@
+# Safety check before adopting the new search setup: run the 25 scenarios with it, 3 times.
+name = "adopt-large-900-cut-025"
+note = "Scenarios with text-embedding-3-large, chunk 900, vector_min_score 0.25"
+checks = ["scenarios"]
+repeat = 3
+cost_limit_usd = 0.25
+
+[override.rag.embedding]
+model = "text-embedding-3-large"
+
+[override.rag.chunking]
+max_chars = 900
+
+[override.rag.no_match]
+vector_min_score = 0.25

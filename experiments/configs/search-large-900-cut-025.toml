@@ -1,0 +1,14 @@
+# Large model, chunk 900, vector cut-off lowered from 0.29 to 0.25.
+name = "search-large-900-cut-025"
+note = "text-embedding-3-large, chunk 900, vector_min_score 0.25"
+checks = ["search"]
+cost_limit_usd = 0.10
+
+[override.rag.embedding]
+model = "text-embedding-3-large"
+
+[override.rag.chunking]
+max_chars = 900
+
+[override.rag.no_match]
+vector_min_score = 0.25
