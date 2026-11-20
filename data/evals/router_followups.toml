@@ -1,0 +1,280 @@
+# Follow-up rows for the router: each row has real earlier exchanges in `history`.
+# history = list of [customer text, assistant text] pairs, oldest first.
+# Order ids and items are invented; they only need to look real.
+# "reviewed = true" only keeps the loader happy; the owner still reviews every row.
+
+# ---- A. A "yes" to a plain question the agent asked (no confirm card behind it) ----
+
+[[row]]
+id = "FU001"
+history = [["Where is my order for the earbuds?", "Your order 402-1182736-5521907 (boAt Airdopes) was delivered on 12 Nov. Would you like to return it?"]]
+message = "Yes please."
+expected_route = "return_or_replace"
+category = "yes_to_question"
+notes = "Yes to an offer to start a return."
+reviewed = true
+
+[[row]]
+id = "FU002"
+history = [["Can I still cancel my kettle?", "Your Prestige kettle in order 171-4402518-9083321 has not shipped yet, so it can be cancelled. Do you want me to cancel it?"]]
+message = "yes"
+expected_route = "cancel_item"
+category = "yes_to_question"
+notes = "Yes to an offer to cancel."
+reviewed = true
+
+[[row]]
+id = "FU003"
+history = [["What is the return window for shoes?", "Shoes can be returned within 10 days of delivery if they are unused. Do you also want to know about exchanges?"]]
+message = "Yes"
+expected_route = "policy_question"
+category = "yes_to_question"
+notes = "Yes to an offer of more policy information."
+reviewed = true
+
+[[row]]
+id = "FU004"
+history = [["My phone case arrived cracked.", "I am sorry about that. I can see two orders with a phone case. Is it the one delivered on 3 Nov?"]]
+message = "Yes, that one."
+expected_route = "return_or_replace"
+category = "yes_to_question"
+notes = "Confirms which order; the problem is a damaged item."
+reviewed = true
+
+[[row]]
+id = "FU005"
+history = [["Where is my package?", "I found two orders on the way. Do you want the details of the Sony headphones order?"]]
+message = "Yes."
+expected_route = "order_status"
+category = "yes_to_question"
+notes = "Yes to an offer of order details."
+reviewed = true
+
+[[row]]
+id = "FU006"
+history = [["I want to talk to someone about my refund.", "I can pass this to our team. Shall I create a request for a person to look at it?"]]
+message = "yes"
+expected_route = "human_help"
+category = "yes_to_question"
+notes = "Yes to an offer of a person."
+reviewed = true
+
+# ---- B. A short answer to a question the agent asked ----
+
+[[row]]
+id = "FU007"
+history = [["I want to return something.", "Sure. Which order is it from?"]]
+message = "The latest one."
+expected_route = "return_or_replace"
+category = "short_answer"
+notes = "Answers 'which order'."
+reviewed = true
+
+[[row]]
+id = "FU008"
+history = [["Cancel my order please.", "Order 305-7712094-1180456 has two items: a mixer grinder and a lunch box. Which one should I cancel?"]]
+message = "The lunch box."
+expected_route = "cancel_item"
+category = "short_answer"
+notes = "Picks an item to cancel."
+reviewed = true
+
+[[row]]
+id = "FU009"
+history = [["Why was my refund less than the price?", "The refund depends on the return reason and the condition of the item. Which order do you mean?"]]
+message = "Order 402-1182736-5521907"
+expected_route = "order_status"
+category = "short_answer"
+notes = "Gives an order id for a refund question about that order."
+reviewed = true
+
+[[row]]
+id = "FU010"
+history = [["I got the wrong item.", "I am sorry. Do you want a replacement or a refund?"]]
+message = "Replacement."
+expected_route = "return_or_replace"
+category = "short_answer"
+notes = "Chooses a resolution."
+reviewed = true
+
+[[row]]
+id = "FU011"
+history = [["Where is my order?", "I found two recent orders. Is it the Philips air fryer or the Wildcraft backpack?"]]
+message = "the backpack"
+expected_route = "order_status"
+category = "short_answer"
+notes = "Picks an order."
+reviewed = true
+
+# ---- C. A short question about the agent's last answer ----
+
+[[row]]
+id = "FU012"
+history = [["Return my fan.", "I checked order 214-3301987-6620411. The fan was delivered 40 days ago, so it is outside the 30-day return window."]]
+message = "Why not?"
+expected_route = "policy_question"
+category = "why_question"
+notes = "Asks for the reason behind a refusal."
+reviewed = true
+
+[[row]]
+id = "FU013"
+history = [["Can I cancel my headphones?", "They have already shipped, so I cannot cancel them. You can return them after delivery."]]
+message = "What happens to my money then?"
+expected_route = "policy_question"
+category = "why_question"
+notes = "Asks about refunds after a return."
+reviewed = true
+
+[[row]]
+id = "FU014"
+history = [["Replace my mixer.", "A replacement is not available for this item. A refund is possible."]]
+message = "Why is a replacement not possible?"
+expected_route = "policy_question"
+category = "why_question"
+notes = "Asks the reason behind a rule."
+reviewed = true
+
+# ---- D. The customer changes topic after an answer ----
+
+[[row]]
+id = "FU015"
+history = [["What is the return window for earbuds?", "Earbuds can be returned within 10 days of delivery."]]
+message = "Thanks. Where is my order 402-1182736-5521907 now?"
+expected_route = "order_status"
+category = "topic_change"
+notes = "Policy answer, then an order question."
+reviewed = true
+
+[[row]]
+id = "FU016"
+history = [["How long does a UPI refund take?", "UPI refunds usually reach your account in 3 to 5 working days."]]
+message = "Ok. Can you also suggest a good phone under 20000?"
+expected_route = "out_of_scope"
+category = "topic_change"
+notes = "Shopping advice is out of scope."
+reviewed = true
+
+[[row]]
+id = "FU017"
+history = [["Where is my order?", "Your order 171-4402518-9083321 is out for delivery today."]]
+message = "I want to speak to a manager about the delivery delays."
+expected_route = "human_help"
+category = "topic_change"
+notes = "Asks for a person."
+reviewed = true
+
+# ---- E. The needed fact is 4 exchanges back (tests history_turns 3 vs 5 vs 8) ----
+
+[[row]]
+id = "FU018"
+history = [
+  ["My shirt is the wrong size.", "I can start a return for the shirt in order 305-1189043-7742210. Shall I do that?"],
+  ["How long is the pickup?", "Pickup is usually within 2 days."],
+  ["And the refund time?", "Refunds take 3 to 5 working days after pickup."],
+  ["Is the refund to my card?", "Yes, to the original payment method."],
+]
+message = "Okay, do it."
+expected_route = "return_or_replace"
+category = "deep_context"
+notes = "The offer is 4 exchanges back."
+reviewed = true
+
+[[row]]
+id = "FU019"
+history = [
+  ["I ordered the wrong colour of the lamp.", "Your lamp in order 171-2208841-5530917 has not shipped. I can cancel it for you. Want me to?"],
+  ["Will I get a full refund?", "Yes, a cancelled order is refunded in full."],
+  ["How long does it take?", "Within 3 to 5 working days."],
+  ["Is it to UPI?", "Yes, to the same UPI account."],
+]
+message = "Alright, please go ahead."
+expected_route = "cancel_item"
+category = "deep_context"
+notes = "The offer is 4 exchanges back."
+reviewed = true
+
+[[row]]
+id = "FU020"
+history = [
+  ["The courier says delivered but I got nothing.", "I am sorry. I can ask our team to look into it. Shall I send this to a person?"],
+  ["How long would that take?", "A person usually replies within a day."],
+  ["Do I need to send photos?", "Not at first. They will ask if they need them."],
+  ["Is there any charge?", "No."],
+]
+message = "Yes, send it."
+expected_route = "human_help"
+category = "deep_context"
+notes = "The offer is 4 exchanges back."
+reviewed = true
+
+[[row]]
+id = "FU021"
+history = [
+  ["Where is my order?", "Your order 402-1182736-5521907 (boAt Airdopes) is out for delivery. Do you want the delivery slot?"],
+  ["What is the return window for earbuds?", "10 days after delivery."],
+  ["Can I return opened earbuds?", "Opened earbuds can be returned only if they are defective."],
+  ["Okay, thanks.", "You are welcome."],
+]
+message = "Yes, tell me the slot."
+expected_route = "order_status"
+category = "deep_context"
+notes = "The offer is 4 exchanges back."
+reviewed = true
+
+[[row]]
+id = "FU022"
+history = [
+  ["Can I return a phone?", "Phones can be returned within 10 days if they are defective."],
+  ["Where is my order 171-4402518-9083321?", "It is out for delivery."],
+  ["Which courier?", "Ecom Express."],
+  ["Thanks.", "You are welcome."],
+]
+message = "What about for tablets?"
+expected_route = "policy_question"
+category = "deep_context"
+notes = "The topic (return rules) is 4 exchanges back."
+reviewed = true
+
+[[row]]
+id = "FU023"
+history = [
+  ["Where is my Philips air fryer?", "It was delivered on 14 Nov."],
+  ["What is the return window?", "10 days after delivery."],
+  ["Is pickup free?", "Yes, pickup is free for eligible returns."],
+  ["How do I pack it?", "Use the original box if you still have it."],
+]
+message = "And the Wildcraft backpack?"
+expected_route = "order_status"
+category = "deep_context"
+notes = "The topic (order location) is 4 exchanges back."
+reviewed = true
+
+# ---- F. Customer cannot give what the agent asked for ----
+
+[[row]]
+id = "FU024"
+history = [["Where is my order?", "Your order 171-4402518-9083321 arrived on 10 Nov."]]
+message = "It is damaged."
+expected_route = "return_or_replace"
+category = "follow_up"
+notes = "A problem report right after an order answer."
+reviewed = true
+
+[[row]]
+id = "FU025"
+history = [["I want to return my shoes.", "Which order are they from? Please give me the order id."]]
+message = "I do not remember. Can you check?"
+expected_route = "return_or_replace"
+category = "no_order_id"
+notes = "The agent should look the order up, not ask again."
+reviewed = true
+
+[[row]]
+id = "FU026"
+history = [["Cancel my order.", "Which order would you like to cancel? Please share the order id."]]
+message = "I do not have the number."
+expected_route = "cancel_item"
+category = "no_order_id"
+notes = "The agent should look the order up, not ask again."
+reviewed = true

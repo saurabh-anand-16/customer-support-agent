@@ -91,7 +91,7 @@ def main(argv=None) -> int:
         print("\nNot started. Fix the point above (or raise cost_limit_usd in the experiment file) and run again.", file=sys.stderr)
         return 3
     judge = plan.agent_cfg.branches.relevance_check
-    needs_key = (any(c in exp["checks"] for c in ("router", "scenarios")) or plan.rag_cfg.retrieval.strategy in ("vector", "hybrid") or plan.rag_cfg.rerank.method == "llm"
+    needs_key = (any(c in exp["checks"] for c in ("router", "followups", "scenarios")) or plan.rag_cfg.retrieval.strategy in ("vector", "hybrid") or plan.rag_cfg.rerank.method == "llm"
                  or ("search" in exp["checks"] and judge is not None and judge.enabled))
     if needs_key and not read_secret(plan.agent_cfg.model.api_key_env, sup.ROOT / plan.agent_cfg.model.env_file):
         print(f"error: no API key: set {plan.agent_cfg.model.api_key_env} in the environment or in {plan.agent_cfg.model.env_file}", file=sys.stderr)
@@ -116,6 +116,8 @@ def main(argv=None) -> int:
                     results[check] = sup.run_search(plan, meter, shared)
                 elif check == "router":
                     results[check] = sup.run_router(plan, meter, sup.REAL_DB, Path(tmp))
+                elif check == "followups":
+                    results[check] = sup.run_followups(plan, meter, sup.REAL_DB, Path(tmp))
                 else:
                     results[check] = sup.run_scenarios(plan, meter, sup.REAL_DB, Path(tmp), shared)
             except sup.CostLimitReached as err:

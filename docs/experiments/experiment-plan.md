@@ -92,6 +92,12 @@ Every later number is compared with this table, with counts ("68 of 76"), never 
 - **Question:** does a higher level fix any of the always-wrong rows, or only cost more?
 
 ### E7: follow-ups and multi-turn
+- **Status:** run (phase 14g) and **adopted**: `[router].history_turns = 5` and `[branches].history_turns = 8`. `[session].history_keep` stays 20.
+- **E7-a, router memory (3, 5, 8):** on the follow-up rows with real earlier exchanges (`data/evals/router_followups.toml`), the deep rows (the needed fact is 4 or more exchanges back) were right 3 of 6 at memory 3, and 5 of 6 at 5 and at 8. Memory 5 is enough, so 5 was adopted.
+- **E7-b, router prompt rules:** two added rules in the router prompt (an answer to the agent's own question or offer continues that topic; a short follow-up that names another item continues the earlier subject). The score was the same as without them. Rejected.
+- **E7-c, branch memory (3, 5, 8):** the 33 scenarios (25 old, 8 multi-turn from phase 14h), 3 runs each. Passed per run: 27, 27, 27 at memory 3; 29, 28, 28 at 5; 29, 30, 30 at 8. The return ladder (S29 to S31) is clean only at 8: at 3 S30 and S31 fail, at 5 S31 fails. The cancel ladder (S26 to S28): S28 (5 questions in between) fails at 3 and 5 and passes in 2 of 3 runs at 8. Adopted: 8.
+- **E7-d, router memory 8:** no better than 5. Not adopted.
+- **Still failing at memory 8:** S27 (see the backlog), and S32 and S33 (their old earbuds and tablets questions are not in the policy text; they were replaced after the runs by a refund-time pair the policy states, and have not been run with the real model yet).
 - **Change:** the follow-up rewrite step and how much conversation context the router and policy branch see.
 - **Target metrics:** follow-up rows correct, a short set of two-turn and three-turn scenarios passed, the rewritten question judged on 20 samples (does it keep the meaning).
 
@@ -103,6 +109,13 @@ Every later number is compared with this table, with counts ("68 of 76"), never 
 ### E9: robustness
 - **Change:** none; add rows. 30 new adversarial rows: injection, requests to ignore the confirm step, requests for another customer's order, asking for web addresses, mixed requests.
 - **Target metrics:** rows refused or handled correctly, writer calls without confirmation (must be 0), any invented value.
+
+## Backlog / later improvements
+
+- **S27 (cancel, 3 questions later):** the agent still asks "which item?" when other products were mentioned in between, even with branch memory 8. The behaviour is correct but the scenario fails. A fix would be in the cancel branch prompt or in how the status answer names the item. Not planned yet.
+- **Case b (the agent asks "which item?" and the customer answers "the second one"):** needs a runner change. `scripts/19_run_scenarios.py` would fill an `{ordinal}` from the selected item's position in its order, and the card check would compare the item. Until then no scenario tests it.
+- **policy_followup rows need topics the policy covers.** Both questions of a pair must be answered by text in `data/clean/policy_chunks.csv`. S32 and S33 now ask about refund time by payment method (credit card, then Amazon Pay balance), which the refund-time table states.
+- **`[session].history_keep` stays 20.** It is only the storage limit; the router (5) and the branches (8) read fewer exchanges than it keeps.
 
 ## How experiments run (decided)
 

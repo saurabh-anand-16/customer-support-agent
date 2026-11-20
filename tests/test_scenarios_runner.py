@@ -22,7 +22,7 @@ _spec.loader.exec_module(runner)
 
 KINDS = {"return_allowed", "return_late", "return_needs_approval", "cancel_allowed", "follow_up_after_cancel", "cancel_refused", "policy_answer",
          "policy_gap", "price_paid", "price_order_total", "price_last_order_total", "price_unavailable", "human_help", "late_request", "injection", "other_customers_order",
-         "out_of_scope", "greeting", "pod_return"}
+         "out_of_scope", "greeting", "pod_return", "policy_followup"}
 
 
 def sha(path) -> str:
@@ -41,7 +41,7 @@ def table():
 
 # === the scenario file ================================================================================================
 def test_the_file_has_about_twenty_scenarios_with_unique_ids(scenarios):
-    assert 18 <= len(scenarios) <= 30
+    assert 18 <= len(scenarios) <= 40
     assert len({s["id"] for s in scenarios}) == len(scenarios)
 
 
@@ -137,3 +137,117 @@ def test_a_selector_that_matches_nothing_is_a_failed_check_not_a_crash(tmp_path)
 def test_the_reading_of_amounts_accepts_formats_with_commas_and_decimals():
     assert runner.amount_in("You paid INR 1,299 for it.", 1299.0) and runner.amount_in("Total 599.00", 599.0)
     assert not runner.amount_in("You paid INR 1,298.", 1299.0)
+
+
+# === phase 14h: action_turn and policy_followup =========================================================================
+from types import SimpleNamespace  # noqa: E402
+
+
+def fake_result(route="clarify", card=None, passages=(), reply="ok"):
+    """What Agent.respond gives, with only the fields run_kind reads."""
+    return {"route": route, "kind": None, "reply": reply, "pending_action": card, "evidence": {"policy_passages": list(passages), "tool_calls": []}}
+
+
+NOTHING = {"returns": 0, "cancelled": 0, "review_items": 0}
+
+
+def play(kind, results, action_turn=0, delta=None, status=None, review=()):
+    """Run the checks of one kind on fake results; returns {check name: passed}."""
+    row = SimpleNamespace(item_id="OI1", item_status="processing", line_total_inr=100.0)
+    checks = {}
+    runner.run_kind(kind, row, "eligible", False, results, delta or {"returns": 0, "cancelled": 1, "review_items": 0}, status or {"OI1": "cancelled"}, list(review),
+                    lambda name, ok, why="": checks.__setitem__(name, bool(ok)), SimpleNamespace(), ["m"] * len(results), action_turn)
+    return checks
+
+
+CANCEL_CARD = {"action": "cancel", "item": {"item_id": "OI1"}}
+
+
+def test_action_turn_is_optional_and_every_scenario_that_had_none_still_has_none(scenarios):
+    old = [s for s in scenarios if int(s["id"][1:]) <= 25]
+    assert len(old) == 25 and all("action_turn" not in s for s in old)
+    assert all(runner.action_turn_problem(s) is None for s in scenarios)
+
+
+@pytest.mark.parametrize("sc, words", [
+    ({"id": "X", "kind": "cancel_allowed", "messages": ["a", "b"], "action_turn": 2}, "out of range"),
+    ({"id": "X", "kind": "cancel_allowed", "messages": ["a", "b"], "action_turn": -1}, "out of range"),
+    ({"id": "X", "kind": "cancel_allowed", "messages": ["a"], "action_turn": 1.0}, "whole number"),
+    ({"id": "X", "kind": "cancel_allowed", "messages": ["a"], "action_turn": True}, "whole number"),
+    ({"id": "X", "kind": "greeting", "messages": ["a", "b"], "action_turn": 1}, "only used by the kinds"),
+])
+def test_a_bad_action_turn_is_described_in_plain_words(sc, words):
+    assert words in runner.action_turn_problem(sc) and sc["id"] in runner.action_turn_problem(sc)
+
+
+def test_an_action_turn_that_is_out_of_range_stops_the_run_with_a_message(tmp_path, capsys):
+    odd = tmp_path / "odd3.toml"
+    odd.write_text('[[scenario]]\nid = "X3"\ntitle = "t"\nkind = "cancel_allowed"\nselect = "processing_item"\naction_turn = 5\nmessages = ["a", "b"]\n', encoding="utf-8")
+    code = runner.main(["--fake", "--file", str(odd), "--output", str(tmp_path / "o.json")])
+    assert code == 2 and "X3: action_turn 5 is out of range" in capsys.readouterr().err
+
+
+def test_run_scenario_reports_a_bad_action_turn_as_a_failed_check_and_not_a_crash(table, tmp_path):
+    sc = {"id": "X4", "title": "t", "kind": "cancel_allowed", "select": "processing_item", "action_turn": 9, "messages": ["a"]}
+    rec = runner.run_scenario(sc, table, DB, None, None, tmp_path)
+    assert rec["passed"] is False and rec["checks"][0][0] == "action_turn" and "out of range" in rec["checks"][0][2] and rec["error"] is None
+
+
+def test_the_card_and_route_come_from_the_turn_action_turn_names():
+    results = [fake_result("order_status"), fake_result("policy_question"), fake_result("cancel_item", CANCEL_CARD), fake_result("clarify")]
+    at_turn = play("cancel_allowed", results, action_turn=2)
+    assert at_turn["routed to cancel_item"] and at_turn["a cancel card for this item"]
+    by_default = play("cancel_allowed", results)                    # no action_turn: the first message, as before
+    assert not by_default["routed to cancel_item"] and not by_default["a cancel card for this item"]
+
+
+def test_the_checks_after_the_yes_do_not_depend_on_action_turn():
+    results = [fake_result("order_status"), fake_result("cancel_item", CANCEL_CARD)]
+    good = play("cancel_allowed", results, action_turn=1)
+    bad = play("cancel_allowed", results, action_turn=1, delta=NOTHING, status={"OI1": "processing"})
+    key = "after the yes the item is cancelled and nothing else changed"
+    assert good[key] and not bad[key]
+
+
+def test_return_needs_approval_reads_the_card_of_the_chosen_turn():
+    results = [fake_result("order_status"), fake_result("return_or_replace", {"needs_staff_approval": True})]
+    name = "the card says a reviewer must approve"
+    assert play("return_needs_approval", results, action_turn=1)[name] is True and play("return_needs_approval", results, action_turn=0)[name] is False
+
+
+@pytest.mark.parametrize("kind", ["return_allowed", "return_late", "cancel_refused", "pod_return"])
+def test_the_other_action_turn_kinds_read_the_chosen_turn_too(kind):
+    route = "cancel_item" if kind == "cancel_refused" else "return_or_replace"
+    results = [fake_result("order_status"), fake_result(route)]
+    routed = lambda checks: next(ok for name, ok in checks.items() if name.startswith("routed to"))      # noqa: E731
+    assert routed(play(kind, results, action_turn=1)) is True and routed(play(kind, results, action_turn=0)) is False
+
+
+def test_policy_followup_looks_at_the_last_turn_only():
+    cited = [{"cited": True}]
+    right = [fake_result("policy_question", passages=[]), fake_result("policy_question", passages=cited)]
+    assert all(play("policy_followup", right, delta=NOTHING).values())
+    only_first = [fake_result("policy_question", passages=cited), fake_result("policy_question", passages=[])]
+    got = play("policy_followup", only_first, delta=NOTHING)
+    assert got["the last message is routed to policy_question"] and not got["policy passages were retrieved for it and one was cited"]
+    wrong_route = [fake_result("policy_question", passages=cited), fake_result("out_of_scope", passages=cited)]
+    assert not play("policy_followup", wrong_route, delta=NOTHING)["the last message is routed to policy_question"]
+    assert not play("policy_followup", right, delta={"returns": 0, "cancelled": 1, "review_items": 0})["nothing written"]
+
+
+def test_the_eight_new_scenarios_are_in_the_file_and_each_action_turn_points_at_the_asking_message(scenarios):
+    new = {s["id"]: s for s in scenarios if int(s["id"][1:]) >= 26}
+    assert list(new) == [f"S{n}" for n in range(26, 34)]
+    for sid in ("S26", "S27", "S28"):
+        s = new[sid]
+        assert s["kind"] == "cancel_allowed" and s["select"] == "processing_item" and s["messages"][s["action_turn"]] == "Please cancel that one."
+        assert s["messages"][0].startswith("What is the status of my {product}") and s["messages"][-1] == "Yes, please." and s["action_turn"] == len(s["messages"]) - 2
+    for sid in ("S29", "S30", "S31"):
+        s = new[sid]
+        assert s["kind"] == "return_allowed" and s["select"] == "eligible_prepaid" and s["messages"][s["action_turn"]] == "I want to return that one, it arrived damaged."
+        assert s["action_turn"] == len(s["messages"]) - 2
+    assert [new[i]["action_turn"] for i in ("S26", "S27", "S28", "S29", "S30", "S31")] == [3, 4, 6, 3, 4, 6]
+    assert [len(new[i]["messages"]) for i in ("S26", "S27", "S28")] == [5, 6, 8]
+    for sid, count in (("S32", 2), ("S33", 5)):
+        assert new[sid]["kind"] == "policy_followup" and len(new[sid]["messages"]) == count and new[sid]["messages"][-1] == "And to an Amazon Pay balance?"
+        assert new[sid]["select"] == "persona:Policy questions" and "action_turn" not in new[sid]

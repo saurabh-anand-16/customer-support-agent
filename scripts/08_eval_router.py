@@ -43,6 +43,7 @@ from agent.session import Session                                   # noqa: E402
 
 ROOT = Path(__file__).resolve().parent.parent
 DEFAULT_CSV = ROOT / "data" / "evals" / "router_messages.csv"
+DEFAULT_FOLLOWUPS = ROOT / "data" / "evals" / "router_followups.toml"       # phase 14g: rows that carry real earlier exchanges
 RESULTS_DIR = ROOT / "data" / "evals" / "results"
 PERSONAS = ROOT / "app" / "personas.toml"
 
@@ -52,6 +53,41 @@ def load_rows(path=DEFAULT_CSV) -> tuple[list[dict], int]:
     with open(path, encoding="utf-8", newline="") as f:
         rows = list(csv.DictReader(f))
     kept = [r for r in rows if r.get("reviewed", "").strip().lower() == "yes"]
+    return kept, len(rows) - len(kept)
+
+
+def load_followups(path=DEFAULT_FOLLOWUPS) -> tuple[list[dict], int]:
+    """Phase 14g: (reviewed rows, number left out) from the follow-up file. Each row comes back in the same shape as a csv row, plus "history":
+    a list of (customer text, assistant text) pairs. A problem in the file raises ValueError that names the row."""
+    data = tomllib.loads(Path(path).read_text(encoding="utf-8"))
+    unknown = set(data) - {"row"}
+    if unknown:
+        raise ValueError(f"{Path(path).name}: unknown top-level key(s) {sorted(unknown)}; rows are written as [[row]]")
+    rows, seen = [], set()
+    for i, raw in enumerate(data.get("row", []), 1):
+        rid = raw.get("id", f"row {i}")
+        for key in ("id", "history", "message", "expected_route", "reviewed"):
+            if key not in raw:
+                raise ValueError(f"{rid}: missing the key '{key}'")
+        if not isinstance(raw["id"], str) or not raw["id"].strip() or raw["id"] in seen:
+            raise ValueError(f"{rid}: the id must be non-empty text and unique")
+        seen.add(raw["id"])
+        if not isinstance(raw["message"], str) or not raw["message"].strip():
+            raise ValueError(f"{rid}: message must be non-empty text")
+        if not isinstance(raw["expected_route"], str) or not raw["expected_route"].strip():
+            raise ValueError(f"{rid}: expected_route must be non-empty text")
+        if not isinstance(raw["reviewed"], bool):
+            raise ValueError(f"{rid}: reviewed must be true or false")
+        history = raw["history"]
+        if not isinstance(history, list) or any(not isinstance(p, list) or len(p) != 2 or not all(isinstance(t, str) and t.strip() for t in p) for p in history):
+            raise ValueError(f"{rid}: history must be a list of [customer text, assistant text] pairs of non-empty text")
+        pending = raw.get("pending", "")
+        if not isinstance(pending, str) or (pending.strip() and not pending.strip().startswith("pending_action")):
+            raise ValueError(f"{rid}: pending must be empty or start with 'pending_action'")
+        rows.append({"id": raw["id"], "message": raw["message"], "context": pending.strip() or "none", "expected_route": raw["expected_route"],
+                     "category": str(raw.get("category") or "followup"), "notes": str(raw.get("notes") or ""),
+                     "reviewed": "yes" if raw["reviewed"] else "no", "history": [(u, a) for u, a in history]})
+    kept = [r for r in rows if r["reviewed"] == "yes"]
     return kept, len(rows) - len(kept)
 
 
@@ -85,6 +121,8 @@ class TalliedChat(OpenAIChat):
 def session_for(row: dict, keep: int) -> Session:
     """A fresh session set up from the row's context column (rows that are not pending)."""
     session = Session("EVAL", "EVAL")
+    for user, assistant in row.get("history") or []:       # phase 14g: real earlier exchanges (csv rows have none); route "" as for the note below
+        session.add_exchange(user, assistant, "", keep)
     context = (row.get("context") or "none").strip()
     if context.startswith("pending_action"):
         session.pending_action = {"description": context}

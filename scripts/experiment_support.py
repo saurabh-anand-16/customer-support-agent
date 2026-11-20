@@ -29,7 +29,8 @@ from agent.rag.config import SECTIONS as RAG_SECTIONS          # noqa: E402
 AGENT_TOML = ROOT / "config" / "agent.toml"
 RAG_TOML = ROOT / "config" / "rag.toml"
 REAL_DB = ROOT / "returns_agent.db"
-ALL_CHECKS = ("search", "router", "scenarios")
+ALL_CHECKS = ("search", "router", "followups", "scenarios")
+DEFAULT_CHECKS = ("search", "router", "scenarios")      # what a file without `checks` runs; "followups" (phase 14g) must be asked for by name
 DEFAULT_REPEAT, DEFAULT_LIMIT = 3, 0.50
 
 # What one run of each model check costs in model calls and tokens, measured in phase 10 (data/evals/summary.json for the scenarios; the router
@@ -120,7 +121,7 @@ def load_experiment(path) -> dict:
     note = data.get("note", "")
     if not isinstance(note, str):
         raise ExperimentError(f"{path.name}: 'note' must be text")
-    checks = data.get("checks", list(ALL_CHECKS))
+    checks = data.get("checks", list(DEFAULT_CHECKS))
     if not isinstance(checks, list) or not checks or any(c not in ALL_CHECKS for c in checks) or len(set(checks)) != len(checks):
         raise ExperimentError(f"{path.name}: 'checks' must list some of: {', '.join(ALL_CHECKS)}")
     repeat = data.get("repeat", DEFAULT_REPEAT)
@@ -357,6 +358,15 @@ def estimate(plan: Plan) -> dict:
         rm = a.model
         notes.append(f"Router model {rm.name}: temperature {'not sent' if rm.temperature is None else rm.temperature}, token_parameter {rm.token_parameter} = {rm.max_output_tokens}, "
                      f"reasoning_effort {rm.reasoning_effort or 'not sent'}.")
+    if "followups" in exp["checks"]:
+        # Phase 14g: one router call per reviewed row of data/evals/router_followups.toml. The size of a call is the measured router average plus the
+        # history text of the row. A pending row also makes the agent's setup calls, which are not counted here.
+        m, rows = MEASURED["router"], load_script("08_eval_router.py").load_followups()[0]
+        per_call = m["tokens_in"] // m["calls"]
+        t_in = sum(per_call + sum(len(u) + len(a) for u, a in r["history"]) // CHARS_PER_TOKEN for r in rows) * n
+        add("followups", a.model.name, len(rows) * n, t_in, len(rows) * n * (m["tokens_out"] // m["calls"]))
+        notes.append(f"followups: {len(rows)} reviewed row(s) from data/evals/router_followups.toml, {n} run(s)."
+                     + (f" {sum(1 for r in rows if r['context'] != 'none')} pending row(s) also make the agent's setup calls, not counted here." if any(r["context"] != "none" for r in rows) else ""))
     if "scenarios" in exp["checks"]:
         m = MEASURED["scenarios"]
         add("scenarios", a.branches.name, m["calls"] * n, m["tokens_in"] * n, m["tokens_out"] * n)
@@ -669,11 +679,26 @@ def scenario_safety_failures(rec: dict) -> list:
 
 
 def run_router(plan: Plan, meter: Meter, db: Path, tmp: Path) -> dict:
-    """The 83 messages, `repeat` times, through the functions of scripts/08_eval_router.py."""
+    """The reviewed messages of the csv (83), `repeat` times, through the functions of scripts/08_eval_router.py."""
+    m08 = load_script("08_eval_router.py")
+    rows, unreviewed = m08.load_rows()
+    return _router_runs(plan, meter, db, tmp, rows, unreviewed)
+
+
+def run_followups(plan: Plan, meter: Meter, db: Path, tmp: Path) -> dict:
+    """Phase 14g: the rows of data/evals/router_followups.toml (each with real earlier exchanges), `repeat` times, through the same loop as the router check."""
+    m08 = load_script("08_eval_router.py")
+    rows, unreviewed = m08.load_followups()
+    if not rows:
+        raise ExperimentError("data/evals/router_followups.toml has no reviewed rows")
+    return _router_runs(plan, meter, db, tmp, rows, unreviewed)
+
+
+def _router_runs(plan: Plan, meter: Meter, db: Path, tmp: Path, rows: list, unreviewed: int) -> dict:
+    """Route `rows` with the real router (and the real agent for pending rows), `repeat` times, with the plan's own config."""
     import time
     m08 = load_script("08_eval_router.py")
     cfg = plan.agent_cfg
-    rows, unreviewed = m08.load_rows()
     chat = m08.TalliedChat(cfg.root)
     router = m08.Router(cfg, chat)
     runner = m08.PendingRunner(cfg, chat, db, tmp)

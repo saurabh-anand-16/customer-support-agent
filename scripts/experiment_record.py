@@ -17,7 +17,8 @@ LOG = ROOT / "docs" / "experiments" / "results-log.md"
 # The verdict rules of the phase document, in rows (search: top 5 of 76; router: correct of 83; scenarios: passed of 25).
 BETTER_BY, WORSE_BY, NOISY_SPREAD = 3, 3, 3
 FALLBACK_TOLERANCE = 2      # the answer-check fallback count may rise by this much over the baseline (the same width as "same")
-SCORE_NAME = {"search": "top 5 of {answerable}", "router": "correct of {rows}", "scenarios": "passed of {scenarios}"}
+SCORE_NAME = {"search": "top 5 of {answerable}", "router": "correct of {rows}", "followups": "correct of {followup_rows}", "scenarios": "passed of {scenarios}"}
+ROUTER_LIKE = ("router", "followups")      # checks scored as "correct of N rows" with wrong_ids per run
 
 
 def git_info() -> dict:
@@ -41,8 +42,8 @@ def run_wrong(result: dict, check: str) -> set:
     runs = [r for r in result.get("runs", []) if r.get("complete", True)]
     if not runs:
         return set()
-    key = "wrong_ids" if check == "router" else "failed_ids"
-    scores = [r["correct"] if check == "router" else r["passed"] for r in runs]
+    key = "wrong_ids" if check in ROUTER_LIKE else "failed_ids"
+    scores = [r["correct"] if check in ROUTER_LIKE else r["passed"] for r in runs]
     return set(runs[_median_run(scores)][key])
 
 
@@ -143,6 +144,10 @@ def lean(results: dict) -> dict:
         r = results["router"]
         keep["router"] = {"scores": r["scores"], "runs": [{k: x[k] for k in ("correct", "complete", "wrong_ids", "by_category", "safety_rows_correct", "seconds")} for x in r["runs"]],
                           "flipped_between_runs": r["flipped_between_runs"]}
+    if "followups" in results and not results["followups"].get("error"):
+        f = results["followups"]
+        keep["followups"] = {"scores": f["scores"], "runs": [{k: x[k] for k in ("correct", "complete", "wrong_ids", "by_category", "seconds")} for x in f["runs"]],
+                             "flipped_between_runs": f["flipped_between_runs"]}
     if "scenarios" in results and not results["scenarios"].get("error"):
         c = results["scenarios"]
         keep["scenarios"] = {"scores": c["scores"], "runs": [{k: x[k] for k in ("passed", "complete", "failed_ids", "answer_check_fallbacks", "answer_check_retries", "seconds")} for x in c["runs"]],
@@ -234,13 +239,13 @@ def format_table(record: dict, baseline: dict | None) -> str:
                      + (f" (now missed: {', '.join(sorted(set(s['top5_missed_ids']) - set(bs['top5_missed_ids']))) or 'none'}; now found: {', '.join(sorted(set(bs['top5_missed_ids']) - set(s['top5_missed_ids']))) or 'none'})" if changed else ""))
         if s.get("relevance"):
             L += relevance_lines(s, bs)
-    for check, unit in (("router", "of {rows} messages"), ("scenarios", "of {scenarios} scenarios")):
+    for check, unit in (("router", "of {rows} messages"), ("followups", "of {rows} follow-up rows"), ("scenarios", "of {scenarios} scenarios")):
         if check not in res or res[check].get("error"):
             continue
         r, br = res[check], b.get(check)
         L.append(f"{check}")
-        key = "correct" if check == "router" else "passed"
-        total = r["rows"] if check == "router" else r["scenarios"]
+        key = "correct" if check in ROUTER_LIKE else "passed"
+        total = r["rows"] if check in ROUTER_LIKE else r["scenarios"]
         pair("  score per run", ", ".join(f"{x[key]}" for x in r["runs"]) + f" {unit.format(rows=total, scenarios=total)}",
              None if not br else ", ".join(str(x[key]) for x in br["runs"]))
         pair("  middle", middle(r["scores"]), middle(br["scores"]) if br else None)
@@ -249,7 +254,12 @@ def format_table(record: dict, baseline: dict | None) -> str:
             L.append(f"  rows that changed between the runs: {', '.join(r['flipped_between_runs'])}")
         if base_wrong is not None:
             L.append(f"  against the baseline: now wrong {', '.join(sorted(mine_wrong - base_wrong)) or 'none'}; now right {', '.join(sorted(base_wrong - mine_wrong)) or 'none'}")
-        if check == "router":
+        if check == "followups":
+            if not br:
+                L.append("  no baseline yet for followups (experiments/baseline.json has no entry): no verdict")
+            for n, x in enumerate(r["runs"], 1):
+                L.append(f"  run {n}: wrong rows " + (", ".join(f"{i} (got {x['got'].get(i, '?')})" for i in x["wrong_ids"]) or "none"))
+        if check in ROUTER_LIKE:
             cats = {}
             for x in r["runs"]:
                 for c, v in x["by_category"].items():
@@ -272,7 +282,7 @@ def format_table(record: dict, baseline: dict | None) -> str:
     for check in record["experiment"]["checks"]:
         v = ver.get(check, {})
         shown = "-" if v.get("score") is None else f"{v['score']}" + ("" if v.get("baseline") is None else f" against {v['baseline']} ({v['diff']:+d})")
-        unit_text = v.get("unit") or SCORE_NAME[check].format(answerable=res.get("search", {}).get("overall", {}).get("answerable", 76), rows=res.get("router", {}).get("rows", 83), scenarios=res.get("scenarios", {}).get("scenarios", 25))
+        unit_text = v.get("unit") or SCORE_NAME[check].format(answerable=res.get("search", {}).get("overall", {}).get("answerable", 76), rows=res.get("router", {}).get("rows", 83), followup_rows=res.get("followups", {}).get("rows", "?"), scenarios=res.get("scenarios", {}).get("scenarios", 25))
         L.append(f"  {check:<10} {v.get('verdict', 'not run'):<12} {shown}   [{unit_text}]"
                  f"   cost {money(record['usage']['per_check'].get(check, {}).get('usd'))}, time {seconds_text(record['usage']['per_check'].get(check, {}).get('seconds'))}")
         for reason in v.get("reasons", []):
@@ -313,7 +323,9 @@ def log_row(record: dict) -> dict:
     else:
         search_cell = score("search")
     t = record["usage"]["total"]
-    verdict = ", ".join(f"{c}: {ver[c]['verdict']}" for c in record["experiment"]["checks"] if c in ver)
+    # the log has no column for followups (a new column would break the rows already in the file), so its score goes into the Verdict cell
+    verdict = ", ".join(f"{c}: {ver[c]['verdict']}" + (f" ({ver[c]['score']} of {res[c]['rows']})" if c == "followups" and ver[c].get("score") is not None and res.get(c) else "")
+                        for c in record["experiment"]["checks"] if c in ver)
     if record["status"] != "complete":
         verdict += f" ({record['status']})"
     return {"Date": record["date"], "Name": record["run_id"][len(record["date"]) + 1:], "Note": record["experiment"]["note"],

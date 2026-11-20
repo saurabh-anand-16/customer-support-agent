@@ -24,7 +24,7 @@ friendly_kinds = ["greeting", "thanks"]   # out-of-scope kinds that do not count
 offer_in_reply = ["unsupported_request"]  # kinds whose reply text already offers a person; the streak does not add a second offer
 
 [router]
-history_turns = 3                # how many past exchanges the router is shown
+history_turns = 5                # how many past exchanges the router is shown. Phase 14g, E7-a: 5 fixes the follow-ups whose answer is 4 exchanges back (3 missed them; 8 was no better)
 max_message_chars = 2000         # longer messages are cut to this before the router sees them
 max_question_chars = 160         # a clarify question longer than this is replaced by the generic one
 generic_clarify = "Could you tell me a little more about what you need help with?"
@@ -89,7 +89,7 @@ returns_lookup_words = ["refund", "return", "replacement", "exchange", "picked u
 format_retries = 1              # phase 10: when the model answers with a bare action (for example a tool name instead of "call_tool"), it is asked once more with the reminder below; 0 = never
 format_reminder = "Your last reply was not in the expected format, so no tool was run. Reply with exactly one JSON object and nothing else. To use a tool, write {\"action\": \"call_tool\", \"tool\": \"<tool name>\", \"arguments\": {}}. To finish, write {\"action\": \"final\", ...}. The value of \"action\" must be the word call_tool or the word final. A tool name goes in \"tool\", never in \"action\"."
 tool_round_limit = 4             # the most tool calls one branch may make for one message; a further call is refused and the message ends with the tool_limit reply
-history_turns = 3                # past exchanges a branch is shown
+history_turns = 8                # past exchanges a branch is shown. Phase 14g, E7-c: 8 fixes "that one" after a long gap (5 questions in between); 3 and 5 lost it
 max_message_chars = 2000
 max_question_chars = 160         # a question the model writes (ask) is used only up to this length and if it ends with "?"
 rewrite_follow_ups = true        # policy branch: one model call turns a follow-up into a standalone question first

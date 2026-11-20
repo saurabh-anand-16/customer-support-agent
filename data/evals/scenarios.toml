@@ -187,3 +187,65 @@ title = "Total of the last order, no order id given"
 kind = "price_last_order_total"
 select = "persona:Last eligible day"
 messages = ["What was the total of my last order?"]
+
+[[scenario]]
+id = "S26"
+title = "Cancel that one, 2 questions later (memory 3 is enough)"
+kind = "cancel_allowed"
+select = "processing_item"
+action_turn = 3
+messages = ["What is the status of my {product} in order {order_id}?", "How long does a UPI refund take?", "Is pickup free for returns?", "Please cancel that one.", "Yes, please."]
+
+[[scenario]]
+id = "S27"
+title = "Cancel that one, 3 questions later (needs memory 5)"
+kind = "cancel_allowed"
+select = "processing_item"
+action_turn = 4
+messages = ["What is the status of my {product} in order {order_id}?", "How long does a UPI refund take?", "Is pickup free for returns?", "Can I return opened earbuds?", "Please cancel that one.", "Yes, please."]
+
+[[scenario]]
+id = "S28"
+title = "Cancel that one, 5 questions later (needs memory 8)"
+kind = "cancel_allowed"
+select = "processing_item"
+action_turn = 6
+messages = ["What is the status of my {product} in order {order_id}?", "How long does a UPI refund take?", "Is pickup free for returns?", "Can I return opened earbuds?", "What is the return window for shoes?", "Do you refund shipping charges?", "Please cancel that one.", "Yes, please."]
+
+[[scenario]]
+id = "S29"
+title = "Return that one, 2 questions later (memory 3 is enough)"
+kind = "return_allowed"
+select = "eligible_prepaid"
+action_turn = 3
+messages = ["What is the status of my {product} in order {order_id}?", "How long does a UPI refund take?", "Is pickup free for returns?", "I want to return that one, it arrived damaged.", "Yes, go ahead."]
+
+[[scenario]]
+id = "S30"
+title = "Return that one, 3 questions later (needs memory 5)"
+kind = "return_allowed"
+select = "eligible_prepaid"
+action_turn = 4
+messages = ["What is the status of my {product} in order {order_id}?", "How long does a UPI refund take?", "Is pickup free for returns?", "Can I return opened earbuds?", "I want to return that one, it arrived damaged.", "Yes, go ahead."]
+
+[[scenario]]
+id = "S31"
+title = "Return that one, 5 questions later (needs memory 8)"
+kind = "return_allowed"
+select = "eligible_prepaid"
+action_turn = 6
+messages = ["What is the status of my {product} in order {order_id}?", "How long does a UPI refund take?", "Is pickup free for returns?", "Can I return opened earbuds?", "What is the return window for shoes?", "Do you refund shipping charges?", "I want to return that one, it arrived damaged.", "Yes, go ahead."]
+
+[[scenario]]
+id = "S32"
+title = "Policy follow-up straight after the question"
+kind = "policy_followup"
+select = "persona:Policy questions"
+messages = ["How long does a refund to a credit card take?", "And to an Amazon Pay balance?"]
+
+[[scenario]]
+id = "S33"
+title = "Policy follow-up after 3 thank-you messages"
+kind = "policy_followup"
+select = "persona:Policy questions"
+messages = ["How long does a refund to a credit card take?", "Thanks, that helps.", "Good to know.", "Okay.", "And to an Amazon Pay balance?"]

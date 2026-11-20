@@ -139,9 +139,30 @@ def amount_in(text: str, amount) -> bool:
     return any(value == Decimal(str(amount)) for value, _, _ in read_numbers(text))
 
 
+# Phase 14h: the kinds whose route, first result and card are read from the turn `action_turn` names (default 0, the first message). The checks after the
+# yes (database change, queued item) do not depend on it. Any other kind must leave action_turn at 0.
+ACTION_TURN_KINDS = ("return_allowed", "return_late", "return_needs_approval", "cancel_allowed", "cancel_refused", "pod_return")
+
+
+def action_turn_problem(sc: dict) -> str | None:
+    """None when the scenario's action_turn is fine, otherwise a plain sentence that says what is wrong."""
+    turn, count = sc.get("action_turn", 0), len(sc.get("messages", []))
+    if isinstance(turn, bool) or not isinstance(turn, int):
+        return f"{sc.get('id', '?')}: action_turn must be a whole number, got {turn!r}"
+    if not 0 <= turn < count:
+        return f"{sc.get('id', '?')}: action_turn {turn} is out of range: the scenario has {count} message(s), so it must be 0 to {count - 1}"
+    if turn and sc.get("kind") not in ACTION_TURN_KINDS:
+        return f"{sc.get('id', '?')}: action_turn is only used by the kinds {', '.join(ACTION_TURN_KINDS)}, not by '{sc.get('kind')}'"
+    return None
+
+
 def run_scenario(sc: dict, table, db_path: Path, cfg, chat_factory, tmp: Path) -> dict:
     started = time.perf_counter()
     rec = {"id": sc["id"], "title": sc["title"], "kind": sc["kind"], "checks": [], "routes": [], "tools": [], "answer_check": [], "writes": {}, "error": None}
+    problem = action_turn_problem(sc)
+    if problem:                                               # a bad file entry is a failed scenario with a clear reason, not a crash of the run
+        rec["checks"].append(("action_turn", False, problem))
+        return finish(rec, started, (0, 0, 0))
     row = pick_row(table, sc["select"])
     if row is None:
         rec["checks"].append(("precondition", False, f"no data matches selector {sc['select']!r}"))
@@ -188,7 +209,7 @@ def run_scenario(sc: dict, table, db_path: Path, cfg, chat_factory, tmp: Path) -
     bad = [p for r in written for p in facts_problems(r, allowed)]
     check(f"every number, amount, date and address in the {len(written)} model-written reply(ies) is in the tool results", not bad, "; ".join(bad))
     check("no web address in any reply", not any(re.search(r"https?://|www\.", r["reply"], re.I) for r in results))
-    run_kind(sc["kind"], row, decision, approval, results, delta, status, review, check, other, sc["messages"])
+    run_kind(sc["kind"], row, decision, approval, results, delta, status, review, check, other, sc["messages"], sc.get("action_turn", 0))
     return finish(rec, started, tuple(a - b for a, b in zip(tally.snapshot(), before_tokens)))
 
 
@@ -199,8 +220,9 @@ def finish(rec, started, tokens) -> dict:
     return rec
 
 
-def run_kind(kind, row, decision, approval, results, delta, status, review, check, other, sc_messages=()) -> None:
-    first, last = results[0], results[-1]
+def run_kind(kind, row, decision, approval, results, delta, status, review, check, other, sc_messages=(), action_turn=0) -> None:
+    # `first` is the turn the checks look at: the first message, or for the ACTION_TURN_KINDS the turn `action_turn` names (phase 14h).
+    first, last = results[action_turn if kind in ACTION_TURN_KINDS else 0], results[-1]
     card = first["pending_action"] or {}
     if kind == "return_allowed":
         check("precondition: the oracle says eligible with no approval", decision == "eligible" and not approval, f"oracle: {decision}, approval {approval}")
@@ -236,6 +258,11 @@ def run_kind(kind, row, decision, approval, results, delta, status, review, chec
         check("routed to policy_question", first["route"] == "policy_question", first["route"])
         check("policy passages were retrieved and one was cited", len(first["evidence"]["policy_passages"]) > 0 and any(p.get("cited") for p in first["evidence"]["policy_passages"]),
               f"{len(first['evidence']['policy_passages'])} passages")
+        check("nothing written", not any(delta.values()), str(delta))
+    elif kind == "policy_followup":                            # phase 14h: the same idea as policy_answer, on the LAST message
+        check("the last message is routed to policy_question", last["route"] == "policy_question", last["route"])
+        check("policy passages were retrieved for it and one was cited", len(last["evidence"]["policy_passages"]) > 0 and any(p.get("cited") for p in last["evidence"]["policy_passages"]),
+              f"{len(last['evidence']['policy_passages'])} passages")
         check("nothing written", not any(delta.values()), str(delta))
     elif kind == "policy_gap":
         check("routed to policy_question", first["route"] == "policy_question", first["route"])
@@ -315,6 +342,10 @@ def main(argv=None) -> int:
     args = parser.parse_args(argv)
 
     scenarios = tomllib.loads(Path(args.file).read_text(encoding="utf-8"))["scenario"]
+    problems = [p for p in map(action_turn_problem, scenarios) if p]
+    if problems:
+        print("error: " + "; ".join(problems), file=sys.stderr)
+        return 2
     if args.ids:
         scenarios = [s for s in scenarios if s["id"] in args.ids]
     cfg = load_agent_config()

@@ -11,7 +11,7 @@ Make a file in `experiments/configs/`, for example `chunk-900.toml`:
 ```toml
 name = "chunk-900"                 # letters, digits, - and _ only
 note = "Chunk size 900 instead of 1200"
-checks = ["search"]                # optional; search, router, scenarios (default: all three)
+checks = ["search"]                # optional; search, router, followups, scenarios (default: search, router and scenarios)
 repeat = 3                         # optional; how often the router and scenarios run (default 3)
 cost_limit_usd = 0.50              # optional; the run stops when it has spent this much (default 0.50)
 
@@ -84,3 +84,13 @@ python scripts/23_run_experiment.py experiments/configs/e1-strict.toml
 - Verdict: better = unanswerable refused at least 3 above the baseline and answerable wrongly refused no more than 2; worse = answerable wrongly refused above 2, or unanswerable refused 3 or more below; noisy = the runs differ by 3 or more; unsafe = a safety check failed. The legend is printed under the table.
 - To try another judge model: `[override.agent.branches.relevance_check]` with `name = "gpt-4o-mini"`, `token_parameter = "max_tokens"` and `temperature = 0.0`, and a `[pricing."gpt-4o-mini"]` block (it already exists). `passages_shown` (2, 3 or 4) is the E1-d setting.
 - With the switch off, the search check prints exactly what it printed before.
+
+## followups: the router with real earlier exchanges (phase 14g)
+
+`data/evals/router_messages.csv` can only hold a one-line "context" note. The check `followups` runs the router on `data/evals/router_followups.toml`, where each `[[row]]` carries real earlier exchanges (`history = [["customer text", "assistant text"], ...]`), the `message`, the `expected_route`, an optional `pending` (text starting with `pending_action` sends the row through the real agent, as in the csv), a `category`, `notes` and `reviewed = true` or `false`. Each history pair becomes one exchange in the session, so the router sees them as it would in a chat, limited by `[router].history_turns`.
+
+- Ask for it by name: `checks = ["followups"]`. It is not in the default list, so old experiment files run as before.
+- It runs the real router on the reviewed rows, `repeat` times, and reports the score per run (of the number of rows), the wrong rows with the route chosen, cost and time. It uses the config with your overrides, so `[override.agent.router]` with `history_turns` or `system_prompt` work.
+- The baseline has no `followups` entry yet. The table then says "no baseline yet for followups" and the verdict is "no baseline". The script never writes the baseline by itself; with `--baseline` it asks, as always.
+- The results log has no column for it (a new column would break the rows already in the file). The score is in the Verdict cell, for example `followups: no baseline (2 of 3)`.
+- Example: `experiments/configs/followups-example.toml`. The file holds 3 example rows until the full set is added. The verdict thresholds (3 rows) are absolute, so they only mean something with a larger set.
