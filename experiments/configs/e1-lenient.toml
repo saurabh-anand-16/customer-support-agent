@@ -1,0 +1,11 @@
+# E1-b (phase 14d): the relevance check, lenient. The judge refuses a question only when the passages are "no" answer.
+# Search already uses the large model, 900-character chunks and the 0.25 cut-off (the defaults since phase 14c), so only the check is switched on.
+name = "e1-lenient"
+note = "Relevance check on (gpt-6-luna), refuse on no only"
+checks = ["search"]
+repeat = 3
+cost_limit_usd = 0.25
+
+[override.agent.branches.relevance_check]
+enabled = true
+refuse_on = ["no"]

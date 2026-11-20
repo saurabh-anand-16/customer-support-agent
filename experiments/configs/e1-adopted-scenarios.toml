@@ -1,0 +1,7 @@
+# The 25 scenarios with the adopted default (phase 14d): the v3 relevance check is on in config/agent.toml, so no override is needed.
+# All 25 must pass, three times (the check of the plan before the default stays).
+name = "e1-adopted-scenarios"
+note = "25 scenarios with the v3 relevance check on (the default since phase 14d)"
+checks = ["scenarios"]
+repeat = 3
+cost_limit_usd = 0.25
