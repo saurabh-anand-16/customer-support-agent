@@ -1,0 +1,8 @@
+name = "e11-session-facts"
+note = "E11: branches see the order and item found in earlier turns (session_facts on). Compare with e9-adversarial (56, 55 of 63). Aimed at S27, S28, S48, S50."
+checks = ["scenarios"]
+repeat = 2
+cost_limit_usd = 0.25
+
+[override.agent.branches]
+session_facts = true
