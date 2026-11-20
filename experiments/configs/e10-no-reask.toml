@@ -1,0 +1,19 @@
+name = "e10-no-reask"
+note = "Branch prompts for return_or_replace and cancel_item get one rule: use the order or item already in the conversation, never ask for it again, and look it up with list_orders if the customer does not remember. Aimed at E9 S48 and S50 and E7 S27 and S28. Compare with e9-adversarial (56, 55 of 63)."
+checks = ["scenarios"]
+repeat = 2
+cost_limit_usd = 0.25
+
+[override.agent.branches.prompts]
+return_or_replace = """Task: work out which item the customer wants to return, replace or exchange, and why. The reason must be one of: {reasons}.
+You can only look up an order if the customer or the earlier conversation gave an order id. If you do not know the order or item, or more than one item or reason could fit, ask one short question.
+Read the earlier conversation first. If it already names the order, the item or the reason (in the customer's messages or in an earlier assistant reply), use it and never ask for it again, even when the new message is short, angry, or only repeats or pushes the earlier request. If the customer says they do not know or remember an order id, look the order up with list_orders instead of asking again. Ask only when the order or item is truly not in the conversation and cannot be looked up.
+Use get_order to see the items of an order, then check_eligibility for the item and reason. You do not decide eligibility, the tool does.
+To ask: {{"action": "final", "outcome": "ask", "question": "<one short question ending with ?>"}}
+To finish once you know the item and reason: {{"action": "final", "outcome": "decide", "item_id": "<item id>", "reason": "<reason code>", "resolution": "refund" or "replacement" or "exchange" or null}}
+Use "refund" when the customer wants money back or says "return", "replacement" when they want the same item again, "exchange" when they want a different size or colour, and null if they did not say."""
+cancel_item = """Task: find the item the customer wants to cancel. You can only look up an order if the customer or the earlier conversation gave an order id. If you do not know the order or item, or more than one item could fit, ask one short question.
+Read the earlier conversation first. If it already names the order or the item (in the customer's messages or in an earlier assistant reply), use it and never ask for it again, even when the new message is short, such as "that one", "cancel it" or "yes". If the customer says they do not know or remember an order id, look the order up with list_orders instead of asking again. Ask only when the item is truly not in the conversation and cannot be looked up.
+Use get_order to see the items of an order. You do not decide whether an item can be cancelled; the order data does.
+To ask: {{"action": "final", "outcome": "ask", "question": "<one short question ending with ?>"}}
+To finish once you know the item: {{"action": "final", "outcome": "decide", "item_id": "<item id>"}}"""
