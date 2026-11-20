@@ -1,0 +1,23 @@
+name = "e5c-all-luna"
+note = "Router, branches, confirm and refund-method all on gpt-6-luna."
+checks = ["scenarios"]
+repeat = 3
+cost_limit_usd = 0.30
+
+[override.agent.branches]
+name = "gpt-6-luna"
+token_parameter = "max_completion_tokens"
+temperature = "omit"
+max_output_tokens = 2000
+
+[override.agent.confirm]
+name = "gpt-6-luna"
+token_parameter = "max_completion_tokens"
+temperature = "omit"
+max_output_tokens = 2000
+
+[override.agent.refund_method]
+name = "gpt-6-luna"
+token_parameter = "max_completion_tokens"
+temperature = "omit"
+max_output_tokens = 2000

@@ -16,6 +16,8 @@ run files in `data/experiments/runs/`; rows whose run file is not on this comput
 | 2026-11-20 | e1-prompt-v3 | Judge gpt-6-luna, v3 prompt (main thing asked), max_output_tokens 1200, refuse on no | 71 (judge: 27 of 30 refused, 14 wrongly) | - | - | $0.0452 | 13m 42s | search: worse | adopt |
 | 2026-11-20 | e1-strict | Relevance check on (gpt-6-luna), refuse on no and partly | 71 (judge: 28 of 30 refused, 23 wrongly) | - | - | $0.0347 | 10m 23s | search: worse | reject (too many good questions refused) |
 | 2026-11-20 | e4-router-luna | Router on gpt-6-luna, default thinking level, no temperature | - | 79 | - | $0.0372 | 8m 20s | router: better | adopt |
+| 2026-11-20 | e5a-branches-luna | Branches (policy, order status, return, cancel) on gpt-6-luna. Router already luna. Confirm and refund-method stay on gpt-4o-mini. | - | - | 24 | $0.0209 | 6m 42s | scenarios: same |reject (S05: luna asks instead of proposing; no gain)  |
+| 2026-11-20 | e5b-confirm-refund-luna | Confirm step and refund-method step on gpt-6-luna. Branches stay on gpt-4o-mini. | - | - | 25 | $0.0272 | 5m 34s | scenarios: same | reject (same score, no gain) |
 | 2026-11-20 | e6-router-high | Router on gpt-6-luna, reasoning_effort high | - | 75 | - | $0.0117 | 2m 52s | router: unsafe | reject (invalid, the pending rows failed to start) |
 | 2026-11-20 | e6-router-high-v2 | Router on gpt-6-luna, reasoning_effort high (reurn after the inheritence fix) | - | 79 | - | $0.0122 | 2m 36s | router: better | reject (no gain over the default) |
 | 2026-11-20 | e6-router-low | Router on gpt-6-luna, reasoning_effort low | - | 74 | - | $0.0106 | 2m 30s | router: unsafe | reject (invalid, the pending rows failed to start) |

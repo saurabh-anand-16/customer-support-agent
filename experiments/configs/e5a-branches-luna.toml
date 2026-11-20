@@ -1,0 +1,11 @@
+name = "e5a-branches-luna"
+note = "Branches (policy, order status, return, cancel) on gpt-6-luna. Router already luna. Confirm and refund-method stay on gpt-4o-mini."
+checks = ["scenarios"]
+repeat = 3
+cost_limit_usd = 0.25
+
+[override.agent.branches]
+name = "gpt-6-luna"
+token_parameter = "max_completion_tokens"
+temperature = "omit"
+max_output_tokens = 2000
