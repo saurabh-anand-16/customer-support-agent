@@ -1,0 +1,8 @@
+name = "e7a-followups-h5"
+note = "Router remembers the last 5 exchanges instead of 3."
+checks = ["followups"]
+repeat = 3
+cost_limit_usd = 0.10
+
+[override.agent.router]
+history_turns = 5

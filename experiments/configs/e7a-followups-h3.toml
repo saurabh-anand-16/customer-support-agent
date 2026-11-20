@@ -1,0 +1,5 @@
+name = "e7a-followups-h3"
+note = "Control for E7-a: router remembers the last 3 exchanges (today's default). No changes."
+checks = ["followups"]
+repeat = 3
+cost_limit_usd = 0.10

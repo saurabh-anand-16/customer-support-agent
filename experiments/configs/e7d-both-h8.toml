@@ -1,0 +1,11 @@
+name = "e7d-both-h8"
+note = "Router and branches both remember the last 8 exchanges. Compare with e7c-branches-h8 (router at 5): 29, 30, 30 of 33. Runs the 25 old scenarios plus the 8 multi-turn ones (S26 to S33)."
+checks = ["scenarios"]
+repeat = 3
+cost_limit_usd = 0.15
+
+[override.agent.router]
+history_turns = 8
+
+[override.agent.branches]
+history_turns = 8

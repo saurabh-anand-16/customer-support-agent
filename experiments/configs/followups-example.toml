@@ -1,0 +1,7 @@
+# Example: only the follow-up rows of data/evals/router_followups.toml, one run, no changes from the defaults.
+# To try a memory setting, add for example:   [override.agent.router]   history_turns = 5
+name = "followups-example"
+note = "Router on the follow-up rows with the current settings"
+checks = ["followups"]
+repeat = 1
+cost_limit_usd = 0.05

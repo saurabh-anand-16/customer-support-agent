@@ -1,0 +1,11 @@
+name = "e7c-branches-h5"
+note = "Branches remember the last 5 exchanges. Router fixed at 5 (the E7-a result) so only the branch memory changes. Runs the 25 old scenarios plus the 8 multi-turn ones (S26 to S33)."
+checks = ["scenarios"]
+repeat = 3
+cost_limit_usd = 0.15
+
+[override.agent.router]
+history_turns = 5
+
+[override.agent.branches]
+history_turns = 5
