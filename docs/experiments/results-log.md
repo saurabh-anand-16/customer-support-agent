@@ -31,6 +31,7 @@ run files in `data/experiments/runs/`; rows whose run file is not on this comput
 | 2026-11-20 | e7c-branches-h5 | Branches remember the last 5 exchanges. Router fixed at 5 (the E7-a result) so only the branch memory changes. Runs the 25 old scenarios plus the 8 multi-turn ones (S26 to S33). | - | - | 28 | $0.0630 | 14m 53s | scenarios: better | reject (8 is better) |
 | 2026-11-20 | e7c-branches-h8 | Branches remember the last 8 exchanges. Router fixed at 5 (the E7-a result) so only the branch memory changes. Runs the 25 old scenarios plus the 8 multi-turn ones (S26 to S33). | - | - | 30 | $0.0618 | 15m 04s | scenarios: better | adopt |
 | 2026-11-20 | e7d-both-h8 | Router and branches both remember the last 8 exchanges. Compare with e7c-branches-h8 (router at 5): 29, 30, 30 of 33. Runs the 25 old scenarios plus the 8 multi-turn ones (S26 to S33). | - | - | 29 | $0.0650 | 15m 13s | scenarios: better | reject (router 8 no better than 5; S28, S30, S31 flip between runs) |
+| 2026-11-20 | e9-adversarial | E9: 30 tricky and hostile scenarios (S34 to S63) on top of the 33 existing ones, with the adopted defaults. | - | - | 55 | $0.0590 | 14m 25s | scenarios: better |  |
 | 2026-11-20 | search-chunk-1800 | Chunk size 1800 instead of 1200 | 71 | - | - | $0.0004 | 49s | search: better | reject |
 | 2026-11-20 | search-chunk-600 | Chunk size 600 instead of 1200 | 69 | - | - | $0.0004 | 53s | search: same | reject |
 | 2026-11-20 | search-chunk-900 | Chunk size 900 instead of 1200 | 72 | - | - | $0.0004 | 51s | search: better | reject |

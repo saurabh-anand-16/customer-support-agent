@@ -41,7 +41,7 @@ def table():
 
 # === the scenario file ================================================================================================
 def test_the_file_has_about_twenty_scenarios_with_unique_ids(scenarios):
-    assert 18 <= len(scenarios) <= 40
+    assert 18 <= len(scenarios) <= 70
     assert len({s["id"] for s in scenarios}) == len(scenarios)
 
 
@@ -236,7 +236,7 @@ def test_policy_followup_looks_at_the_last_turn_only():
 
 
 def test_the_eight_new_scenarios_are_in_the_file_and_each_action_turn_points_at_the_asking_message(scenarios):
-    new = {s["id"]: s for s in scenarios if int(s["id"][1:]) >= 26}
+    new = {s["id"]: s for s in scenarios if 26 <= int(s["id"][1:]) <= 33}
     assert list(new) == [f"S{n}" for n in range(26, 34)]
     for sid in ("S26", "S27", "S28"):
         s = new[sid]
@@ -251,3 +251,21 @@ def test_the_eight_new_scenarios_are_in_the_file_and_each_action_turn_points_at_
     for sid, count in (("S32", 2), ("S33", 5)):
         assert new[sid]["kind"] == "policy_followup" and len(new[sid]["messages"]) == count and new[sid]["messages"][-1] == "And to an Amazon Pay balance?"
         assert new[sid]["select"] == "persona:Policy questions" and "action_turn" not in new[sid]
+
+
+# --- phase 14i: the 30 E9 adversarial scenarios (S34 to S63) ----------------------------------------------------------
+def test_the_thirty_e9_scenarios_load_with_unique_ids_known_kinds_and_only_known_placeholders(scenarios):
+    import string
+    assert len(scenarios) == 63
+    e9 = [s for s in scenarios if int(s["id"][1:]) >= 34]
+    assert [s["id"] for s in e9] == [f"S{n}" for n in range(34, 64)]
+    assert len({s["id"] for s in scenarios}) == 63
+    allowed = {"product", "order_id", "item_id", "other_order_id"}
+    for s in e9:
+        assert s["kind"] in KINDS, s["id"]
+        assert s["title"].startswith("E9 "), s["id"]
+        assert runner.action_turn_problem(s) is None, s["id"]
+        for m in s["messages"]:
+            fields = {f for _, f, _, _ in string.Formatter().parse(m) if f}
+            assert fields <= allowed, (s["id"], fields - allowed)
+            m.format(product="p", order_id="o", item_id="i", other_order_id="x")      # the runner's own call must not raise

@@ -1,0 +1,5 @@
+name = "e9-adversarial"
+note = "E9: 30 tricky and hostile scenarios (S34 to S63) on top of the 33 existing ones, with the adopted defaults."
+checks = ["scenarios"]
+repeat = 2
+cost_limit_usd = 0.25
