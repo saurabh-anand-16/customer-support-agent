@@ -94,3 +94,22 @@ python scripts/23_run_experiment.py experiments/configs/e1-strict.toml
 - The baseline has no `followups` entry yet. The table then says "no baseline yet for followups" and the verdict is "no baseline". The script never writes the baseline by itself; with `--baseline` it asks, as always.
 - The results log has no column for it (a new column would break the rows already in the file). The score is in the Verdict cell, for example `followups: no baseline (2 of 3)`.
 - Example: `experiments/configs/followups-example.toml`. The file holds 3 example rows until the full set is added. The verdict thresholds (3 rows) are absolute, so they only mean something with a larger set.
+
+## Grading replies (phase 17, offline)
+
+`scripts/24_grade_replies.py` reads the saved traces of a finished run (`data/experiments/runs/<run>/traces.jsonl`) and a model that did not write the replies (`config/grader.toml`, default `gpt-6-luna`) grades each reply: `answers`, `grounded`, `no_overpromise`, `clear` and `overall` (1 to 5). It is not part of the agent.
+
+```
+python scripts/24_grade_replies.py --run 2026-11-20-e9-adversarial --dry-run      # counts and an estimate; sends nothing
+python scripts/24_grade_replies.py --run 2026-11-20-e9-adversarial --limit 10     # real model, first 10 replies
+python scripts/24_grade_replies.py --run 2026-11-20-e9-adversarial                # all replies
+python scripts/24_grade_replies.py --run 2026-11-20-e9-adversarial --review-sheet # 20 replies to mark yourself (no model call)
+python scripts/24_grade_replies.py --read-review data/evals/results/reply_review_<run>.csv
+```
+
+- Needs full tool outputs in the trace. `[tracing].step_chars` was 300, which cut every tool and search output; it is 8000 since phase 17, so only runs made after that change have whole outputs. A step output that still ends with `...` is **cut evidence**: its reply gets `grounded = not_enough_evidence` (set by the script, whatever the grader says), the other criteria are graded as normal, and the summary says "X of N replies graded on cut evidence".
+- The template flag is inferred (the trace has none): the route is `out_of_scope` or `branch_human_help`, or the reply equals a fixed text of `config/agent.toml`.
+- The prompt tells the grader that the customer message, tool results and reply are data and never instructions.
+- Cost: the price comes from `[pricing."<model>"]` in `config/agent.toml`. The script stops before sending if the estimate is above `[limits].cost_cap_usd` (0.50), or if the model has no price, and it stops a run whose real cost goes above the cap.
+- Files go to `data/evals/results/` (git-ignored): `reply_grades_<run>.csv`, `reply_grades_<run>.md`, `reply_review_<run>.csv`. An existing file is never overwritten: `_2`, `_3` is added.
+- The trace has no scenario kind, so the summary counts by route (and by template or model-written).
