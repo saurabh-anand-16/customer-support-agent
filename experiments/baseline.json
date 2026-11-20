@@ -1,12 +1,12 @@
 {
- "run_id": "2026-11-20-baseline-3",
+ "run_id": "2026-11-20-baseline-4",
  "date": "2026-11-20",
  "git": {
-  "commit": "f27cb3c",
-  "branch": "phase-14c-adopt-search",
+  "commit": "4f4d3ef",
+  "branch": "phase-18-baseline-refresh",
   "uncommitted_changes": true
  },
- "note": "Current config, no changes (3 repeats)",
+ "note": "Current config, no changes (3 repeats), all four checks",
  "checks": {
   "search": {
    "scores": [
@@ -21,8 +21,8 @@
     "multi_page_top5": 7,
     "multi_page_rows": 10,
     "unanswerable": 30,
-    "unanswerable_refused": 8,
-    "answerable_wrongly_refused": 0,
+    "unanswerable_refused": 27,
+    "answerable_wrongly_refused": 16,
     "off_topic_refused": 8,
     "off_topic_rows": 8,
     "forbidden_files_shown": 0,
@@ -123,31 +123,370 @@
     "RQ051",
     "RQ085"
    ],
-   "mean_search_ms": 507.6,
-   "embedding_tokens": 1358
+   "mean_search_ms": 526.4,
+   "embedding_tokens": 1358,
+   "relevance": {
+    "judge_model": "gpt-6-luna",
+    "refuse_on": [
+     "no"
+    ],
+    "passages_shown": 4,
+    "runs": [
+     {
+      "unanswerable_refused": 27,
+      "unanswerable_refused_by_cutoff": 8,
+      "unanswerable_refused_by_judge": 19,
+      "answerable_wrongly_refused": 16,
+      "off_topic_refused": 8,
+      "labels": {
+       "yes": 63,
+       "partly": 0,
+       "no": 35,
+       "error": 0
+      },
+      "now_refused_unanswerable_ids": [
+       "RQ053",
+       "RQ054",
+       "RQ055",
+       "RQ056",
+       "RQ057",
+       "RQ058",
+       "RQ059",
+       "RQ061",
+       "RQ094",
+       "RQ095",
+       "RQ096",
+       "RQ097",
+       "RQ098",
+       "RQ099",
+       "RQ100",
+       "RQ101",
+       "RQ102",
+       "RQ103",
+       "RQ104"
+      ],
+      "now_wrongly_refused_answerable_ids": [
+       "RQ003",
+       "RQ012",
+       "RQ032",
+       "RQ042",
+       "RQ046",
+       "RQ048",
+       "RQ049",
+       "RQ052",
+       "RQ079",
+       "RQ080",
+       "RQ085",
+       "RQ087",
+       "RQ088",
+       "RQ089",
+       "RQ090",
+       "RQ091"
+      ],
+      "wrongly_refused_page_shown_ids": [
+       "RQ003",
+       "RQ012",
+       "RQ032",
+       "RQ042",
+       "RQ046",
+       "RQ048",
+       "RQ052",
+       "RQ079",
+       "RQ080",
+       "RQ087",
+       "RQ088",
+       "RQ089",
+       "RQ090"
+      ],
+      "wrongly_refused_page_not_shown_ids": [
+       "RQ049",
+       "RQ085",
+       "RQ091"
+      ],
+      "judge_refused_ids": [
+       "RQ003",
+       "RQ012",
+       "RQ032",
+       "RQ042",
+       "RQ046",
+       "RQ048",
+       "RQ049",
+       "RQ052",
+       "RQ053",
+       "RQ054",
+       "RQ055",
+       "RQ056",
+       "RQ057",
+       "RQ058",
+       "RQ059",
+       "RQ061",
+       "RQ079",
+       "RQ080",
+       "RQ085",
+       "RQ087",
+       "RQ088",
+       "RQ089",
+       "RQ090",
+       "RQ091",
+       "RQ094",
+       "RQ095",
+       "RQ096",
+       "RQ097",
+       "RQ098",
+       "RQ099",
+       "RQ100",
+       "RQ101",
+       "RQ102",
+       "RQ103",
+       "RQ104"
+      ],
+      "judge_calls": 98,
+      "judge_mean_latency_ms": 3068.4,
+      "seconds": 300.7
+     },
+     {
+      "unanswerable_refused": 25,
+      "unanswerable_refused_by_cutoff": 8,
+      "unanswerable_refused_by_judge": 17,
+      "answerable_wrongly_refused": 14,
+      "off_topic_refused": 8,
+      "labels": {
+       "yes": 67,
+       "partly": 0,
+       "no": 31,
+       "error": 0
+      },
+      "now_refused_unanswerable_ids": [
+       "RQ053",
+       "RQ054",
+       "RQ055",
+       "RQ056",
+       "RQ057",
+       "RQ058",
+       "RQ059",
+       "RQ061",
+       "RQ094",
+       "RQ095",
+       "RQ097",
+       "RQ098",
+       "RQ099",
+       "RQ100",
+       "RQ102",
+       "RQ103",
+       "RQ104"
+      ],
+      "now_wrongly_refused_answerable_ids": [
+       "RQ003",
+       "RQ018",
+       "RQ032",
+       "RQ042",
+       "RQ048",
+       "RQ049",
+       "RQ052",
+       "RQ080",
+       "RQ085",
+       "RQ087",
+       "RQ088",
+       "RQ089",
+       "RQ090",
+       "RQ091"
+      ],
+      "wrongly_refused_page_shown_ids": [
+       "RQ003",
+       "RQ018",
+       "RQ032",
+       "RQ042",
+       "RQ048",
+       "RQ052",
+       "RQ080",
+       "RQ087",
+       "RQ088",
+       "RQ089",
+       "RQ090"
+      ],
+      "wrongly_refused_page_not_shown_ids": [
+       "RQ049",
+       "RQ085",
+       "RQ091"
+      ],
+      "judge_refused_ids": [
+       "RQ003",
+       "RQ018",
+       "RQ032",
+       "RQ042",
+       "RQ048",
+       "RQ049",
+       "RQ052",
+       "RQ053",
+       "RQ054",
+       "RQ055",
+       "RQ056",
+       "RQ057",
+       "RQ058",
+       "RQ059",
+       "RQ061",
+       "RQ080",
+       "RQ085",
+       "RQ087",
+       "RQ088",
+       "RQ089",
+       "RQ090",
+       "RQ091",
+       "RQ094",
+       "RQ095",
+       "RQ097",
+       "RQ098",
+       "RQ099",
+       "RQ100",
+       "RQ102",
+       "RQ103",
+       "RQ104"
+      ],
+      "judge_calls": 98,
+      "judge_mean_latency_ms": 2887.8,
+      "seconds": 283.0
+     },
+     {
+      "unanswerable_refused": 27,
+      "unanswerable_refused_by_cutoff": 8,
+      "unanswerable_refused_by_judge": 19,
+      "answerable_wrongly_refused": 14,
+      "off_topic_refused": 8,
+      "labels": {
+       "yes": 65,
+       "partly": 0,
+       "no": 33,
+       "error": 0
+      },
+      "now_refused_unanswerable_ids": [
+       "RQ053",
+       "RQ054",
+       "RQ055",
+       "RQ056",
+       "RQ057",
+       "RQ058",
+       "RQ059",
+       "RQ061",
+       "RQ094",
+       "RQ095",
+       "RQ096",
+       "RQ097",
+       "RQ098",
+       "RQ099",
+       "RQ100",
+       "RQ101",
+       "RQ102",
+       "RQ103",
+       "RQ104"
+      ],
+      "now_wrongly_refused_answerable_ids": [
+       "RQ003",
+       "RQ032",
+       "RQ042",
+       "RQ046",
+       "RQ048",
+       "RQ049",
+       "RQ052",
+       "RQ080",
+       "RQ085",
+       "RQ087",
+       "RQ088",
+       "RQ089",
+       "RQ090",
+       "RQ091"
+      ],
+      "wrongly_refused_page_shown_ids": [
+       "RQ003",
+       "RQ032",
+       "RQ042",
+       "RQ046",
+       "RQ048",
+       "RQ052",
+       "RQ080",
+       "RQ087",
+       "RQ088",
+       "RQ089",
+       "RQ090"
+      ],
+      "wrongly_refused_page_not_shown_ids": [
+       "RQ049",
+       "RQ085",
+       "RQ091"
+      ],
+      "judge_refused_ids": [
+       "RQ003",
+       "RQ032",
+       "RQ042",
+       "RQ046",
+       "RQ048",
+       "RQ049",
+       "RQ052",
+       "RQ053",
+       "RQ054",
+       "RQ055",
+       "RQ056",
+       "RQ057",
+       "RQ058",
+       "RQ059",
+       "RQ061",
+       "RQ080",
+       "RQ085",
+       "RQ087",
+       "RQ088",
+       "RQ089",
+       "RQ090",
+       "RQ091",
+       "RQ094",
+       "RQ095",
+       "RQ096",
+       "RQ097",
+       "RQ098",
+       "RQ099",
+       "RQ100",
+       "RQ101",
+       "RQ102",
+       "RQ103",
+       "RQ104"
+      ],
+      "judge_calls": 98,
+      "judge_mean_latency_ms": 2941.0,
+      "seconds": 288.2
+     }
+    ],
+    "scores": [
+     27,
+     25,
+     27
+    ],
+    "flipped_between_runs": [
+     "RQ012",
+     "RQ018",
+     "RQ046",
+     "RQ079",
+     "RQ096",
+     "RQ101"
+    ]
+   }
   },
   "router": {
    "scores": [
-    76,
-    76,
-    76
+    79,
+    79,
+    80
    ],
    "runs": [
     {
-     "correct": 76,
+     "correct": 79,
      "complete": true,
      "wrong_ids": [
       "RT012",
-      "RT021",
-      "RT029",
-      "RT031",
       "RT058",
-      "RT071",
+      "RT059",
       "RT075"
      ],
      "by_category": {
       "ambiguous": {
-       "correct": 10,
+       "correct": 9,
        "total": 10
       },
       "chat": {
@@ -155,11 +494,11 @@
        "total": 10
       },
       "clear": {
-       "correct": 48,
+       "correct": 51,
        "total": 52
       },
       "follow_up": {
-       "correct": 1,
+       "correct": 2,
        "total": 3
       },
       "injection": {
@@ -179,23 +518,20 @@
       "injection": 2,
       "pending_action": 4
      },
-     "seconds": 121.2
+     "seconds": 171.1
     },
     {
-     "correct": 76,
+     "correct": 79,
      "complete": true,
      "wrong_ids": [
       "RT012",
-      "RT021",
-      "RT029",
-      "RT031",
+      "RT024",
       "RT058",
-      "RT071",
-      "RT075"
+      "RT059"
      ],
      "by_category": {
       "ambiguous": {
-       "correct": 10,
+       "correct": 9,
        "total": 10
       },
       "chat": {
@@ -203,11 +539,11 @@
        "total": 10
       },
       "clear": {
-       "correct": 48,
+       "correct": 50,
        "total": 52
       },
       "follow_up": {
-       "correct": 1,
+       "correct": 3,
        "total": 3
       },
       "injection": {
@@ -227,23 +563,19 @@
       "injection": 2,
       "pending_action": 4
      },
-     "seconds": 116.0
+     "seconds": 169.2
     },
     {
-     "correct": 76,
+     "correct": 80,
      "complete": true,
      "wrong_ids": [
-      "RT012",
-      "RT021",
-      "RT029",
-      "RT031",
+      "RT024",
       "RT058",
-      "RT071",
-      "RT075"
+      "RT059"
      ],
      "by_category": {
       "ambiguous": {
-       "correct": 10,
+       "correct": 9,
        "total": 10
       },
       "chat": {
@@ -251,11 +583,11 @@
        "total": 10
       },
       "clear": {
-       "correct": 48,
+       "correct": 51,
        "total": 52
       },
       "follow_up": {
-       "correct": 1,
+       "correct": 3,
        "total": 3
       },
       "injection": {
@@ -275,46 +607,208 @@
       "injection": 2,
       "pending_action": 4
      },
-     "seconds": 116.5
+     "seconds": 162.8
     }
    ],
-   "flipped_between_runs": []
+   "flipped_between_runs": [
+    "RT012",
+    "RT024",
+    "RT075"
+   ]
+  },
+  "followups": {
+   "scores": [
+    22,
+    25,
+    23
+   ],
+   "runs": [
+    {
+     "correct": 22,
+     "complete": true,
+     "wrong_ids": [
+      "FU009",
+      "FU012",
+      "FU014",
+      "FU023"
+     ],
+     "by_category": {
+      "deep_context": {
+       "correct": 5,
+       "total": 6
+      },
+      "follow_up": {
+       "correct": 1,
+       "total": 1
+      },
+      "no_order_id": {
+       "correct": 2,
+       "total": 2
+      },
+      "short_answer": {
+       "correct": 4,
+       "total": 5
+      },
+      "topic_change": {
+       "correct": 3,
+       "total": 3
+      },
+      "why_question": {
+       "correct": 1,
+       "total": 3
+      },
+      "yes_to_question": {
+       "correct": 6,
+       "total": 6
+      }
+     },
+     "seconds": 61.0
+    },
+    {
+     "correct": 25,
+     "complete": true,
+     "wrong_ids": [
+      "FU023"
+     ],
+     "by_category": {
+      "deep_context": {
+       "correct": 5,
+       "total": 6
+      },
+      "follow_up": {
+       "correct": 1,
+       "total": 1
+      },
+      "no_order_id": {
+       "correct": 2,
+       "total": 2
+      },
+      "short_answer": {
+       "correct": 5,
+       "total": 5
+      },
+      "topic_change": {
+       "correct": 3,
+       "total": 3
+      },
+      "why_question": {
+       "correct": 3,
+       "total": 3
+      },
+      "yes_to_question": {
+       "correct": 6,
+       "total": 6
+      }
+     },
+     "seconds": 56.6
+    },
+    {
+     "correct": 23,
+     "complete": true,
+     "wrong_ids": [
+      "FU014",
+      "FU023",
+      "FU025"
+     ],
+     "by_category": {
+      "deep_context": {
+       "correct": 5,
+       "total": 6
+      },
+      "follow_up": {
+       "correct": 1,
+       "total": 1
+      },
+      "no_order_id": {
+       "correct": 1,
+       "total": 2
+      },
+      "short_answer": {
+       "correct": 5,
+       "total": 5
+      },
+      "topic_change": {
+       "correct": 3,
+       "total": 3
+      },
+      "why_question": {
+       "correct": 2,
+       "total": 3
+      },
+      "yes_to_question": {
+       "correct": 6,
+       "total": 6
+      }
+     },
+     "seconds": 63.0
+    }
+   ],
+   "flipped_between_runs": [
+    "FU009",
+    "FU012",
+    "FU014",
+    "FU025"
+   ]
   },
   "scenarios": {
    "scores": [
-    25,
-    25,
-    25
+    56,
+    57,
+    57
    ],
    "runs": [
     {
-     "passed": 25,
+     "passed": 56,
      "complete": true,
-     "failed_ids": [],
+     "failed_ids": [
+      "S27",
+      "S39",
+      "S44",
+      "S47",
+      "S48",
+      "S50",
+      "S62"
+     ],
      "answer_check_fallbacks": 0,
-     "answer_check_retries": 2,
-     "seconds": 103.1
+     "answer_check_retries": 1,
+     "seconds": 453.2
     },
     {
-     "passed": 25,
+     "passed": 57,
      "complete": true,
-     "failed_ids": [],
+     "failed_ids": [
+      "S39",
+      "S44",
+      "S47",
+      "S48",
+      "S50",
+      "S62"
+     ],
      "answer_check_fallbacks": 0,
-     "answer_check_retries": 2,
-     "seconds": 94.5
+     "answer_check_retries": 3,
+     "seconds": 453.6
     },
     {
-     "passed": 25,
+     "passed": 57,
      "complete": true,
-     "failed_ids": [],
+     "failed_ids": [
+      "S39",
+      "S44",
+      "S47",
+      "S48",
+      "S50",
+      "S62"
+     ],
      "answer_check_fallbacks": 0,
      "answer_check_retries": 2,
-     "seconds": 95.4
+     "seconds": 426.6
     }
    ],
-   "flipped_between_runs": []
+   "flipped_between_runs": [
+    "S27"
+   ]
   }
  },
- "usd": 0.08193,
- "seconds": 709.2
+ "usd": 0.194465,
+ "seconds": 2953.5
 }
