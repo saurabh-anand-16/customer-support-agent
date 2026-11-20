@@ -6,6 +6,8 @@ Steps for one message:
      standalone question ("why not?" -> "why can't a ... be returned?"). The trace records the original and the result.
   2. search_policy runs (through the adapter, out-of-scope passages never asked for). If no passage counts as an
      answer, the reply is the fixed no_policy_match text and the model is not asked anything more.
+  2b. Phase 14d: if [branches.relevance_check] is switched on, one short judge call (relevance.py) says whether the passages answer the
+     question. A label in refuse_on ends the message with the same fixed reply and no answer call. A judge that fails is ignored.
   3. The model sees the numbered passages and may call get_refund_timeline (or search again). It answers using only
      them and lists the numbers it used. The citations in the reply are written by code from the passages it used:
      a number that was not returned is dropped, and an answer with no valid citation becomes the no-match reply.
@@ -13,6 +15,7 @@ Steps for one message:
 from ..checks import check
 from .base import (Branch, BranchContext, BranchResult, Run, ask_model, check_answer, conversation_text, fill, parse_object,
                    tool_loop)
+from .relevance import check_relevance
 
 
 class PolicyQuestionBranch(Branch):
@@ -88,6 +91,15 @@ class PolicyQuestionBranch(Branch):
         if not output.get("results"):                          # nothing counts as an answer: fixed reply, no answer call
             run.notes["no_match"] = True
             return BranchResult(b.replies["no_policy_match"], run)
+
+        relevance = b.relevance_check
+        if relevance is not None and relevance.enabled:        # phase 14d: off by default; with it off nothing below this line runs
+            verdict = check_relevance(ctx.cfg, ctx.chat, query, output["results"])
+            run.notes["relevance_check"] = verdict.info
+            run.model_calls.append({"purpose": "relevance_check", "latency_ms": verdict.latency_ms, "raw_output": verdict.raw_output})
+            if verdict.refuse:                                  # the passages do not answer it: the same fixed reply as "no match", no answer call
+                run.notes["no_match"] = True
+                return BranchResult(b.replies["no_policy_match"], run)
 
         shown = self.add_passages(ctx, run, record)
         first = f"{conversation_text(ctx)}\n\nStandalone question: {query}\n\nPolicy passages:\n{shown}"

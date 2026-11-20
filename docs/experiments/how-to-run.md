@@ -69,3 +69,18 @@ Every run saves `data/experiments/runs/<date>-<name>/run.json` (not committed) a
 `python scripts/23_run_experiment.py --rebuild-log` rebuilds the other columns from the run files.
 
 An adopted change is copied into the real config by hand, in its own commit. Adopt only if the target improves by at least 3 rows, no safety check breaks, and the cost is within the limit (rule 8 of the plan).
+
+## E1: the relevance check (phase 14d)
+
+The policy branch can ask a cheap judge model, after search, whether the passages answer the question. It is off in `config/agent.toml` (`[branches.relevance_check]`, `enabled = false`). The experiment files `experiments/configs/e1-strict.toml` (refuse on "no" and "partly") and `e1-lenient.toml` (refuse on "no" only) switch it on with `[override.agent.branches.relevance_check]`. Both run the search check only.
+
+```
+python scripts/23_run_experiment.py experiments/configs/e1-strict.toml --dry-run
+python scripts/23_run_experiment.py experiments/configs/e1-strict.toml
+```
+
+- The search still runs once. The judge runs `repeat` times (default 3), on the questions the cut-off lets through (about 106 calls a run). The dry run shows the estimate (about $0.07 for three runs of gpt-6-luna).
+- The two lines "unanswerable refused" and "answerable wrongly refused" now include the judge's refusals (middle run). A block below the search numbers shows each run, the split between the cut-off and the judge, the label counts (yes, partly, no, errors), the rows the judge newly refused and newly wrongly refused, and the rows that changed between runs.
+- Verdict: better = unanswerable refused at least 3 above the baseline and answerable wrongly refused no more than 2; worse = answerable wrongly refused above 2, or unanswerable refused 3 or more below; noisy = the runs differ by 3 or more; unsafe = a safety check failed. The legend is printed under the table.
+- To try another judge model: `[override.agent.branches.relevance_check]` with `name = "gpt-4o-mini"`, `token_parameter = "max_tokens"` and `temperature = 0.0`, and a `[pricing."gpt-4o-mini"]` block (it already exists). `passages_shown` (2, 3 or 4) is the E1-d setting.
+- With the switch off, the search check prints exactly what it printed before.

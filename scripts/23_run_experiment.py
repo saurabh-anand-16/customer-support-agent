@@ -90,7 +90,9 @@ def main(argv=None) -> int:
     if est["unpriced_chat"] or est["total_usd"] > est["limit_usd"]:
         print("\nNot started. Fix the point above (or raise cost_limit_usd in the experiment file) and run again.", file=sys.stderr)
         return 3
-    needs_key = any(c in exp["checks"] for c in ("router", "scenarios")) or plan.rag_cfg.retrieval.strategy in ("vector", "hybrid") or plan.rag_cfg.rerank.method == "llm"
+    judge = plan.agent_cfg.branches.relevance_check
+    needs_key = (any(c in exp["checks"] for c in ("router", "scenarios")) or plan.rag_cfg.retrieval.strategy in ("vector", "hybrid") or plan.rag_cfg.rerank.method == "llm"
+                 or ("search" in exp["checks"] and judge is not None and judge.enabled))
     if needs_key and not read_secret(plan.agent_cfg.model.api_key_env, sup.ROOT / plan.agent_cfg.model.env_file):
         print(f"error: no API key: set {plan.agent_cfg.model.api_key_env} in the environment or in {plan.agent_cfg.model.env_file}", file=sys.stderr)
         return 2

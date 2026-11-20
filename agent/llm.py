@@ -45,11 +45,17 @@ class LlmError(RuntimeError):
 @dataclass(frozen=True)
 class ModelSettings:
     name: str
-    temperature: float
+    temperature: float | None     # None (no key in the config): the request does not send a temperature (some models accept only their default)
     max_output_tokens: int
     timeout_seconds: int
     api_key_env: str
     env_file: str
+    # Phase 14d: two optional settings for models that need other request options. With the defaults the request is exactly what it always was.
+    token_parameter: str = "max_tokens"       # the name of the output-token limit in the request: "max_tokens" or "max_completion_tokens"
+    reasoning_effort: str | None = None       # sent as "reasoning_effort" only when set
+
+
+TOKEN_PARAMETERS = ("max_tokens", "max_completion_tokens")
 
 
 @dataclass(frozen=True)
@@ -77,6 +83,22 @@ class ScopeSettings:
 
 
 @dataclass(frozen=True)
+class RelevanceSettings:
+    """[branches.relevance_check] (phase 14d, experiment E1): after policy search, one short model call says whether the passages answer the question.
+    Off by default. The model options (temperature, token_parameter, reasoning_effort) work as in [model]."""
+    enabled: bool
+    name: str
+    temperature: float | None
+    token_parameter: str
+    reasoning_effort: str | None
+    max_output_tokens: int
+    passages_shown: int
+    max_passage_chars: int
+    refuse_on: list
+    prompt: str
+
+
+@dataclass(frozen=True)
 class BranchSettings:
     """[branches]: the five branch flows (phase 4b). `name` is the branch model; nothing else names a model."""
     name: str
@@ -99,6 +121,7 @@ class BranchSettings:
     resolution_texts: dict
     approval_texts: dict
     replies: dict
+    relevance_check: RelevanceSettings | None = None     # phase 14d: None when the section is not in the file (the same as enabled = false)
 
 
 @dataclass(frozen=True)
@@ -293,7 +316,7 @@ REVIEW_DECISION_REPLIES = ("approved", "declined", "closed", "bad_decision", "ba
 REVIEW_DECISION_REPLY_FIELDS = {"reference", "message", "return_id", "limit"}
 
 _SPEC = {
-    "model": (ModelSettings, {"name": str, "temperature": float, "max_output_tokens": int, "timeout_seconds": int,
+    "model": (ModelSettings, {"name": str, "max_output_tokens": int, "timeout_seconds": int,
                               "api_key_env": str, "env_file": str}),
     "session": (SessionSettings, {"history_keep": int, "off_topic_limit": int, "friendly_kinds": list, "offer_in_reply": list}),
     "router": (RouterSettings, {"history_turns": int, "max_message_chars": int, "max_question_chars": int,
@@ -333,18 +356,32 @@ def _ok(value, tp) -> bool:
     return isinstance(value, tp)
 
 
-def _build(name: str, data, cls, spec: dict, where: str):
+# Phase 14d: options a model section may leave out, as {key: (type, value when absent)}. Only [model] and [branches.relevance_check] have them for now.
+MODEL_OPTIONS = {"temperature": (float, None), "token_parameter": (str, "max_tokens"), "reasoning_effort": (str, None)}
+
+RELEVANCE_SPEC = {"enabled": bool, "name": str, "max_output_tokens": int, "passages_shown": int, "max_passage_chars": int,
+                  "refuse_on": list, "prompt": str}
+
+
+def _build(name: str, data, cls, spec: dict, where: str, optional: dict | None = None):
+    optional = optional or {}
     if not isinstance(data, dict):
         raise AgentConfigError(f"{where}: [{name}] is missing or is not a table")
     for key in data:
-        if key not in spec:
-            raise AgentConfigError(f"{where}: unknown key '{key}' in [{name}]. Allowed keys: {', '.join(spec)}")
+        if key not in spec and key not in optional:
+            raise AgentConfigError(f"{where}: unknown key '{key}' in [{name}]. Allowed keys: {', '.join([*spec, *optional])}")
     for key, tp in spec.items():
         if key not in data:
             raise AgentConfigError(f"{where}: [{name}] is missing the key '{key}'")
         if not _ok(data[key], tp):
             raise AgentConfigError(f"{where}: [{name}].{key} must be of type {tp.__name__}, got {data[key]!r}")
-    values = {k: (float(v) if spec[k] is float else v) for k, v in data.items()}
+    for key, (tp, _default) in optional.items():
+        if key in data and not _ok(data[key], tp):
+            raise AgentConfigError(f"{where}: [{name}].{key} must be of type {tp.__name__}, got {data[key]!r}")
+    types = {**spec, **{k: tp for k, (tp, _) in optional.items()}}
+    values = {k: (float(v) if types[k] is float else v) for k, v in data.items()}
+    for key, (_tp, default) in optional.items():
+        values.setdefault(key, default)
     return cls(**values)
 
 
@@ -364,7 +401,16 @@ def load_agent_config(path: str | Path | None = None) -> AgentConfig:
         # [app] (phase 7) belongs to the Streamlit app, which reads and checks it itself (app/config.py). The agent only lets it be there.
         if key not in _SPEC and key not in ("replies", "app", "pricing"):
             raise AgentConfigError(f"{where}: unknown section [{key}]. Allowed: {', '.join([*_SPEC, 'replies', 'app', 'pricing'])}")
-    built = {name: _build(name, raw.get(name), cls, spec, where) for name, (cls, spec) in _SPEC.items()}
+    raw_branches, relevance_raw = raw.get("branches"), None
+    if isinstance(raw_branches, dict) and "relevance_check" in raw_branches:     # phase 14d: a sub-table of [branches], read on its own
+        raw_branches = dict(raw_branches)
+        relevance_raw = raw_branches.pop("relevance_check")
+    sections = {**raw, "branches": raw_branches}
+    built = {name: _build(name, sections.get(name), cls, spec, where, MODEL_OPTIONS if name == "model" else None)
+             for name, (cls, spec) in _SPEC.items()}
+    if relevance_raw is not None:
+        relevance = _build("branches.relevance_check", relevance_raw, RelevanceSettings, RELEVANCE_SPEC, where, MODEL_OPTIONS)
+        built["branches"] = dataclasses.replace(built["branches"], relevance_check=relevance)
     replies = raw.get("replies")
     if not isinstance(replies, dict):
         raise AgentConfigError(f"{where}: [replies] is missing or is not a table")
@@ -436,8 +482,7 @@ def _check(cfg: AgentConfig, where: str) -> None:
         for kind in listed:
             if kind not in r.kinds:
                 raise AgentConfigError(f"{where}: [session].{key} has '{kind}', which is not a kind in [router.kinds]")
-    if not 0 <= m.temperature <= 2:
-        raise AgentConfigError(f"{where}: [model].temperature must be between 0 and 2")
+    _check_model_options(m, "[model]", where)
     for label, value in (("[model].max_output_tokens", m.max_output_tokens), ("[model].timeout_seconds", m.timeout_seconds),
                          ("[session].history_keep", s.history_keep), ("[session].off_topic_limit", s.off_topic_limit),
                          ("[router].max_message_chars", r.max_message_chars), ("[router].max_question_chars", r.max_question_chars)):
@@ -614,7 +659,33 @@ def _check_answer_check(a: AnswerCheckSettings, where: str) -> None:
     _check_table(where, "answer_check.replies", a.replies, ANSWER_CHECK_REPLIES, ANSWER_CHECK_REPLY_FIELDS)
 
 
+def _check_model_options(m, label: str, where: str) -> None:
+    """The temperature (when there is one), token_parameter and reasoning_effort of [model] or [branches.relevance_check]."""
+    if m.temperature is not None and not 0 <= m.temperature <= 2:
+        raise AgentConfigError(f"{where}: {label}.temperature must be between 0 and 2")
+    if m.token_parameter not in TOKEN_PARAMETERS:
+        raise AgentConfigError(f"{where}: {label}.token_parameter must be one of {', '.join(TOKEN_PARAMETERS)}, got {m.token_parameter!r}")
+    if m.reasoning_effort is not None and not m.reasoning_effort.strip():
+        raise AgentConfigError(f"{where}: {label}.reasoning_effort must not be empty (leave the key out to send none)")
+
+
+def _check_relevance(r: RelevanceSettings, where: str) -> None:
+    label = "[branches.relevance_check]"
+    _check_model_options(r, label, where)
+    if not r.name.strip():
+        raise AgentConfigError(f"{where}: {label}.name (the judge model) must not be empty")
+    for key in ("max_output_tokens", "passages_shown", "max_passage_chars"):
+        if getattr(r, key) < 1:
+            raise AgentConfigError(f"{where}: {label}.{key} must be 1 or more")
+    if not r.refuse_on or any(x not in ("partly", "no") for x in r.refuse_on) or len(set(r.refuse_on)) != len(r.refuse_on):
+        raise AgentConfigError(f'{where}: {label}.refuse_on must list "no", "partly" or both (never "yes")')
+    if not r.prompt.strip():
+        raise AgentConfigError(f"{where}: {label}.prompt must not be empty")
+
+
 def _check_branches(b: BranchSettings, where: str) -> None:
+    if b.relevance_check is not None:
+        _check_relevance(b.relevance_check, where)
     if not 0 <= b.temperature <= 2:
         raise AgentConfigError(f"{where}: [branches].temperature must be between 0 and 2")
     for key in ("max_output_tokens", "tool_round_limit", "max_message_chars", "max_question_chars", "rewrite_max_chars",
@@ -694,10 +765,14 @@ class OpenAIChat(ChatModel):
     def complete(self, system, messages, settings):
         try:
             client = self._get_client(settings)
-            response = client.chat.completions.create(
-                model=settings.name, temperature=settings.temperature, max_tokens=settings.max_output_tokens,
-                response_format={"type": "json_object"},
-                messages=[{"role": "system", "content": system}, *messages])
+            request = {"model": settings.name, "response_format": {"type": "json_object"},
+                       "messages": [{"role": "system", "content": system}, *messages]}
+            if settings.temperature is not None:                       # phase 14d: no key in the config means no temperature is sent
+                request["temperature"] = settings.temperature
+            request[settings.token_parameter] = settings.max_output_tokens
+            if settings.reasoning_effort:
+                request["reasoning_effort"] = settings.reasoning_effort
+            response = client.chat.completions.create(**request)
             self._keep_usage(response)
             return response.choices[0].message.content or ""
         except (MissingKeyError, MissingDependencyError) as err:

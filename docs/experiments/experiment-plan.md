@@ -54,6 +54,8 @@ Every later number is compared with this table, with counts ("68 of 76"), never 
 ## The experiments
 
 ### E1: relevance check before answering (target: the 22 leaked questions)
+- **Status:** built (phase 14d) and **adopted as the default** with the v3 judge (`gpt-6-luna`, refuse on "no", limit 1200). The 25 scenarios with it on still have to be run (`experiments/configs/e1-adopted-scenarios.toml`).
+- **Results (106 questions, baseline unanswerable refused 8 of 30):** e1-strict 28 refused, 23 good ones wrongly refused (rejected); e1-lenient 12 refused, 0 wrong (rejected, too few caught); e1-prompt-v2 28 refused, 18 wrong, 9 to 13 judge errors a run (rejected; the output limit of 400 was used up by reasoning); **e1-prompt-v3 27 refused, about 14 of 76 wrongly refused (6 are policy_gap rows, 2 are search misses), 0 errors, about 2.5 s extra per policy question (adopted).** The goal of 22 or more refused was met; the limit of 2 or fewer wrongly refused was not, which is the known limit. Details: `docs/experiments/results-log.md` and `docs/builds/phase-14d-build.md`.
 - **Change:** after search, one cheap model call reads the question and the top passages and answers whether a passage states the answer. If not, the agent says the policy does not cover it.
 - **Target metrics:** unanswerable rows refused (baseline 8 of 30, goal at least 22 of 30); answerable rows wrongly refused (baseline 0, limit 2 of 76); honest reply on refused rows (the out-of-scope or "not covered" kind is used, no invented answer).
 - **Cost limit:** one extra small call per policy question, under 1 second. Report latency and cost per policy question.

@@ -38,6 +38,7 @@ MEASURED = {"router": {"calls": 103, "tokens_in": 100105, "tokens_out": 2775},
             "scenarios": {"calls": 80, "tokens_in": 78561, "tokens_out": 2305}}
 QUERY_TOKENS = 20          # a search question is about this many tokens (a rough figure, only used for the estimate)
 CHARS_PER_TOKEN = 4        # the usual rough rule, only used for the estimate (no tokenizer package is installed)
+JUDGE_OUTPUT_TOKENS = 200  # phase 14d: output of one relevance-check call, reasoning tokens included (a guess for the estimate only)
 
 
 class ExperimentError(Exception):
@@ -318,6 +319,14 @@ def estimate(plan: Plan) -> dict:
                 tokens += sum(len(c.text) for c in chunks) // CHARS_PER_TOKEN
                 notes.append(f"The settings change the index, so a new one is built in memory ({len(chunks)} chunks); the real index is not touched.")
             add("search (embeddings)", r.embedding.model, questions, tokens, 0, kind="embed")
+        judge = a.branches.relevance_check
+        if judge is not None and judge.enabled:
+            # Phase 14d: one judge call per question the cut-off lets through, per run. Counted as every question (an upper bound).
+            per_call_in = (len(judge.prompt) + judge.passages_shown * judge.max_passage_chars) // CHARS_PER_TOKEN + QUERY_TOKENS + 10
+            per_call_out = JUDGE_OUTPUT_TOKENS
+            add("search (judge)", judge.name, questions * n, questions * n * per_call_in, questions * n * per_call_out)
+            notes.append(f"The relevance check ({judge.name}) is called about {questions} times per run, {n} runs: each call is about {per_call_in} tokens in and "
+                         f"{per_call_out} out (the output includes the model's reasoning tokens; a guess). Cache-write tokens are not counted by the trace or here.")
         if r.rerank.method == "llm":
             add("search (llm rerank)", r.rerank.llm_model, questions, questions * (r.rerank.candidates * r.rerank.llm_max_chars // CHARS_PER_TOKEN + 150),
                 questions * 8 * r.rerank.candidates // 4)
@@ -477,7 +486,9 @@ def run_search(plan: Plan, meter: Meter, shared: dict) -> dict:
     before = meter.snapshot()
     built = prepare_search(plan, shared)
     cfg, parts = shared["search"]["cfg"], shared["search"]
-    records, cost = m07.run_profile(cfg, rows, parts.get("chunks"), parts.get("store"), parts.get("embedder"), say=lambda *a, **k: None)
+    judge = plan.agent_cfg.branches.relevance_check
+    judged = judge is not None and judge.enabled                     # phase 14d: with the switch off nothing below changes
+    records, cost = m07.run_profile(cfg, rows, parts.get("chunks"), parts.get("store"), parts.get("embedder"), say=lambda *a, **k: None, keep_text=judged)
     sep = cfg.metadata.heading_path_separator
     test_fraction = plan.agent_cfg.eval.test_fraction
     held_out_ids = {r["id"] for r in rows if split.split_for(r["id"], r["category"], test_fraction) == "test"}
@@ -504,6 +515,12 @@ def run_search(plan: Plan, meter: Meter, shared: dict) -> dict:
                 "by_category": {k: {"rows": int(v["rows"]), "answerable": int(v["answerable"]), "top5": int(v["hit5"])} for k, v in by.items()}}
 
     overall = summarize(records)
+    relevance = None
+    if judged:
+        relevance = run_relevance(plan, meter, m07, cfg, rows, records)
+        mid = relevance["runs"][_median_run(relevance["scores"])]            # the existing lines now include the judge's refusals (middle run)
+        overall.update(unanswerable_refused=mid["unanswerable_refused"], answerable_wrongly_refused=mid["answerable_wrongly_refused"],
+                       off_topic_refused=mid["off_topic_refused"])
     held = summarize([r for r in records if r["id"] in held_out_ids])
     top5_miss = [r["id"] for r in records if m07.parse_expected(r["expected"])
                  and not all(p is not None and p <= 5 for p in [m07.group_found_at(r["results"], g, sep) for g in m07.parse_expected(r["expected"])])]
@@ -511,7 +528,72 @@ def run_search(plan: Plan, meter: Meter, shared: dict) -> dict:
     return {"rows": len(rows), "not_reviewed_left_out": unreviewed, "overall": overall, "held_out": held, "held_out_rows": len(held_out_ids),
             "top5_missed_ids": top5_miss, "scores": [overall["top5"]], "mean_search_ms": cost["mean_latency_ms"], "seconds": cost["seconds"],
             "embedding_tokens": usage["embedding_tokens"], "rerank_model_calls": cost["rerank_model_calls"], "rerank_failures": cost["rerank_failures"],
-            "usage": usage, **built}
+            "usage": usage, **built, **({"relevance": relevance} if relevance else {})}
+
+
+def run_relevance(plan: Plan, meter: Meter, m07, cfg, rows: list, records: list) -> dict:
+    """Phase 14d (experiment E1): after search, the same judge the agent uses (agent/branches/relevance.py, one function) reads each question
+    and its top passages, `repeat` times. Questions the cut-off already refuses get no call. Returns the numbers of every run."""
+    import time
+    from collections import Counter
+
+    from agent.branches.relevance import check_relevance
+    from agent.llm import OpenAIChat
+    acfg = plan.agent_cfg
+    judge = acfg.branches.relevance_check
+    chat = OpenAIChat(acfg.root)
+    questions = {r["id"]: r["question"] for r in rows}
+    let_through = {rec["id"]: m07.best_scores_rule(cfg, rec) for rec in records}        # False = the cut-off refuses it already
+    sep = cfg.metadata.heading_path_separator
+    shown_count = max(1, min(judge.passages_shown, acfg.branches.policy_top_k))          # how many passages the judge sees (same cap as the agent)
+
+    def page_shown(rec) -> bool:
+        """The page rule of the top-5 count (every expected group found, by file and heading), applied to the passages the judge was shown."""
+        shown = rec["results"][:shown_count]
+        return all(m07.group_found_at(shown, g, sep) is not None for g in m07.parse_expected(rec["expected"]))
+    runs = []
+    for _ in range(plan.exp["repeat"]):
+        before, started, got = meter.snapshot(), time.perf_counter(), {}
+        for rec in records:
+            if not let_through[rec["id"]]:
+                continue
+            meter.check_limit()
+            passages = [{"citation": x["citation"], "text": x["text"]} for x in rec["results"]]
+            got[rec["id"]] = check_relevance(acfg, chat, questions[rec["id"]], passages)
+        labels, unans, by_cutoff, by_judge, wrong, off_topic = Counter(), 0, 0, 0, 0, 0
+        now_refused, now_wrong, wrong_shown, wrong_missed = [], [], [], []
+        for rec in records:
+            answerable = bool(m07.parse_expected(rec["expected"]))
+            by_cut = not let_through[rec["id"]]
+            v = got.get(rec["id"])
+            by_j = bool(v and v.refuse)
+            if v is not None:
+                labels[v.label or "error"] += 1
+            if answerable:
+                wrong += by_cut or by_j
+                if by_j:
+                    now_wrong.append(rec["id"])
+                    (wrong_shown if page_shown(rec) else wrong_missed).append(rec["id"])
+            else:
+                unans += by_cut or by_j
+                by_cutoff += by_cut
+                by_judge += by_j
+                if by_j:
+                    now_refused.append(rec["id"])
+            if rec["category"] == "off_topic":
+                off_topic += by_cut or by_j
+        calls = list(got.values())
+        runs.append({"unanswerable_refused": unans, "unanswerable_refused_by_cutoff": by_cutoff, "unanswerable_refused_by_judge": by_judge,
+                     "answerable_wrongly_refused": wrong, "off_topic_refused": off_topic,
+                     "labels": {k: labels.get(k, 0) for k in ("yes", "partly", "no", "error")},
+                     "now_refused_unanswerable_ids": sorted(now_refused), "now_wrongly_refused_answerable_ids": sorted(now_wrong),
+                     "wrongly_refused_page_shown_ids": sorted(wrong_shown), "wrongly_refused_page_not_shown_ids": sorted(wrong_missed),
+                     "judge_refused_ids": sorted(i for i, v in got.items() if v.refuse),
+                     "judge_calls": len(calls), "judge_mean_latency_ms": round(sum(v.latency_ms for v in calls) / max(1, len(calls)), 1),
+                     "seconds": round(time.perf_counter() - started, 1), "usage": meter.since(before)})
+    flipped = sorted(set().union(*[set(r["judge_refused_ids"]) for r in runs]) - set.intersection(*[set(r["judge_refused_ids"]) for r in runs])) if runs else []
+    return {"judge_model": judge.name, "refuse_on": list(judge.refuse_on), "passages_shown": judge.passages_shown, "runs": runs,
+            "scores": [r["unanswerable_refused"] for r in runs], "flipped_between_runs": flipped}
 
 
 SAFE_ROUTER_CATEGORIES = ("injection", "pending_action")

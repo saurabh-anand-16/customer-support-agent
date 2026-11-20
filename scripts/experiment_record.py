@@ -70,10 +70,44 @@ def unsafe_reasons(check: str, result: dict, base: dict | None, db_changed: bool
     return why
 
 
+# Phase 14d (experiment E1): the verdict of a search run that used the relevance check, from the judge-aware numbers of the middle run.
+WRONGLY_REFUSED_LIMIT = 2
+
+
+def relevance_verdict(result: dict, base: dict | None, db_changed: bool) -> dict:
+    runs = result["relevance"]["runs"]
+    scores = result["relevance"]["scores"]
+    mid = runs[_median_run(scores)]
+    reasons = unsafe_reasons("search", result, base, db_changed)
+    if result["overall"].get("forbidden_files_shown"):
+        reasons.append("an out-of-scope page was shown")
+    bo = (base or {}).get("overall") or {}
+    base_unans = bo.get("unanswerable_refused")
+    out = {"score": mid["unanswerable_refused"], "scores": scores, "baseline": base_unans, "reasons": reasons,
+           "diff": None if base_unans is None else mid["unanswerable_refused"] - base_unans,
+           "unit": f"unanswerable refused of {result['overall']['unanswerable']}; answerable wrongly refused {mid['answerable_wrongly_refused']} of {result['overall']['answerable']}"}
+    wrong = mid["answerable_wrongly_refused"]
+    if reasons:
+        out["verdict"] = "unsafe"
+    elif len(scores) > 1 and max(scores) - min(scores) >= NOISY_SPREAD:
+        out["verdict"] = "noisy"
+    elif base_unans is None:
+        out["verdict"] = "no baseline"
+    elif wrong > WRONGLY_REFUSED_LIMIT or out["diff"] <= -WORSE_BY:
+        out["verdict"] = "worse"
+    elif out["diff"] >= BETTER_BY:
+        out["verdict"] = "better"
+    else:
+        out["verdict"] = "same"
+    return out
+
+
 def verdict_for(check: str, result: dict | None, base: dict | None, db_changed: bool) -> dict:
     """{"verdict", "score", "baseline", "diff", "reasons"} for one check."""
     if not result or result.get("error"):
         return {"verdict": "failed", "reasons": [result.get("error", "the check did not run")] if result else []}
+    if check == "search" and result.get("relevance"):
+        return relevance_verdict(result, base, db_changed)
     scores = result.get("scores", [])
     reasons = unsafe_reasons(check, result, base, db_changed)
     mine = middle(scores)
@@ -103,6 +137,8 @@ def lean(results: dict) -> dict:
         s = results["search"]
         keep["search"] = {"scores": s["scores"], "overall": s["overall"], "held_out": s["held_out"], "top5_missed_ids": s["top5_missed_ids"],
                           "mean_search_ms": s["mean_search_ms"], "embedding_tokens": s["embedding_tokens"]}
+        if s.get("relevance"):
+            keep["search"]["relevance"] = {**s["relevance"], "runs": [{k: v for k, v in x.items() if k != "usage"} for x in s["relevance"]["runs"]]}
     if "router" in results and not results["router"].get("error"):
         r = results["router"]
         keep["router"] = {"scores": r["scores"], "runs": [{k: x[k] for k in ("correct", "complete", "wrong_ids", "by_category", "safety_rows_correct", "seconds")} for x in r["runs"]],
@@ -135,6 +171,32 @@ def seconds_text(s) -> str:
 
 def fmt_scores(scores: list, mid) -> str:
     return "-" if not scores else (f"{mid}" if len(scores) == 1 else f"{mid} (runs {', '.join(map(str, scores))})")
+
+
+def relevance_lines(s: dict, bs: dict | None) -> list:
+    """The extra lines of a search run that used the relevance check (phase 14d): every run, the middle one, the labels, and the rows that moved."""
+    rel = s["relevance"]
+    runs, scores = rel["runs"], rel["scores"]
+    mid = runs[_median_run(scores)]
+    o = s["overall"]
+    bo = (bs or {}).get("overall") or {}
+    L = [f"  relevance check: judge {rel['judge_model']}, refuse on {', '.join(rel['refuse_on'])}, {rel['passages_shown']} passage(s) shown, {len(runs)} run(s)"]
+    L.append(f"    unanswerable refused per run: {', '.join(str(r['unanswerable_refused']) for r in runs)} of {o['unanswerable']} "
+             f"(baseline {bo.get('unanswerable_refused', '-')}); middle {mid['unanswerable_refused']}")
+    L.append(f"      by the cut-off / by the judge (middle run): {mid['unanswerable_refused_by_cutoff']} / {mid['unanswerable_refused_by_judge']}")
+    L.append(f"    answerable wrongly refused per run: {', '.join(str(r['answerable_wrongly_refused']) for r in runs)} of {o['answerable']} (baseline {bo.get('answerable_wrongly_refused', '-')})")
+    L.append("    judge labels per run (yes / partly / no / errors): " + "; ".join("/".join(str(r["labels"][k]) for k in ("yes", "partly", "no", "error")) for r in runs))
+    L.append(f"    unanswerable rows now refused by the judge (middle run): {', '.join(mid['now_refused_unanswerable_ids']) or 'none'}")
+    L.append(f"    answerable rows now wrongly refused by the judge (middle run): {', '.join(mid['now_wrongly_refused_answerable_ids']) or 'none'}")
+    if "wrongly_refused_page_shown_ids" in mid:       # runs saved before this split was added do not have it
+        L.append("    answerable rows wrongly refused by the judge, split (per run): the right page was shown to the judge / was not shown (search missed it): "
+                 + "; ".join(f"{len(r['wrongly_refused_page_shown_ids'])} / {len(r['wrongly_refused_page_not_shown_ids'])}" for r in runs))
+        L.append(f"      middle run, page shown: {', '.join(mid['wrongly_refused_page_shown_ids']) or 'none'}")
+        L.append(f"      middle run, page not shown: {', '.join(mid['wrongly_refused_page_not_shown_ids']) or 'none'}")
+    L.append(f"    rows the judge refused in some runs but not in all: {', '.join(rel['flipped_between_runs']) or 'none'}")
+    L.append(f"    judge calls per run: {', '.join(str(r['judge_calls']) for r in runs)}; mean {mid['judge_mean_latency_ms']} ms per call; "
+             f"cost per run: {', '.join(money(r['usage']['usd'] if not r['usage']['unpriced'] else None) for r in runs)}; time per run: {', '.join(seconds_text(r['seconds']) for r in runs)}")
+    return L
 
 
 def format_table(record: dict, baseline: dict | None) -> str:
@@ -170,6 +232,8 @@ def format_table(record: dict, baseline: dict | None) -> str:
         if bs:
             L.append(f"  rows whose top-5 result changed against the baseline: {', '.join(changed) or 'none'}"
                      + (f" (now missed: {', '.join(sorted(set(s['top5_missed_ids']) - set(bs['top5_missed_ids']))) or 'none'}; now found: {', '.join(sorted(set(bs['top5_missed_ids']) - set(s['top5_missed_ids']))) or 'none'})" if changed else ""))
+        if s.get("relevance"):
+            L += relevance_lines(s, bs)
     for check, unit in (("router", "of {rows} messages"), ("scenarios", "of {scenarios} scenarios")):
         if check not in res or res[check].get("error"):
             continue
@@ -208,12 +272,17 @@ def format_table(record: dict, baseline: dict | None) -> str:
     for check in record["experiment"]["checks"]:
         v = ver.get(check, {})
         shown = "-" if v.get("score") is None else f"{v['score']}" + ("" if v.get("baseline") is None else f" against {v['baseline']} ({v['diff']:+d})")
-        L.append(f"  {check:<10} {v.get('verdict', 'not run'):<12} {shown}   [{SCORE_NAME[check].format(answerable=res.get('search', {}).get('overall', {}).get('answerable', 76), rows=res.get('router', {}).get('rows', 83), scenarios=res.get('scenarios', {}).get('scenarios', 25))}]"
+        unit_text = v.get("unit") or SCORE_NAME[check].format(answerable=res.get("search", {}).get("overall", {}).get("answerable", 76), rows=res.get("router", {}).get("rows", 83), scenarios=res.get("scenarios", {}).get("scenarios", 25))
+        L.append(f"  {check:<10} {v.get('verdict', 'not run'):<12} {shown}   [{unit_text}]"
                  f"   cost {money(record['usage']['per_check'].get(check, {}).get('usd'))}, time {seconds_text(record['usage']['per_check'].get(check, {}).get('seconds'))}")
         for reason in v.get("reasons", []):
             L.append(f"             - {reason}")
     L.append("")
     L.append("  better = 3 or more above the baseline; same = within 2; worse = 3 or more below; noisy = the repeats differ by 3 or more; unsafe = a safety check failed.")
+    if res.get("search", {}).get("relevance"):
+        L.append(f"  With the relevance check on, the search verdict uses the middle run's judge-aware numbers: better = unanswerable refused at least {BETTER_BY} above the baseline and "
+                 f"answerable wrongly refused no more than {WRONGLY_REFUSED_LIMIT}; worse = answerable wrongly refused above {WRONGLY_REFUSED_LIMIT}, or unanswerable refused {WORSE_BY} or more below; "
+                 "noisy = the runs differ by 3 or more; unsafe = a safety check failed.")
     L.append("  The database hash " + ("CHANGED (the run is marked unsafe)." if record["guards"]["database_changed"] else "is unchanged.") +
              " Config files, the policy index and the embedding cache: " + ("unchanged." if not record["guards"]["other_changed"] else f"CHANGED: {', '.join(record['guards']['other_changed'])}."))
     return "\n".join(L)
@@ -237,12 +306,18 @@ def _cell(text) -> str:
 def log_row(record: dict) -> dict:
     res, ver = record["results"], record["verdicts"]
     score = lambda c: "-" if c not in record["experiment"]["checks"] else (str(ver.get(c, {}).get("score")) if ver.get(c, {}).get("score") is not None else ver.get(c, {}).get("verdict", "-"))    # noqa: E731
+    search = res.get("search") or {}
+    if search.get("relevance") and not search.get("error"):          # phase 14d: the column is top 5; the judge-aware numbers go beside it
+        mid = search["relevance"]["runs"][_median_run(search["relevance"]["scores"])]
+        search_cell = f"{search['overall']['top5']} (judge: {mid['unanswerable_refused']} of {search['overall']['unanswerable']} refused, {mid['answerable_wrongly_refused']} wrongly)"
+    else:
+        search_cell = score("search")
     t = record["usage"]["total"]
     verdict = ", ".join(f"{c}: {ver[c]['verdict']}" for c in record["experiment"]["checks"] if c in ver)
     if record["status"] != "complete":
         verdict += f" ({record['status']})"
     return {"Date": record["date"], "Name": record["run_id"][len(record["date"]) + 1:], "Note": record["experiment"]["note"],
-            "Search top 5 (of 76)": score("search"), "Router (of 83, middle)": score("router"), "Scenarios (of 25)": score("scenarios"),
+            "Search top 5 (of 76)": search_cell, "Router (of 83, middle)": score("router"), "Scenarios (of 25)": score("scenarios"),
             "Cost": money(t["usd"]) if not t["unpriced"] else f"{money(t['usd'])}+ (some not priced)", "Time": seconds_text(t["seconds"]), "Verdict": verdict}
 
 

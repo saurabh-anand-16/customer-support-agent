@@ -170,8 +170,15 @@ def make_pipeline(cfg, chunks, store=None, embedder=None):
     return Pipeline.build(cfg, chunks, store, embedder)
 
 
-def run_profile(cfg, rows, chunks=None, store=None, embedder=None, say=print) -> tuple[list[dict], dict]:
-    """Search every row with no no-match rule. Returns (records, cost) where cost counts calls and time."""
+def _citation(cfg, hit) -> str:
+    """The citation text policy search would give this hit (the judge sees the same labels as the agent)."""
+    from agent.policy_search import format_citation
+    return format_citation(cfg, {"heading_path": hit.heading_path, "source_file": hit.source_file, "copied_on": hit.copied_on})
+
+
+def run_profile(cfg, rows, chunks=None, store=None, embedder=None, say=print, keep_text=False) -> tuple[list[dict], dict]:
+    """Search every row with no no-match rule. Returns (records, cost) where cost counts calls and time.
+    keep_text (phase 14d): also keep each result's citation and text, for the relevance check of the experiment runner. The default records are unchanged."""
     chunks = chunks or chunk_documents(cfg, load_documents(cfg))
     pipeline = make_pipeline(cfg, chunks, store, embedder)
     flt = Filter.from_config(cfg, False)
@@ -200,8 +207,8 @@ def run_profile(cfg, rows, chunks=None, store=None, embedder=None, say=print) ->
             "id": row["id"], "category": row["category"], "expected": row["expected"],
             "forbidden_files": row.get("forbidden_files", ""), "n_hits": len(hits),
             "bm25_best": bests["bm25"], "vector_best": bests["vector"], "rerank_status": status,
-            "results": [{"source_file": h.source_file, "heading_path": h.heading_path,
-                         "score": (s if s is not None else h.score)} for h, s in ranked],
+            "results": [{"source_file": h.source_file, "heading_path": h.heading_path, "score": (s if s is not None else h.score),
+                         **({"citation": _citation(cfg, h), "text": h.text} if keep_text else {})} for h, s in ranked],
             "latency_ms": round((time.perf_counter() - t0) * 1000, 1)})
     failed = [r["rerank_status"] for r in records if r["rerank_status"] != "ok"]
     if failed and len(failed) == len(records):         # a profile whose reranker never ran is not a result: its numbers would equal the fused list's

@@ -296,7 +296,7 @@ def test_the_fixed_agent_config_loads_with_its_values(tmp_path):
 
 @pytest.mark.parametrize("changes, message", [
     ({"model": {"nme": "x"}}, "unknown key 'nme' in \\[model\\]"),
-    ({"model": {"temperature": None}}, "missing the key 'temperature'"),
+    ({"model": {"max_output_tokens": None}}, "missing the key 'max_output_tokens'"),     # phase 14d: temperature may now be left out of [model]
     ({"model": {"temperature": "hot"}}, "temperature must be of type float"),
     ({"model": {"temperature": 3.5}}, "between 0 and 2"),
     ({"session": {"off_topic_limit": 0}}, "off_topic_limit must be 1 or more"),
