@@ -1,0 +1,9 @@
+# Example: a search-only experiment (offline apart from a few embeddings). The index changes, so a new one is built in memory; the real index is not touched.
+# Only what differs from config/rag.toml is written. The table names are the real ones: [chunking] max_chars.
+name = "search-chunk-900"
+note = "Chunk size 900 instead of 1200"
+checks = ["search"]
+cost_limit_usd = 0.10
+
+[override.rag.chunking]
+max_chars = 900

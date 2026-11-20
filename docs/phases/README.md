@@ -39,7 +39,8 @@ Rules for these files:
 | 10 | Evaluation and tuning (retrieval, router, known problems, 23 end-to-end scenarios, full mutation run) | Done, in review ([build report](../builds/phase-10-build.md)); real-model runs done | 3 | [phase-10-evaluation-and-tuning.md](phase-10-evaluation-and-tuning.md) |
 | 11 and 12 | Developer tabs: Evaluation, Policy explorer, Assumptions (read-only; a Tests tab was dropped) | Built, in review ([build report](../builds/phase-11-build.md)); real-browser run done, no mutation check run | 2 | [phase-11-developer-tabs.md](phase-11-developer-tabs.md) |
 | 13 | How it works page, Limits and assumptions page, README with a generated results block, `docs/SOURCES.md`, screenshots | Built, in review ([build report](../builds/phase-13-build.md)); real-browser run with the real model done, no mutation check run | 1 to 2 | [phase-13-explain-and-readme.md](phase-13-explain-and-readme.md) |
-| 14 | CI, packaging, deployment, live demo link | Not started | 2 | |
+| 14 | Experiment runner: one script, one small config file per idea, numbers stored and compared with a baseline | Built, in review ([build report](../builds/phase-14-build.md)); the baseline run is waiting for the owner's go-ahead | 2 | [phase-14-experiment-runner.md](phase-14-experiment-runner.md) |
+| 15 | Deployment, live demo link | Not started | 2 | [phase-15-deployment.md](phase-15-deployment.md) |
 | Optional | MCP server around the tools | Not started | 1 | |
 
 Phase files for phases 4 and later are written when the phase before them finishes.

@@ -19,3 +19,6 @@ data/demo/
 
 # Full evaluation result files (phase 10); the small summary.json next to them is committed
 data/evals/results/
+
+# Experiment run folders (phase 14); experiments/baseline.json and docs/experiments/results-log.md are committed
+data/experiments/runs/

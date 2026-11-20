@@ -1,0 +1,10 @@
+# Example: a router-only experiment. A router change shows up in the router check; the scenarios are left out to keep the cost small.
+# Tables mirror config/agent.toml: [model] is the router's model. Each override key must already exist there (a typo stops the run).
+name = "router-example"
+note = "Router temperature 0.3 instead of the current value"
+checks = ["router"]
+repeat = 3
+cost_limit_usd = 0.25
+
+[override.agent.model]
+temperature = 0.3

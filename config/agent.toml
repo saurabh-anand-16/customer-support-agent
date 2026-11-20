@@ -209,6 +209,13 @@ input_per_million = 0.15
 output_per_million = 0.60
 cached_input_per_million = 0.075
 
+[pricing."text-embedding-3-small"]
+input_per_million = 0.02
+
+[pricing."text-embedding-3-large"]
+input_per_million = 0.13
+
+
 [eval]
 # Used by scripts/eval_split.py (shared with phase 3d): the share of rows that go to the test split.
 test_fraction = 0.33

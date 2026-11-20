@@ -1,0 +1,7 @@
+# The baseline: no overrides, so this is the setup as it is now. Three repeats show how much the model checks vary by themselves.
+# Run once with --baseline to save its numbers as experiments/baseline.json (the script asks first).
+name = "baseline"
+note = "Current config, no changes (3 repeats)"
+checks = ["search", "router", "scenarios"]
+repeat = 3
+cost_limit_usd = 0.50

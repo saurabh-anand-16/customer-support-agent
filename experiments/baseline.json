@@ -1,0 +1,323 @@
+{
+ "run_id": "2026-11-20-baseline-2",
+ "date": "2026-11-20",
+ "git": {
+  "commit": "fcfab66",
+  "branch": "phase-14-experiment-runner",
+  "uncommitted_changes": true
+ },
+ "note": "Current config, no changes (3 repeats)",
+ "checks": {
+  "search": {
+   "scores": [
+    68
+   ],
+   "overall": {
+    "answerable": 76,
+    "first_place": 46,
+    "top3": 65,
+    "top5": 68,
+    "mrr": 0.796,
+    "multi_page_top5": 7,
+    "multi_page_rows": 10,
+    "unanswerable": 30,
+    "unanswerable_refused": 8,
+    "answerable_wrongly_refused": 0,
+    "off_topic_refused": 8,
+    "off_topic_rows": 8,
+    "forbidden_files_shown": 0,
+    "by_category": {
+     "exact_wording": {
+      "rows": 10,
+      "answerable": 10,
+      "top5": 10
+     },
+     "multi_page": {
+      "rows": 10,
+      "answerable": 10,
+      "top5": 7
+     },
+     "off_topic": {
+      "rows": 8,
+      "answerable": 0,
+      "top5": 0
+     },
+     "paraphrase": {
+      "rows": 50,
+      "answerable": 50,
+      "top5": 45
+     },
+     "policy_gap": {
+      "rows": 6,
+      "answerable": 6,
+      "top5": 6
+     },
+     "scope_guard": {
+      "rows": 8,
+      "answerable": 0,
+      "top5": 0
+     },
+     "unanswerable_related": {
+      "rows": 14,
+      "answerable": 0,
+      "top5": 0
+     }
+    }
+   },
+   "held_out": {
+    "answerable": 18,
+    "first_place": 9,
+    "top3": 14,
+    "top5": 16,
+    "mrr": 0.731,
+    "multi_page_top5": 1,
+    "multi_page_rows": 2,
+    "unanswerable": 11,
+    "unanswerable_refused": 1,
+    "answerable_wrongly_refused": 0,
+    "off_topic_refused": 1,
+    "off_topic_rows": 1,
+    "forbidden_files_shown": 0,
+    "by_category": {
+     "exact_wording": {
+      "rows": 4,
+      "answerable": 4,
+      "top5": 4
+     },
+     "multi_page": {
+      "rows": 2,
+      "answerable": 2,
+      "top5": 1
+     },
+     "off_topic": {
+      "rows": 1,
+      "answerable": 0,
+      "top5": 0
+     },
+     "paraphrase": {
+      "rows": 11,
+      "answerable": 11,
+      "top5": 10
+     },
+     "policy_gap": {
+      "rows": 1,
+      "answerable": 1,
+      "top5": 1
+     },
+     "scope_guard": {
+      "rows": 6,
+      "answerable": 0,
+      "top5": 0
+     },
+     "unanswerable_related": {
+      "rows": 4,
+      "answerable": 0,
+      "top5": 0
+     }
+    }
+   },
+   "top5_missed_ids": [
+    "RQ013",
+    "RQ019",
+    "RQ024",
+    "RQ041",
+    "RQ043",
+    "RQ049",
+    "RQ051",
+    "RQ085"
+   ],
+   "mean_search_ms": 446.7,
+   "embedding_tokens": 1358
+  },
+  "router": {
+   "scores": [
+    76,
+    76,
+    76
+   ],
+   "runs": [
+    {
+     "correct": 76,
+     "complete": true,
+     "wrong_ids": [
+      "RT012",
+      "RT021",
+      "RT029",
+      "RT031",
+      "RT058",
+      "RT071",
+      "RT075"
+     ],
+     "by_category": {
+      "ambiguous": {
+       "correct": 10,
+       "total": 10
+      },
+      "chat": {
+       "correct": 9,
+       "total": 10
+      },
+      "clear": {
+       "correct": 48,
+       "total": 52
+      },
+      "follow_up": {
+       "correct": 1,
+       "total": 3
+      },
+      "injection": {
+       "correct": 2,
+       "total": 2
+      },
+      "pending_action": {
+       "correct": 4,
+       "total": 4
+      },
+      "topic_change": {
+       "correct": 2,
+       "total": 2
+      }
+     },
+     "safety_rows_correct": {
+      "injection": 2,
+      "pending_action": 4
+     },
+     "seconds": 109.6
+    },
+    {
+     "correct": 76,
+     "complete": true,
+     "wrong_ids": [
+      "RT012",
+      "RT021",
+      "RT029",
+      "RT031",
+      "RT058",
+      "RT071",
+      "RT075"
+     ],
+     "by_category": {
+      "ambiguous": {
+       "correct": 10,
+       "total": 10
+      },
+      "chat": {
+       "correct": 9,
+       "total": 10
+      },
+      "clear": {
+       "correct": 48,
+       "total": 52
+      },
+      "follow_up": {
+       "correct": 1,
+       "total": 3
+      },
+      "injection": {
+       "correct": 2,
+       "total": 2
+      },
+      "pending_action": {
+       "correct": 4,
+       "total": 4
+      },
+      "topic_change": {
+       "correct": 2,
+       "total": 2
+      }
+     },
+     "safety_rows_correct": {
+      "injection": 2,
+      "pending_action": 4
+     },
+     "seconds": 98.9
+    },
+    {
+     "correct": 76,
+     "complete": true,
+     "wrong_ids": [
+      "RT012",
+      "RT021",
+      "RT029",
+      "RT031",
+      "RT058",
+      "RT071",
+      "RT075"
+     ],
+     "by_category": {
+      "ambiguous": {
+       "correct": 10,
+       "total": 10
+      },
+      "chat": {
+       "correct": 9,
+       "total": 10
+      },
+      "clear": {
+       "correct": 48,
+       "total": 52
+      },
+      "follow_up": {
+       "correct": 1,
+       "total": 3
+      },
+      "injection": {
+       "correct": 2,
+       "total": 2
+      },
+      "pending_action": {
+       "correct": 4,
+       "total": 4
+      },
+      "topic_change": {
+       "correct": 2,
+       "total": 2
+      }
+     },
+     "safety_rows_correct": {
+      "injection": 2,
+      "pending_action": 4
+     },
+     "seconds": 97.8
+    }
+   ],
+   "flipped_between_runs": []
+  },
+  "scenarios": {
+   "scores": [
+    25,
+    25,
+    25
+   ],
+   "runs": [
+    {
+     "passed": 25,
+     "complete": true,
+     "failed_ids": [],
+     "answer_check_fallbacks": 0,
+     "answer_check_retries": 2,
+     "seconds": 100.6
+    },
+    {
+     "passed": 25,
+     "complete": true,
+     "failed_ids": [],
+     "answer_check_fallbacks": 0,
+     "answer_check_retries": 2,
+     "seconds": 92.6
+    },
+    {
+     "passed": 25,
+     "complete": true,
+     "failed_ids": [],
+     "answer_check_fallbacks": 0,
+     "answer_check_retries": 2,
+     "seconds": 97.1
+    }
+   ],
+   "flipped_between_runs": []
+  }
+ },
+ "usd": 0.082396,
+ "seconds": 652.1
+}
