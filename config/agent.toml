@@ -2,10 +2,17 @@
 # Secrets (the API key) never go in this file: they stay in .env.
 
 [model]
-# The chat model used by the router (and, in later phases, the branches). Only this file names it.
-name = "gpt-4o-mini"
-temperature = 0.0
-max_output_tokens = 300
+# The chat model used by the router. Only this file names it. The branches, confirm step and refund-method step name their own model below
+# and take only the key, timeout and file settings from here.
+# Phase 14e (experiment E4, measured on the 83 reviewed router rows, 3 runs): gpt-6-luna scored 79, 79, 78 against 76, 76, 76 for gpt-4o-mini;
+# injection 2 of 2 and pending_action 4 of 4 kept; cost $0.037 against $0.048 for the 3 runs; about 0.5 s slower per call.
+# There is no temperature line on purpose: luna runs at its default, so a few borderline rows flip between runs.
+# gpt-6-luna needs max_completion_tokens instead of max_tokens. reasoning_effort may be set here for the router (experiment E6 did).
+# Since the 14e fix the branch, confirm and refund-method steps and the judge do not copy token_parameter, reasoning_effort or temperature
+# from this table: they take only the key name, the env file and the timeout. Each has its own options in its own section.
+name = "gpt-6-luna"
+token_parameter = "max_completion_tokens"
+max_output_tokens = 1500
 timeout_seconds = 30
 api_key_env = "OPENAI_API_KEY"   # name of the variable that holds the key; the key itself is read from .env
 env_file = ".env"

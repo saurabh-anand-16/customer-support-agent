@@ -25,7 +25,7 @@ from dataclasses import dataclass, field
 
 from .actions import fill, run_pending
 from .checks import check
-from .llm import AgentConfig, ChatModel, LlmError, purpose
+from .llm import AgentConfig, ChatModel, LlmError, purpose, step_settings
 from .refund_method import STAGE_METHOD, RefundMethodStep
 from .session import Session
 from .tool_adapter import ToolAdapter
@@ -77,8 +77,7 @@ class ConfirmStep:
 
     # -- the model's label -------------------------------------------------------------------------------
     def _settings(self):
-        c = self.cfg.confirm
-        return dataclasses.replace(self.cfg.model, name=c.name, temperature=c.temperature, max_output_tokens=c.max_output_tokens)
+        return step_settings(self.cfg.model, self.cfg.confirm)
 
     def label(self, pending: dict, message: str) -> dict:
         """Ask the model for a label. Returns {"label", "reason", "raw_output", "error", "latency_ms"}; any problem gives "unclear"."""

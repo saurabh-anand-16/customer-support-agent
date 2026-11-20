@@ -58,6 +58,15 @@ class ModelSettings:
 TOKEN_PARAMETERS = ("max_tokens", "max_completion_tokens")
 
 
+def step_settings(model: ModelSettings, step) -> ModelSettings:
+    """Settings for the branch, confirm or refund-method call (phase 14e). From [model] only what is shared: the API key name, the env file
+    and the timeout. The model name, limit and the options (temperature, token_parameter, reasoning_effort) are the step's own, so an option
+    meant for the router's model is never sent to another model."""
+    return ModelSettings(name=step.name, temperature=step.temperature, max_output_tokens=step.max_output_tokens,
+                         timeout_seconds=model.timeout_seconds, api_key_env=model.api_key_env, env_file=model.env_file,
+                         token_parameter=step.token_parameter, reasoning_effort=step.reasoning_effort)
+
+
 @dataclass(frozen=True)
 class SessionSettings:
     history_keep: int
@@ -102,7 +111,9 @@ class RelevanceSettings:
 class BranchSettings:
     """[branches]: the five branch flows (phase 4b). `name` is the branch model; nothing else names a model."""
     name: str
-    temperature: float
+    temperature: float | None     # phase 14e: no key in the config = none is sent
+    token_parameter: str            # phase 14e: this step's own options (not copied from [model])
+    reasoning_effort: str | None
     max_output_tokens: int
     tool_round_limit: int
     format_retries: int         # phase 10: how many times a bare action (no "call_tool" or "final") is answered with the reminder below
@@ -128,7 +139,9 @@ class BranchSettings:
 class ConfirmSettings:
     """[confirm]: the yes or no step before a write (phase 4c). `name` is the model that labels the customer's answer."""
     name: str
-    temperature: float
+    temperature: float | None     # phase 14e: no key in the config = none is sent
+    token_parameter: str            # phase 14e: this step's own options (not copied from [model])
+    reasoning_effort: str | None
     max_output_tokens: int
     max_message_chars: int
     pending_max_turns: int       # messages the customer may send while an action waits; the next one finds it expired
@@ -141,7 +154,9 @@ class ConfirmSettings:
 class RefundMethodSettings:
     """[refund_method]: the question asked before the confirm card of a Pay on Delivery refund (phase 4d)."""
     name: str                    # the model that labels the customer's reply (it picks nothing: code checks the label)
-    temperature: float
+    temperature: float | None     # phase 14e: no key in the config = none is sent
+    token_parameter: str            # phase 14e: this step's own options (not copied from [model])
+    reasoning_effort: str | None
     max_output_tokens: int
     max_message_chars: int
     not_offered: list            # methods the tool lists that this agent never offers (a customer who asks for one goes to a person)
@@ -322,12 +337,12 @@ _SPEC = {
     "router": (RouterSettings, {"history_turns": int, "max_message_chars": int, "max_question_chars": int,
                                 "generic_clarify": str, "system_prompt": str, "labels": dict, "kinds": dict}),
     "scope": (ScopeSettings, {"statement": str}),
-    "branches": (BranchSettings, {"name": str, "temperature": float, "max_output_tokens": int, "tool_round_limit": int,
+    "branches": (BranchSettings, {"name": str, "max_output_tokens": int, "tool_round_limit": int,
                                   "format_retries": int, "format_reminder": str, "history_turns": int, "max_message_chars": int, "max_question_chars": int,
                                   "rewrite_follow_ups": bool, "rewrite_max_chars": int, "policy_top_k": int,
                                   "max_passage_chars": int, "returns_lookup_orders": int, "returns_lookup_words": list, "prompts": dict, "reason_texts": dict,
                                   "resolution_texts": dict, "approval_texts": dict, "replies": dict}),
-    "confirm": (ConfirmSettings, {"name": str, "temperature": float, "max_output_tokens": int, "max_message_chars": int,
+    "confirm": (ConfirmSettings, {"name": str, "max_output_tokens": int, "max_message_chars": int,
                                   "pending_max_turns": int, "max_unclear_asks": int, "prompt": str, "replies": dict}),
     "answer_check": (AnswerCheckSettings, {"enabled": bool, "max_retries": int, "max_facts_listed": int, "max_passage_chars": int,
                                            "allowed_text": list, "retry_instruction": str, "replies": dict}),
@@ -336,7 +351,7 @@ _SPEC = {
                                 "reasons_by_requested_method": dict, "show_note_to_customer": bool, "note_max_chars": int,
                                 "product_name_max_chars": int, "recent_decision_days": int, "note_to_customer": dict, "existing_case": dict,
                                 "default_decided_by": str, "notices": dict, "decision_replies": dict, "chat": dict}),
-    "refund_method": (RefundMethodSettings, {"name": str, "temperature": float, "max_output_tokens": int, "max_message_chars": int,
+    "refund_method": (RefundMethodSettings, {"name": str, "max_output_tokens": int, "max_message_chars": int,
                                              "not_offered": list, "escalation_kind": str, "prompt": str, "option_texts": dict,
                                              "notes": dict, "replies": dict}),
     "tracing": (TracingSettings, {"enabled": bool, "local_path": str, "max_lines": int, "capture_text": bool, "step_chars": int, "hidden_keys": list,
@@ -356,7 +371,9 @@ def _ok(value, tp) -> bool:
     return isinstance(value, tp)
 
 
-# Phase 14d: options a model section may leave out, as {key: (type, value when absent)}. Only [model] and [branches.relevance_check] have them for now.
+# Phase 14d: options a model section may leave out, as {key: (type, value when absent)}. [model] and [branches.relevance_check] have them since 14d;
+# phase 14e added [branches], [confirm] and [refund_method]: each step has its OWN options and never copies them from [model].
+MODEL_OPTION_SECTIONS = ("model", "branches", "confirm", "refund_method")
 MODEL_OPTIONS = {"temperature": (float, None), "token_parameter": (str, "max_tokens"), "reasoning_effort": (str, None)}
 
 RELEVANCE_SPEC = {"enabled": bool, "name": str, "max_output_tokens": int, "passages_shown": int, "max_passage_chars": int,
@@ -406,7 +423,7 @@ def load_agent_config(path: str | Path | None = None) -> AgentConfig:
         raw_branches = dict(raw_branches)
         relevance_raw = raw_branches.pop("relevance_check")
     sections = {**raw, "branches": raw_branches}
-    built = {name: _build(name, sections.get(name), cls, spec, where, MODEL_OPTIONS if name == "model" else None)
+    built = {name: _build(name, sections.get(name), cls, spec, where, MODEL_OPTIONS if name in MODEL_OPTION_SECTIONS else None)
              for name, (cls, spec) in _SPEC.items()}
     if relevance_raw is not None:
         relevance = _build("branches.relevance_check", relevance_raw, RelevanceSettings, RELEVANCE_SPEC, where, MODEL_OPTIONS)
@@ -524,8 +541,7 @@ def _check_table(where: str, section: str, table: dict, needed, allowed_fields) 
 def _check_confirm(c: ConfirmSettings, where: str) -> None:
     if not c.name.strip():
         raise AgentConfigError(f"{where}: [confirm].name (the model) must not be empty")
-    if not 0 <= c.temperature <= 2:
-        raise AgentConfigError(f"{where}: [confirm].temperature must be between 0 and 2")
+    _check_model_options(c, "[confirm]", where)
     for key in ("max_output_tokens", "max_message_chars", "pending_max_turns"):
         if getattr(c, key) < 1:
             raise AgentConfigError(f"{where}: [confirm].{key} must be 1 or more")
@@ -539,8 +555,7 @@ def _check_confirm(c: ConfirmSettings, where: str) -> None:
 def _check_refund_method(m: RefundMethodSettings, where: str) -> None:
     if not m.name.strip():
         raise AgentConfigError(f"{where}: [refund_method].name (the model) must not be empty")
-    if not 0 <= m.temperature <= 2:
-        raise AgentConfigError(f"{where}: [refund_method].temperature must be between 0 and 2")
+    _check_model_options(m, "[refund_method]", where)
     for key in ("max_output_tokens", "max_message_chars"):
         if getattr(m, key) < 1:
             raise AgentConfigError(f"{where}: [refund_method].{key} must be 1 or more")
@@ -686,8 +701,7 @@ def _check_relevance(r: RelevanceSettings, where: str) -> None:
 def _check_branches(b: BranchSettings, where: str) -> None:
     if b.relevance_check is not None:
         _check_relevance(b.relevance_check, where)
-    if not 0 <= b.temperature <= 2:
-        raise AgentConfigError(f"{where}: [branches].temperature must be between 0 and 2")
+    _check_model_options(b, "[branches]", where)
     for key in ("max_output_tokens", "tool_round_limit", "max_message_chars", "max_question_chars", "rewrite_max_chars",
                 "policy_top_k", "max_passage_chars"):
         if getattr(b, key) < 1:

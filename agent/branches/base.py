@@ -20,7 +20,7 @@ from typing import Callable
 
 from ..answer_check import describe_facts, describe_problems, facts_from, find_problems, inspect_text
 from ..checks import check
-from ..llm import AgentConfig, ChatModel, LlmError, current_recorder, safely
+from ..llm import AgentConfig, ChatModel, LlmError, current_recorder, safely, step_settings
 from ..llm import purpose as call_purpose
 from ..session import Session
 from ..tool_adapter import ToolAdapter
@@ -89,9 +89,8 @@ def fill(template: str, **fields) -> str:
 
 
 def model_settings(cfg: AgentConfig):
-    """The branch model's settings: the key, timeout and env file come from [model], the rest from [branches]."""
-    b = cfg.branches
-    return dataclasses.replace(cfg.model, name=b.name, temperature=b.temperature, max_output_tokens=b.max_output_tokens)
+    """The branch model's settings: the key, timeout and env file come from [model], everything else from [branches] (phase 14e)."""
+    return step_settings(cfg.model, cfg.branches)
 
 
 def conversation_text(ctx: BranchContext) -> str:

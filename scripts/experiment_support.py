@@ -144,6 +144,42 @@ def _same_kind(base, new) -> bool:
     return isinstance(new, type(base))
 
 
+# Phase 14e: model settings the loader accepts but config/agent.toml may not contain. An experiment file may set them in these tables only
+# ([model], [branches], [confirm], [refund_method] and [branches.relevance_check]; each step has its own, none is copied from [model]).
+# temperature may also be the string "omit": the key is removed for the run, so no temperature is sent.
+OPTIONAL_MODEL_TABLES = {"override.agent.model": ("model",), "override.agent.branches.relevance_check": ("branches", "relevance_check"),
+                         "override.agent.branches": ("branches",), "override.agent.confirm": ("confirm",),
+                         "override.agent.refund_method": ("refund_method",)}
+OPTIONAL_MODEL_KEYS = ("reasoning_effort", "token_parameter", "temperature")
+
+
+def _optional_help(where: str) -> str:
+    return (f" Optional keys allowed in [{where}] even though the config file has none: reasoning_effort (non-empty text), token_parameter (text), "
+            f"temperature (a number, or \"omit\" to send none).") if where in OPTIONAL_MODEL_TABLES else ""
+
+
+def _split_optional(ov: dict) -> tuple[dict, list]:
+    """Take the optional model keys out of the override. Returns (the override without them, [(table path, key, value)])."""
+    ov, found = copy.deepcopy(ov), []
+    for where, path in OPTIONAL_MODEL_TABLES.items():
+        table = ov
+        for part in path:
+            table = table.get(part) if isinstance(table, dict) else None
+        if not isinstance(table, dict):
+            continue
+        for key in OPTIONAL_MODEL_KEYS:
+            if key not in table:
+                continue
+            value = table.pop(key)
+            if key == "temperature":
+                if value != "omit" and (isinstance(value, bool) or not isinstance(value, (int, float))):
+                    raise ExperimentError(f"{where}.temperature must be a number or the text \"omit\", got {value!r}")
+            elif not isinstance(value, str) or (key == "reasoning_effort" and not value.strip()):
+                raise ExperimentError(f"{where}.{key} must be {'non-empty ' if key == 'reasoning_effort' else ''}text, got {value!r}")
+            found.append((path, key, value))
+    return ov, found
+
+
 def _check_paths(base: dict, ov: dict, where: str, new_ok: tuple = ()) -> None:
     """Every key in `ov` must already exist in `base` (a typo stops the run), and have the same kind of value."""
     for key, value in ov.items():
@@ -153,7 +189,8 @@ def _check_paths(base: dict, ov: dict, where: str, new_ok: tuple = ()) -> None:
                 if not isinstance(value, dict):
                     raise ExperimentError(f"{here} must be a table")
                 continue
-            raise ExperimentError(f"Unknown setting {here}. It is not in the config file, so it would do nothing. Settings in that table: {', '.join(base) or 'none'}")
+            raise ExperimentError(f"Unknown setting {here}. It is not in the config file, so it would do nothing. Settings in that table: {', '.join(base) or 'none'}."
+                                  + _optional_help(where))
         if isinstance(base[key], dict):
             if not isinstance(value, dict):
                 raise ExperimentError(f"{here} is a table in the config file, so give it as a table")
@@ -174,8 +211,20 @@ def _deep_merge(base: dict, ov: dict) -> dict:
 
 def merged_agent_raw(ov: dict) -> dict:
     base = tomllib.loads(AGENT_TOML.read_text(encoding="utf-8"))
+    ov, optional = _split_optional(ov)
     _check_paths(base, ov, "override.agent", new_ok=("override.agent.pricing",))
-    return _deep_merge(base, ov)
+    merged = _deep_merge(base, ov)
+    for path, key, value in optional:
+        table = merged
+        for part in path:
+            table = table.get(part) if isinstance(table, dict) else None
+        if not isinstance(table, dict):
+            raise ExperimentError(f"override.agent.{'.'.join(path)}.{key}: the config file has no [{'.'.join(path)}] table to put it in")
+        if value == "omit":
+            table.pop(key, None)
+        else:
+            table[key] = value
+    return merged
 
 
 def merged_rag_raw(ov: dict, cache_path: str) -> tuple[dict, str]:
@@ -240,6 +289,8 @@ def build_plan(exp: dict, work: Path) -> Plan:
     rag_cfg = load_config(profile, path=rag_path)
     for path, value in _leaves(exp["override"].get("agent", {})):
         got = _read_back(agent_cfg, path)
+        if path[-1] == "temperature" and value == "omit":
+            value = None                      # phase 14e: "omit" means the loaded settings hold no temperature
         if got != value and not (isinstance(value, (int, float)) and not isinstance(value, bool) and float(got) == float(value)):
             raise ExperimentError(f"override.agent.{'.'.join(path)} did not take effect (the loaded value is {got!r})")
     for path, value in _leaves({k: v for k, v in exp["override"].get("rag", {}).items() if k != "default_profile"}):
@@ -303,6 +354,9 @@ def estimate(plan: Plan) -> dict:
     if "router" in exp["checks"]:
         m = MEASURED["router"]
         add("router", a.model.name, m["calls"] * n, m["tokens_in"] * n, m["tokens_out"] * n)
+        rm = a.model
+        notes.append(f"Router model {rm.name}: temperature {'not sent' if rm.temperature is None else rm.temperature}, token_parameter {rm.token_parameter} = {rm.max_output_tokens}, "
+                     f"reasoning_effort {rm.reasoning_effort or 'not sent'}.")
     if "scenarios" in exp["checks"]:
         m = MEASURED["scenarios"]
         add("scenarios", a.branches.name, m["calls"] * n, m["tokens_in"] * n, m["tokens_out"] * n)

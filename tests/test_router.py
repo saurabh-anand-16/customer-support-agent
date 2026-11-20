@@ -414,7 +414,7 @@ def test_live_file_the_real_agent_config_loads_and_its_prompt_can_be_filled_in()
     # Invariants only: whatever the values, the file is valid and gives a prompt that names every label and kind.
     cfg = load_agent_config()
     prompt = Router(cfg, FakeChat()).system_prompt()
-    assert cfg.model.name.strip() and 0 <= cfg.model.temperature <= 2
+    assert cfg.model.name.strip() and (cfg.model.temperature is None or 0 <= cfg.model.temperature <= 2)   # no temperature line = none is sent
     assert all(f'"{label}"' in prompt for label in cfg.router.labels) and all(f'"{kind}"' in prompt for kind in cfg.router.kinds)
     assert cfg.scope.statement.strip() in prompt and "{" not in re.sub(r'\{"route".*?\}', "", prompt)
     for label in ("out_of_scope", "clarify"):

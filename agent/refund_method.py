@@ -28,7 +28,7 @@ from dataclasses import dataclass, field
 
 from .branches.base import fill
 from .checks import check
-from .llm import AgentConfig, ChatModel, LlmError, purpose
+from .llm import AgentConfig, ChatModel, LlmError, purpose, step_settings
 from .session import Session
 from .tool_adapter import ToolAdapter
 
@@ -104,8 +104,7 @@ class RefundMethodStep:
         self.cfg, self.chat, self.adapter, self.escalate_fn = cfg, chat, adapter, escalate_fn
 
     def _settings(self):
-        m = self.cfg.refund_method
-        return dataclasses.replace(self.cfg.model, name=m.name, temperature=m.temperature, max_output_tokens=m.max_output_tokens)
+        return step_settings(self.cfg.model, self.cfg.refund_method)
 
     # -- the model's label ------------------------------------------------------------------------------------
     def label(self, pending: dict, message: str, options: Options) -> dict:

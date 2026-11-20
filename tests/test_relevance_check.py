@@ -176,3 +176,65 @@ def test_the_request_is_unchanged_for_existing_models_and_follows_the_options_fo
     assert luna_effort == {"model": "gpt-6-luna", "max_completion_tokens": 300, "reasoning_effort": "low", "response_format": {"type": "json_object"},
                            "messages": system_and_messages}
     assert luna == {"model": "gpt-6-luna", "max_completion_tokens": 300, "response_format": {"type": "json_object"}, "messages": system_and_messages}
+
+
+# === Phase 14e: the router's model options are never copied to the other steps ============================================
+def test_branch_confirm_refund_method_and_judge_payloads_ignore_the_options_of_model():
+    import dataclasses
+
+    from agent.branches.base import model_settings
+    from agent.branches.relevance import judge_settings
+    from agent.confirm import ConfirmStep
+    from agent.refund_method import RefundMethodStep
+
+    real = load_agent_config()
+    cfg = dataclasses.replace(real, model=dataclasses.replace(real.model, name="gpt-6-luna", temperature=None, max_output_tokens=1500,
+                                                              token_parameter="max_completion_tokens", reasoning_effort="low"))
+    confirm, method = object.__new__(ConfirmStep), object.__new__(RefundMethodStep)
+    confirm.cfg = method.cfg = cfg
+    steps = {"branch": (model_settings(cfg), cfg.branches), "confirm": (confirm._settings(), cfg.confirm),
+             "refund_method": (method._settings(), cfg.refund_method)}
+    client = FakeClient()
+    chat = OpenAIChat(client=client)
+    messages = [{"role": "user", "content": "hi"}]
+    for settings, _step in steps.values():
+        chat.complete("SYS", messages, settings)
+    chat.complete("SYS", messages, judge_settings(cfg, cfg.branches.relevance_check))
+    body = [{"role": "system", "content": "SYS"}, *messages]
+    for (name, (_settings, step)), sent in zip(steps.items(), client.sent):
+        # what the code sent before the router moved to luna: the step's own model, max_tokens, its own temperature, no reasoning_effort
+        assert sent == {"model": step.name, "temperature": step.temperature, "max_tokens": step.max_output_tokens,
+                        "response_format": {"type": "json_object"}, "messages": body}, name
+        assert step.name != "gpt-6-luna" and step.temperature is not None            # the step keeps its own model and temperature
+    judge = cfg.branches.relevance_check
+    expected = {"model": judge.name, judge.token_parameter: judge.max_output_tokens, "response_format": {"type": "json_object"}, "messages": body}
+    if judge.temperature is not None:
+        expected["temperature"] = judge.temperature
+    if judge.reasoning_effort:
+        expected["reasoning_effort"] = judge.reasoning_effort
+    assert client.sent[3] == expected                                  # the judge sends its own options, not those of [model]
+
+
+def test_the_step_sections_accept_their_own_options_and_reject_bad_ones(tmp_path):
+    import tomllib
+
+    from agent.llm import AgentConfigError
+    text = DEFAULT_CONFIG.read_text(encoding="utf-8")
+    raw = tomllib.loads(text)
+    for section in ("branches", "confirm", "refund_method"):
+        assert raw[section]["max_output_tokens"]                      # the sections exist; the options below are added to a copy of the file
+    def write(extra: str, section: str):
+        t = text.replace(f"[{section}]\n", f"[{section}]\n{extra}\n", 1)
+        p = tmp_path / "agent.toml"
+        p.write_text(t, encoding="utf-8")
+        return p
+    for section in ("branches", "confirm", "refund_method"):
+        cfg = load_agent_config(write('token_parameter = "max_completion_tokens"\nreasoning_effort = "low"', section))
+        got = getattr(cfg, section)
+        assert (got.token_parameter, got.reasoning_effort) == ("max_completion_tokens", "low")
+        default = getattr(load_agent_config(), section)
+        assert (default.token_parameter, default.reasoning_effort) == ("max_tokens", None)           # absent: today's request
+        with pytest.raises(AgentConfigError):
+            load_agent_config(write('token_parameter = "nope"', section))
+        with pytest.raises(AgentConfigError):
+            load_agent_config(write('reasoning_effort = " "', section))

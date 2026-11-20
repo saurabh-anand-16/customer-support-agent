@@ -74,6 +74,8 @@ Every later number is compared with this table, with counts ("68 of 76"), never 
 - **Add first:** 20 to 30 new follow-up, multi-turn and injection rows (reviewed by you) and 20 fresh held-out rows.
 
 ### E4: router model
+- **Status:** run (`e4-router-luna`, 3 runs) and **adopted as the default router** (phase 14e).
+- **Results (83 reviewed rows):** gpt-6-luna 79, 79, 78 correct against 76, 76, 76 for gpt-4o-mini. Injection 2 of 2 and pending_action 4 of 4 kept. Cost $0.037 against $0.048 for the 3 runs. About 0.5 s slower per call. luna runs at its default temperature (none is sent), so a few borderline rows flip between runs. It needs `max_completion_tokens` (1500).
 - **Change:** gpt-4o-mini against gpt-6-luna and one or two other small models.
 - **Target metrics:** as E3, plus time per call and cost per 1,000 messages.
 - **Watch:** settings a newer model rejects (such as temperature) and any change in the output format.
@@ -84,6 +86,7 @@ Every later number is compared with this table, with counts ("68 of 76"), never 
 - **Reply quality:** pick 20 replies (the same scenarios for every model), hide the model name, and rate each from 1 to 5 for correct, clear and helpful. You rate them; the average and the number below 3 are the metric.
 
 ### E6: thinking level
+- **Status:** run once each for the router (`e6-router-low` 74 of 83, `e6-router-high` 75 of 83; e4 without the option 79, 79, 78). **Not adopted.** The scores are not comparable to E4: all 4 pending_action rows show `setup_failed`, so 4 rows were lost. Cause: the pending-action rows run the real agent, and the branch, confirm and refund-method settings are built by copying the `[model]` table (`agent/branches/base.py:94`, `agent/confirm.py:81`, `agent/refund_method.py:108`), so `gpt-4o-mini` was sent `reasoning_effort` and answered 400 "Unrecognized request argument supplied: reasoning_effort" (checked with one real call). On the other 79 rows low and high gave 74 and 75 correct, against 75, 75 and 74 for E4 (79, 79, 78 minus its 4 pending rows): no gain. **Fixed in phase 14e:** `step_settings` in `agent/llm.py` now builds the branch, confirm, refund-method and judge settings. From `[model]` it takes only the API key name, the env file and the timeout; the name, limit, `temperature`, `token_parameter` and `reasoning_effort` are the step's own (`[branches]`, `[confirm]` and `[refund_method]` accept the three as optional keys; absent means `max_tokens` and nothing else sent). A test with a fake client checks the payloads of all four steps with `[model]` set to luna and `reasoning_effort = "low"`. The experiment runner can override those keys in all those tables. E6 has to be rerun (`e6-router-low` and `e6-router-high`) for valid numbers.
 - **Change:** the reasoning level on the models that support it (low, medium, high), for the router and for the branches separately.
 - **Target metrics:** as E3 and E5, plus reasoning tokens, time and cost per turn.
 - **Question:** does a higher level fix any of the always-wrong rows, or only cost more?

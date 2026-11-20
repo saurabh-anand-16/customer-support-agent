@@ -19,7 +19,7 @@ import json
 import time
 from dataclasses import dataclass, field
 
-from ..llm import AgentConfig, ChatModel, LlmError, RelevanceSettings
+from ..llm import AgentConfig, ChatModel, LlmError, RelevanceSettings, step_settings
 from ..llm import purpose as call_purpose
 
 LABELS = ("yes", "partly", "no")
@@ -41,8 +41,7 @@ class Verdict:
 
 def judge_settings(cfg: AgentConfig, r: RelevanceSettings):
     """The judge model's settings: key, timeout and env file from [model]; the name, limit and options from [branches.relevance_check]."""
-    return dataclasses.replace(cfg.model, name=r.name, temperature=r.temperature, max_output_tokens=r.max_output_tokens,
-                               token_parameter=r.token_parameter, reasoning_effort=r.reasoning_effort)
+    return step_settings(cfg.model, r)
 
 
 def passages_for_judge(cfg: AgentConfig, results: list) -> list:

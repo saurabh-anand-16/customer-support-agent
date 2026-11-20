@@ -85,9 +85,9 @@ source = "config/agent.toml#refund_method.not_offered"
 [[assumption]]
 id = "chat-model"
 title = "The chat model and its settings"
-text = "One chat model runs the router and the branches. Its name and settings are set in one file. A different model may behave differently, and the evaluation numbers belong to this one."
+text = "The router has its own chat model, and the branches, confirm step and refund-method step each name theirs. All are set in one file. A different model may behave differently, and the evaluation numbers belong to this one."
 kind = "our decision"
-source = ["config/agent.toml#model.name", "config/agent.toml#model.temperature", "config/agent.toml#model.max_output_tokens"]
+source = ["config/agent.toml#model.name", "config/agent.toml#model.token_parameter", "config/agent.toml#model.max_output_tokens"]
 
 [[assumption]]
 id = "search-profile"
