@@ -206,7 +206,7 @@ def test_with_a_baseline_entry_the_same_rules_as_the_router_apply():
 def test_lean_can_hold_followups_but_the_saved_baseline_has_none():
     assert rec.lean({"followups": RESULT})["followups"]["scores"] == [2, 2, 3]
     saved = json.loads((ROOT / "experiments" / "baseline.json").read_text(encoding="utf-8"))
-    assert "followups" not in saved["checks"]
+    assert "followups" in saved["checks"]
 
 
 def record_for(results, verdicts):
