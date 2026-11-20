@@ -1,0 +1,12 @@
+# E4: the router on gpt-6-luna, default thinking level. Router check only.
+name = "e4-router-luna"
+note = "Router on gpt-6-luna, default thinking level, no temperature"
+checks = ["router"]
+repeat = 3
+cost_limit_usd = 0.25
+
+[override.agent.model]
+name = "gpt-6-luna"
+token_parameter = "max_completion_tokens"
+temperature = "omit"
+max_output_tokens = 1500

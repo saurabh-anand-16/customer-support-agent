@@ -10,10 +10,16 @@ run files in `data/experiments/runs/`; rows whose run file is not on this comput
 | 2026-11-20 | baseline-2 | Current config, no changes (3 repeats) | 68 | 76 | 25 | $0.0824 | 10m 52s | search: no baseline, router: no baseline, scenarios: no baseline | the first baseline, small embedding model, chunk 1200): superseded (old search setup, replaced by baseline-3). |
 | 2026-11-20 | baseline-3 | Current config, no changes (3 repeats) | 71 | 76 | 25 | $0.0819 | 11m 49s | search: better, router: same, scenarios: same |  |
 | 2026-11-20 | e1-adopted-scenarios | 25 scenarios with the v3 relevance check on (the default since phase 14d) | - | - | 25 | $0.0340 | 5m 25s | scenarios: same | adopt |
+| 2026-11-20 | e1-adopted-scenarios-2 | 25 scenarios with the v3 relevance check on (the default since phase 14d) | - | - | 25 | $0.0293 | 5m 19s | scenarios: same | adopt |
 | 2026-11-20 | e1-lenient | Relevance check on (gpt-6-luna), refuse on no only | 71 (judge: 12 of 30 refused, 0 wrongly) | - | - | $0.0295 | 11m 09s | search: better | reject (too few caught for the cost) |
 | 2026-11-20 | e1-prompt-v2 | Judge gpt-6-luna, quote-first prompt, labels yes/no, refuse on no | 71 (judge: 28 of 30 refused, 18 wrongly) | - | - | $0.0435 | 13m 05s | search: worse | reject |
 | 2026-11-20 | e1-prompt-v3 | Judge gpt-6-luna, v3 prompt (main thing asked), max_output_tokens 1200, refuse on no | 71 (judge: 27 of 30 refused, 14 wrongly) | - | - | $0.0452 | 13m 42s | search: worse | adopt |
 | 2026-11-20 | e1-strict | Relevance check on (gpt-6-luna), refuse on no and partly | 71 (judge: 28 of 30 refused, 23 wrongly) | - | - | $0.0347 | 10m 23s | search: worse | reject (too many good questions refused) |
+| 2026-11-20 | e4-router-luna | Router on gpt-6-luna, default thinking level, no temperature | - | 79 | - | $0.0372 | 8m 20s | router: better | adopt |
+| 2026-11-20 | e6-router-high | Router on gpt-6-luna, reasoning_effort high | - | 75 | - | $0.0117 | 2m 52s | router: unsafe | reject (invalid, the pending rows failed to start) |
+| 2026-11-20 | e6-router-high-v2 | Router on gpt-6-luna, reasoning_effort high (reurn after the inheritence fix) | - | 79 | - | $0.0122 | 2m 36s | router: better | reject (no gain over the default) |
+| 2026-11-20 | e6-router-low | Router on gpt-6-luna, reasoning_effort low | - | 74 | - | $0.0106 | 2m 30s | router: unsafe | reject (invalid, the pending rows failed to start) |
+| 2026-11-20 | e6-router-low-v2 | Router on gpt-6-luna, reasoning_effort low (rerun after the inheritence fix) | - | 78 | - | $0.0114 | 2m 38s | router: same | reject (no gain over the default) |
 | 2026-11-20 | search-chunk-1800 | Chunk size 1800 instead of 1200 | 71 | - | - | $0.0004 | 49s | search: better | reject |
 | 2026-11-20 | search-chunk-600 | Chunk size 600 instead of 1200 | 69 | - | - | $0.0004 | 53s | search: same | reject |
 | 2026-11-20 | search-chunk-900 | Chunk size 900 instead of 1200 | 72 | - | - | $0.0004 | 51s | search: better | reject |

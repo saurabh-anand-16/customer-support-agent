@@ -1,0 +1,13 @@
+# E6: the router on gpt-6-luna with a low thinking level. One run.
+name = "e6-router-low-v2"
+note = "Router on gpt-6-luna, reasoning_effort low (rerun after the inheritence fix)"
+checks = ["router"]
+repeat = 1
+cost_limit_usd = 0.25
+
+[override.agent.model]
+name = "gpt-6-luna"
+token_parameter = "max_completion_tokens"
+temperature = "omit"
+max_output_tokens = 1500
+reasoning_effort = "low"
